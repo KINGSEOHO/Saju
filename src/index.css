@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-serif: 'Noto Serif KR', 'Nanum Myeongjo', serif;
+}
+
+/*
+ * 오행 색 (dataviz validate_palette.js 검증 통과 — light/dark 각각)
+ * light: #008300,#e34948,#eda100,#4a3aa7,#2a78d6  /  dark: #008300,#e66767,#b08000,#9085e9,#256abf
+ * CVD 인접쌍 6~8 경고 구간 → 항상 텍스트 라벨(목·화·토·금·수)을 함께 표시해 색에만 의존하지 않는다.
+ * 운세 점수: 발산형(유리=파랑 ↔ 불리=빨강, 중립=회색)
+ */
+:root {
+  color-scheme: light;
+  --surface: #fcfcfb;
+  --el-wood: #008300;
+  --el-fire: #e34948;
+  --el-earth: #eda100;
+  --el-metal: #4a3aa7;
+  --el-water: #2a78d6;
+  --div-pos: #2a78d6;
+  --div-neg: #e34948;
+  --div-mid: #f0efec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+    --surface: #1a1a19;
+    --el-wood: #008300;
+    --el-fire: #e66767;
+    --el-earth: #b08000;
+    --el-metal: #9085e9;
+    --el-water: #256abf;
+    --div-pos: #3987e5;
+    --div-neg: #e66767;
+    --div-mid: #383835;
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+@layer base {
+body {
+  @apply bg-stone-50 text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
+  font-family: var(--font-sans);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+}
+
+.hanja {
+  font-family: var(--font-serif);
+}
+
+@utility card {
+  @apply rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6 dark:border-stone-800 dark:bg-stone-900;
+}
+
+@utility field {
+  @apply w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 outline-none transition focus:border-stone-900 focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-300;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-stone-900 text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white;
+}
+@utility btn-ghost {
+  @apply btn border border-stone-300 bg-white text-stone-800 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800;
+}
+
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .card-print {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}

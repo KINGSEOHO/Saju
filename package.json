@@ -1,0 +1,38 @@
+{
+  "name": "myeonggyeong-saju",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "정밀 만세력 엔진 기반 사주 분석 웹사이트 (명경사주)",
+  "scripts": {
+    "dev": "concurrently -k -n web,api -c cyan,magenta \"vite\" \"npm:dev:api\"",
+    "dev:web": "vite",
+    "dev:api": "ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin} node --disable-warning=ExperimentalWarning server/index.mjs",
+    "build": "tsc --noEmit && vite build",
+    "start": "NODE_ENV=production node --disable-warning=ExperimentalWarning server/index.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.5",
+    "korean-lunar-calendar": "^0.4.0",
+    "lunar-javascript": "^1.7.7",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}
