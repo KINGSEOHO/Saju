@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "concurrently -k -n web,api -c cyan,magenta \"vite\" \"npm:dev:api\"",
     "dev:web": "vite",
-    "dev:api": "ADMIN_TOKEN=${ADMIN_TOKEN:-dev-admin} node --disable-warning=ExperimentalWarning server/index.mjs",
+    "dev:api": "node --disable-warning=ExperimentalWarning server/index.mjs --dev",
     "build": "tsc --noEmit && vite build",
-    "start": "NODE_ENV=production node --disable-warning=ExperimentalWarning server/index.mjs",
+    "start": "node --disable-warning=ExperimentalWarning server/index.mjs --prod",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

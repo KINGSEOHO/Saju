@@ -15,10 +15,11 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT ?? 8787);
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? '';
+const DEV = process.argv.includes('--dev');
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? (DEV ? 'dev-admin' : '');
 const DB_PATH = process.env.DB_PATH ?? join(ROOT, 'data', 'saju.db');
 const DIST = join(ROOT, 'dist');
-const PROD = process.env.NODE_ENV === 'production';
+const PROD = process.argv.includes('--prod') || process.env.NODE_ENV === 'production';
 
 mkdirSync(dirname(DB_PATH), { recursive: true });
 const db = new DatabaseSync(DB_PATH);
