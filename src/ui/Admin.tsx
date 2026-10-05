@@ -2,29 +2,9 @@
 import { useState, type FormEvent } from 'react';
 import { FEATURE_OPTIONS, PRICE_OPTIONS } from '../config/plans.ts';
 import { STEMS } from '../engine/index.ts';
+import { SHEET_URL } from '../config/backend.ts';
 import { fetchStats } from '../lib/api.ts';
-
-interface Bucket {
-  key: string;
-  n: number;
-  avg?: number | null;
-}
-interface Stats {
-  totals: { analyses: number; feedback: number; reviews: number; sessions: number };
-  overall: { n: number; avgOverall: number | null; avgAccuracy: number | null; avgDetail: number | null };
-  sections: { section: string; n: number; avg: number | null; dist: number[] }[];
-  price: Bucket[];
-  features: Bucket[];
-  compare: Bucket[];
-  byStrength: Bucket[];
-  byDayStem: Bucket[];
-  byConfidence: Bucket[];
-  byTimeKnown: Bucket[];
-  daily: { day: string; analyses: number; reviews: number }[];
-  recentReviews: { created_at: string; overall: number; accuracy: number; text: string | null; price: string | null; meta: Record<string, unknown> }[];
-  recentComments: { created_at: string; section: string; rating: number; comment: string }[];
-  decision: { ready: boolean; notes: string[]; wtpPaidShare: number | null; medianPrice: string | null };
-}
+import type { Stats } from '../lib/stats.ts';
 
 const SECTION_KO: Record<string, string> = { summary: '종합', personality: '성향', love: '연애·결혼', career: '직업·이직', wealth: '재물', health: '건강' };
 const PRICE_KO = Object.fromEntries(PRICE_OPTIONS.map((p) => [p.id, p.label]));
@@ -97,7 +77,7 @@ export function Admin() {
     <div className="space-y-6">
       <form onSubmit={load} className="card flex flex-wrap items-end gap-3">
         <label className="grow">
-          <span className="mb-1 block text-sm font-semibold">관리자 토큰 (서버 환경변수 ADMIN_TOKEN)</span>
+          <span className="mb-1 block text-sm font-semibold">관리자 토큰 ({SHEET_URL ? 'Apps Script 스크립트 속성 ADMIN_TOKEN' : '서버 환경변수 ADMIN_TOKEN'})</span>
           <input className="field" type="password" value={token} onChange={(e) => setToken(e.target.value)} autoComplete="off" />
         </label>
         <button className="btn-primary" type="submit">

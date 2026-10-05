@@ -3,7 +3,11 @@
 **정확하게 계산하고, 있는 그대로 말하는 사주 웹사이트.**
 천문 계산 기반 정밀 만세력 엔진 위에서 오행·십성·용신·신살·대운을 산출하고, 성향·연애·이직·재물·건강 리포트를 **근거와 함께** 자동 생성합니다. React + Tailwind CSS v4 + TypeScript, 리뷰 수집용 Node 서버(외부 의존성 없음) 포함.
 
-## 빠른 시작
+## 배포 (권장: GitHub Pages + Google 스프레드시트, 무료·서버 없음)
+
+**`docs/SETUP-SHEETS.md`** 의 3단계(스프레드시트 연결 → 저장소 변수 `SHEET_URL` → Pages 켜기)만 하면 `https://<아이디>.github.io/Saju/` 로 열립니다. 이후에는 코드를 푸시할 때마다 자동 배포됩니다.
+
+## 로컬 실행
 
 ```bash
 npm install
@@ -15,7 +19,7 @@ ADMIN_TOKEN=비밀값 npm start   # 운영: dist/ 정적 서빙 + /api (기본 �
 
 - Node **22.5 이상** 필요 (내장 `node:sqlite` 사용). DB 파일 위치는 `DB_PATH` (기본 `data/saju.db`).
 - 관리자 통계: `/#/admin` 에서 `ADMIN_TOKEN` 입력.
-- 서버 없이 `dist/` 만 정적 호스팅해도 사주 분석은 100% 동작합니다(계산은 브라우저에서 수행). 이 경우 리뷰는 브라우저에 임시 보관 후 서버가 생기면 재전송됩니다.
+- 리뷰 저장 위치: `SHEET_URL` 이 설정되면 Google 스프레드시트, 아니면 자체 서버(`/api`). 둘 다 없으면 브라우저에 임시 보관 후 재전송합니다. 사주 분석 자체는 어느 경우든 100% 동작합니다.
 
 ## 정확도 — 무엇을, 어떻게 검증했나
 
@@ -62,7 +66,9 @@ src/engine/      만세력·명리 엔진 (UI 의존성 없는 순수 TS, 서버
 src/report/      해석 지식베이스(kb.ts)와 리포트 생성기(generate.ts)
 src/ui/          React 컴포넌트 (Tailwind)
 src/config/plans.ts  과금 기능 플래그 (현재 BETA_FREE)
-server/index.mjs     리뷰·정확도 평가·이벤트 API + 관리자 통계 + 정적 서빙
+server/index.mjs     (선택) 자체 서버 방식: 리뷰 API + 관리자 통계 + 정적 서빙
+docs/google-apps-script.gs  스프레드시트 방식 수신 코드
+.github/workflows/   GitHub Pages 자동 배포
 docs/MONETIZATION.md 리뷰 기반 유료화 설계
 tests/           정확도·안정성 테스트
 ```

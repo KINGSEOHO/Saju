@@ -1,8 +1,11 @@
 /**
  * 리뷰·피드백 API 클라이언트
- * 서버(/api)가 없으면(정적 호스팅) 브라우저 localStorage 에 보관했다가 다음 기회에 재전송한다.
+ * - Google 스프레드시트(SHEET_URL) 또는 자체 서버(/api)로 전송
+ * - 전송 실패 시 브라우저 localStorage 에 보관했다가 다음 방문 때 재전송
  */
+import { SHEET_URL } from '../config/backend.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
+import { computeStats, type RawData, type Stats } from './stats.ts';
 
 const QUEUE_KEY = 'mg_pending_v1';
 const SESSION_KEY = 'mg_session_v1';
@@ -42,6 +45,17 @@ type Kind = 'feedback' | 'reviews' | 'events';
 
 async function post(kind: Kind, body: unknown): Promise<boolean> {
   try {
+    if (SHEET_URL) {
+      // text/plain 으로 보내야 CORS 사전요청 없이 Apps Script 가 받는다
+      const r = await fetch(SHEET_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ kind, ...(body as object) }),
+      });
+      if (!r.ok) return false;
+      const out = await r.json().catch(() => ({}));
+      return !out.error;
+    }
     const r = await fetch(`/api/${kind}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -89,7 +103,14 @@ export async function send(kind: Kind, body: unknown): Promise<'sent' | 'queued'
   return 'sent';
 }
 
-export async function fetchStats(token: string) {
+export async function fetchStats(token: string): Promise<Stats> {
+  if (SHEET_URL) {
+    const r = await fetch(`${SHEET_URL}?token=${encodeURIComponent(token)}`);
+    if (!r.ok) throw new Error(`스프레드시트 연결 오류 (${r.status})`);
+    const raw = (await r.json()) as RawData & { error?: string };
+    if (raw.error) throw new Error(raw.error === 'unauthorized' ? '관리자 토큰이 올바르지 않습니다.' : raw.error);
+    return computeStats(raw);
+  }
   const r = await fetch('/api/stats', { headers: { Authorization: `Bearer ${token}` } });
   if (!r.ok) throw new Error(r.status === 401 ? '관리자 토큰이 올바르지 않습니다.' : `서버 오류 (${r.status})`);
   return r.json();
