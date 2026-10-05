@@ -31,7 +31,7 @@ export function SectionRating({ a, section }: { a: SajuAnalysis; section: Sectio
             aria-pressed={rating === i + 1}
             className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
               rating === i + 1
-                ? 'border-stone-900 bg-stone-900 text-white dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900'
+                ? 'border-brand-700 tab-on dark:border-brand-300'
                 : 'border-stone-300 hover:border-stone-500 dark:border-stone-700'
             }`}
           >
@@ -173,7 +173,7 @@ export function ReviewForm({ a }: { a: SajuAnalysis }) {
               onClick={() => setPrice(p.id)}
               aria-pressed={price === p.id}
               className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                price === p.id ? 'border-stone-900 bg-stone-900 text-white dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900' : 'border-stone-300 dark:border-stone-700'
+                price === p.id ? 'border-brand-700 tab-on dark:border-brand-300' : 'border-stone-300 dark:border-stone-700'
               }`}
             >
               {p.label}

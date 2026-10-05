@@ -17,7 +17,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
       role="tab"
       aria-selected={tab === id}
       onClick={() => setTab(id)}
-      className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${tab === id ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'}`}
+      className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${tab === id ? 'tab-on' : 'tab-off'}`}
     >
       {label}
     </button>
@@ -64,7 +64,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
             {d.list.map((x) => {
               const current = a.currentDaeun?.pillar.index === x.pillar.index;
               return (
-                <div key={x.pillar.index} className={`rounded-xl border p-3 ${current ? 'border-stone-900 dark:border-stone-100' : 'border-stone-200 dark:border-stone-800'}`}>
+                <div key={x.pillar.index} className={`rounded-xl border p-3 ${current ? 'border-brand-600 ring-1 ring-brand-600 dark:border-brand-300 dark:ring-brand-300' : 'border-stone-200 dark:border-stone-800'}`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="font-bold">
                       <span className="hanja text-lg">{pillarHanja(x.pillar)}</span> <span className="text-sm text-stone-500">{pillarKo(x.pillar)}</span>
@@ -137,7 +137,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
             {a.wolun.map((w) => {
               const isNow = a.now >= w.startMs && a.wolun.find((x) => x.startMs > w.startMs && x.startMs <= a.now) === undefined;
               return (
-                <div key={w.startMs} className={`rounded-xl border p-3 ${isNow ? 'border-stone-900 dark:border-stone-100' : 'border-stone-200 dark:border-stone-800'}`}>
+                <div key={w.startMs} className={`rounded-xl border p-3 ${isNow ? 'border-brand-600 ring-1 ring-brand-600 dark:border-brand-300 dark:ring-brand-300' : 'border-stone-200 dark:border-stone-800'}`}>
                   <div className="flex items-center justify-between">
                     <span className="hanja text-lg font-bold">{pillarHanja(w.pillar)}</span>
                     {isNow && <span className="chip">이번 달</span>}

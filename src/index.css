@@ -3,6 +3,27 @@
 @theme {
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-serif: 'Noto Serif KR', 'Nanum Myeongjo', serif;
+
+  /* 가독성: 기본 글자 크기를 한 단계씩 키움 (12→13, 14→15, 16→17px) */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.55;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.65;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.75;
+
+  /* 브랜드 색: 차분한 먹청(墨靑) */
+  --color-brand-50: #eef2f9;
+  --color-brand-100: #dbe3f2;
+  --color-brand-200: #b9c8e6;
+  --color-brand-300: #8ea7d4;
+  --color-brand-400: #6383be;
+  --color-brand-500: #4566a6;
+  --color-brand-600: #34518c;
+  --color-brand-700: #2a4172;
+  --color-brand-800: #22355d;
+  --color-brand-900: #1b2a49;
+  --color-paper: #f7f5f0;
 }
 
 /*
@@ -44,7 +65,7 @@ html {
 }
 @layer base {
 body {
-  @apply bg-stone-50 text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
+  @apply bg-paper text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
   font-family: var(--font-sans);
   word-break: keep-all;
   overflow-wrap: anywhere;
@@ -56,18 +77,18 @@ body {
 }
 
 @utility card {
-  @apply rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6 dark:border-stone-800 dark:bg-stone-900;
+  @apply rounded-3xl border border-stone-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(27,42,73,0.12)] sm:p-7 dark:border-stone-800 dark:bg-stone-900 dark:shadow-none;
 }
 
 @utility field {
-  @apply w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 outline-none transition focus:border-stone-900 focus:ring-2 focus:ring-stone-900/10 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-stone-300;
+  @apply w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-base text-stone-900 outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-600/15 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-brand-300;
 }
 
 @utility btn {
   @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
 }
 @utility btn-primary {
-  @apply btn bg-stone-900 text-white hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white;
+  @apply btn bg-brand-700 text-white shadow-sm hover:bg-brand-800 dark:bg-brand-300 dark:text-brand-900 dark:hover:bg-brand-200;
 }
 @utility btn-ghost {
   @apply btn border border-stone-300 bg-white text-stone-800 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800;
@@ -75,6 +96,14 @@ body {
 
 @utility chip {
   @apply inline-flex items-center gap-1 rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300;
+}
+
+/* 선택된 탭·세그먼트 */
+@utility tab-on {
+  @apply bg-brand-700 text-white shadow-sm dark:bg-brand-300 dark:text-brand-900;
+}
+@utility tab-off {
+  @apply text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800;
 }
 
 @media print {

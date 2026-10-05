@@ -11,15 +11,12 @@ const TAB_ORDER: SectionId[] = ['summary', 'personality', 'love', 'career', 'wea
 function StatementItem({ s, showEvidence }: { s: Statement; showEvidence: boolean }) {
   const t = TONE_STYLE[s.tone];
   return (
-    <li className={`rounded-xl border px-3.5 py-2.5 ${t.cls}`}>
-      <div className="flex gap-2.5">
-        <span className="mt-px shrink-0 text-xs font-bold opacity-80" aria-label={t.label} title={t.label}>
-          {t.icon}
-        </span>
-        <div className="min-w-0">
-          <p className="text-[15px] leading-relaxed">{s.text}</p>
-          {showEvidence && s.evidence && <p className="mt-1 text-xs opacity-70">근거 · {s.evidence}</p>}
-        </div>
+    <li className="flex gap-3 rounded-2xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
+      <span aria-hidden className={`w-1 shrink-0 rounded-full ${t.bar}`} />
+      <div className="min-w-0">
+        {s.tone !== 'neutral' && <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-bold ${t.pill}`}>{t.label}</span>}
+        <p className={`${s.tone !== 'neutral' ? 'mt-1.5' : ''} text-base leading-relaxed text-stone-800 dark:text-stone-200`}>{s.text}</p>
+        {showEvidence && s.evidence && <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">근거 · {s.evidence}</p>}
       </div>
     </li>
   );
@@ -29,9 +26,9 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
   const locked = !BETA_FREE && PREMIUM_SECTIONS.includes(sec.id);
   return (
     <div>
-      <div className="mb-5 rounded-xl bg-stone-900 px-4 py-3 text-white dark:bg-stone-100 dark:text-stone-900">
-        <div className="text-xs font-semibold opacity-70">{sec.title} 한 줄 요약</div>
-        <div className="mt-0.5 font-semibold">{sec.headline}</div>
+      <div className="mb-6 rounded-2xl bg-brand-50 px-5 py-4 dark:bg-brand-900/40">
+        <div className="text-xs font-semibold text-brand-700 dark:text-brand-300">{sec.title} 한 줄 요약</div>
+        <div className="mt-1 text-lg leading-snug font-bold text-brand-900 dark:text-brand-50">{sec.headline}</div>
       </div>
       {locked ? (
         <div className="rounded-xl border border-stone-300 p-6 text-center text-sm">이 섹션은 프리미엄 리포트에 포함됩니다.</div>
@@ -39,7 +36,7 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
         <div className="space-y-7">
           {sec.blocks.map((b) => (
             <div key={b.heading}>
-              <h3 className="mb-2.5 text-base font-bold">{b.heading}</h3>
+              <h3 className="mb-3 text-lg font-bold">{b.heading}</h3>
               <ul className="space-y-2">
                 {b.items.map((s, i) => (
                   <StatementItem key={i} s={s} showEvidence={showEvidence} />
@@ -49,7 +46,7 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
           ))}
           {sec.timeline && (
             <div>
-              <h3 className="mb-3 text-base font-bold">{sec.timeline.title}</h3>
+              <h3 className="mb-3 text-lg font-bold">{sec.timeline.title}</h3>
               <DivergingBars
                 ariaLabel={sec.timeline.title}
                 data={sec.timeline.items.map((t) => ({
@@ -117,7 +114,7 @@ export function ReportView({ a }: { a: SajuAnalysis }) {
           </ul>
         </div>
       )}
-      <div className="sticky top-14 z-10 -mx-5 mt-5 border-b border-stone-200 bg-white/95 px-5 py-2 backdrop-blur sm:-mx-6 sm:px-6 dark:border-stone-800 dark:bg-stone-900/95">
+      <div className="mt-5 border-b border-stone-200 pb-2 dark:border-stone-800">
         <div className="flex items-center gap-1 overflow-x-auto" role="tablist">
           {TAB_ORDER.map((id) => {
             const s = report.sections.find((x) => x.id === id)!;
@@ -129,7 +126,7 @@ export function ReportView({ a }: { a: SajuAnalysis }) {
                 aria-selected={tab === id}
                 onClick={() => setTab(id)}
                 className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold ${
-                  tab === id ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
+                  tab === id ? 'tab-on' : 'tab-off'
                 }`}
               >
                 {s.title}

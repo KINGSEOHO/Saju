@@ -71,7 +71,7 @@ export function BirthForm({ initial, onSubmit }: { initial?: BirthInput | null; 
 
   const seg = (active: boolean) =>
     `flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-      active ? 'bg-stone-900 text-white shadow dark:bg-stone-100 dark:text-stone-900' : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
+      active ? 'tab-on' : 'tab-off'
     }`;
 
   return (
