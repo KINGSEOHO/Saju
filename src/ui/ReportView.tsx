@@ -5,7 +5,7 @@ import type { GaeunData, GaeunItem } from '../report/gaeun.ts';
 import { generateReport, type ReportSection, type SectionId, type Statement } from '../report/generate.ts';
 import type { StoryPara } from '../report/story.ts';
 import { DivergingBars } from './Charts.tsx';
-import { TONE_STYLE } from './common.tsx';
+import { Gloss, TONE_STYLE } from './common.tsx';
 import { SectionRating } from './Feedback.tsx';
 
 const TAB_ORDER: SectionId[] = ['summary', 'gaeun', 'personality', 'love', 'career', 'wealth', 'health'];
@@ -17,8 +17,14 @@ function StatementItem({ s, showEvidence }: { s: Statement; showEvidence: boolea
       <span aria-hidden className={`w-1 shrink-0 rounded-full ${t.bar}`} />
       <div className="min-w-0">
         {s.tone !== 'neutral' && <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-bold ${t.pill}`}>{t.label}</span>}
-        <p className={`${s.tone !== 'neutral' ? 'mt-1.5' : ''} text-base leading-relaxed text-stone-800 dark:text-stone-200`}>{s.text}</p>
-        {showEvidence && s.evidence && <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">근거 · {s.evidence}</p>}
+        <p className={`${s.tone !== 'neutral' ? 'mt-1.5' : ''} text-base leading-relaxed text-stone-800 dark:text-stone-200`}>
+          <Gloss text={s.text} />
+        </p>
+        {showEvidence && s.evidence && (
+          <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
+            <Gloss text={`근거 · ${s.evidence}`} />
+          </p>
+        )}
       </div>
     </li>
   );
@@ -33,8 +39,14 @@ function StoryView({ story, showEvidence }: { story: StoryPara[]; showEvidence: 
           return (
             <section key={i} className="mb-8">
               <h3 className="mb-2.5 text-lg font-bold text-stone-900 sm:text-xl dark:text-stone-50">{p.title}</h3>
-              <p className="text-[17px] leading-[1.95] text-stone-800 dark:text-stone-200">{p.text}</p>
-              {showEvidence && p.basis && <p className="mt-2 text-xs text-stone-500">근거 · {p.basis}</p>}
+              <p className="text-[17px] leading-[1.95] text-stone-800 dark:text-stone-200">
+                <Gloss text={p.text} />
+              </p>
+              {showEvidence && p.basis && (
+                <p className="mt-2 text-xs text-stone-500">
+                  <Gloss text={`근거 · ${p.basis}`} />
+                </p>
+              )}
             </section>
           );
         }
@@ -67,8 +79,14 @@ function StoryView({ story, showEvidence }: { story: StoryPara[]; showEvidence: 
                 {p.when === 'now' ? '지금' : p.when === 'past' ? '지나온 시간' : '다가올 시간'}
               </span>
             </div>
-            <p className={`mt-1.5 text-[16px] leading-[1.9] ${p.when === 'past' ? 'text-stone-600 dark:text-stone-400' : 'text-stone-800 dark:text-stone-200'}`}>{p.text}</p>
-            {showEvidence && p.basis && <p className="mt-1.5 text-xs text-stone-500">근거 · {p.basis}</p>}
+            <p className={`mt-1.5 text-[16px] leading-[1.9] ${p.when === 'past' ? 'text-stone-600 dark:text-stone-400' : 'text-stone-800 dark:text-stone-200'}`}>
+              <Gloss text={p.text} />
+            </p>
+            {showEvidence && p.basis && (
+              <p className="mt-1.5 text-xs text-stone-500">
+                <Gloss text={`근거 · ${p.basis}`} />
+              </p>
+            )}
           </section>
         );
       })}
@@ -94,7 +112,9 @@ function GaeunColumn({ title, mark, tone, items, showEvidence }: { title: string
             </span>
             <div className="min-w-0">
               <div className="text-xs font-bold text-stone-500 dark:text-stone-400">{it.label}</div>
-              <p className="text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">{it.value}</p>
+              <p className="text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">
+                <Gloss text={it.value} />
+              </p>
               {it.swatch && (
                 <div className="mt-1.5 flex gap-1.5" aria-hidden>
                   {it.swatch.map((c) => (
@@ -102,7 +122,11 @@ function GaeunColumn({ title, mark, tone, items, showEvidence }: { title: string
                   ))}
                 </div>
               )}
-              {showEvidence && <p className="mt-0.5 text-xs text-stone-500">근거 · {it.basis}</p>}
+              {showEvidence && (
+                <p className="mt-0.5 text-xs text-stone-500">
+                  <Gloss text={`근거 · ${it.basis}`} />
+                </p>
+              )}
             </div>
           </li>
         ))}
@@ -134,7 +158,9 @@ function GaeunBoard({ g, showEvidence }: { g: GaeunData; showEvidence: boolean }
   const YEAR_CLS = { good: 'border-emerald-300 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/20', neutral: 'border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800/40', bad: 'border-amber-300 bg-amber-50/60 dark:border-amber-800 dark:bg-amber-950/20' };
   return (
     <div className="mb-8 space-y-5">
-      <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">{g.why}</p>
+      <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
+        <Gloss text={g.why} />
+      </p>
       <div className="grid gap-3 md:grid-cols-2">
         <GaeunColumn title="가까이할 것" mark="○" tone="good" items={g.close} showEvidence={showEvidence} />
         <GaeunColumn title="멀리할 것" mark="✕" tone="bad" items={g.away} showEvidence={showEvidence} />
@@ -142,8 +168,14 @@ function GaeunBoard({ g, showEvidence }: { g: GaeunData; showEvidence: boolean }
       {g.year && (
         <div className={`rounded-2xl border p-4 ${YEAR_CLS[g.year.tone]}`}>
           <div className="font-bold">{g.year.title}</div>
-          <p className="mt-1 text-[15px] leading-relaxed">{g.year.text}</p>
-          {showEvidence && <p className="mt-1 text-xs text-stone-500">근거 · {g.year.basis}</p>}
+          <p className="mt-1 text-[15px] leading-relaxed">
+            <Gloss text={g.year.text} />
+          </p>
+          {showEvidence && (
+            <p className="mt-1 text-xs text-stone-500">
+              <Gloss text={`근거 · ${g.year.basis}`} />
+            </p>
+          )}
         </div>
       )}
       <div className="rounded-2xl border border-brand-200 p-4 dark:border-brand-800">
@@ -179,7 +211,9 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
     <div>
       <div className="mb-5 rounded-2xl bg-brand-50 px-5 py-4 dark:bg-brand-900/40">
         <div className="text-xs font-semibold text-brand-700 dark:text-brand-300">{sec.title} 한 줄 요약</div>
-        <div className="mt-1 text-lg leading-snug font-bold text-brand-900 dark:text-brand-50">{sec.headline}</div>
+        <div className="mt-1 text-lg leading-snug font-bold text-brand-900 dark:text-brand-50">
+          <Gloss text={sec.headline} />
+        </div>
       </div>
       {!locked && sec.gaeun && <GaeunBoard g={sec.gaeun} showEvidence={showEvidence} />}
       {!locked && (
@@ -253,7 +287,7 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
                     >
                       {t.verdict}
                     </span>
-                    <span className="text-xs leading-relaxed text-stone-600 dark:text-stone-400">{t.notes.join(' · ') || '특이 신호 없음'}</span>
+                    <span className="text-xs leading-relaxed text-stone-600 dark:text-stone-400">{t.notes.length ? <Gloss text={t.notes.join(' · ')} /> : '특이 신호 없음'}</span>
                   </li>
                 ))}
               </ul>

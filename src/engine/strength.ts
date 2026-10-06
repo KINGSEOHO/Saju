@@ -366,12 +366,22 @@ export interface YongsinAnalysis {
   method: '억부' | '조후' | '종격' | '종왕';
   eokbu: Element;
   eokbuReason: string;
+  /** 억부용신을 고른 경우(쉬운 말 풀이용) */
+  eokbuCase: EokbuCase;
   johu: { stems: number[]; element: Element | null; urgent: boolean; reason: string };
   special: string | null;
   reasoning: string[];
   /** 결론의 확실성 */
   confidence: '높음' | '보통' | '낮음';
 }
+
+/**
+ * 억부용신을 고른 경우
+ * - insung: 신강, 인성 과다 → 재성 / clash: 신강, 관살도 강함 → 식상 / control: 신강 → 관성
+ * - release: 신강, 관성 약함 → 식상 / wealth: 신약, 재성 최강 → 비겁 / pressure: 신약, 관성 최강 → 인성
+ * - drain: 신약, 식상 최강 → 인성
+ */
+export type EokbuCase = 'insung' | 'clash' | 'control' | 'release' | 'wealth' | 'pressure' | 'drain';
 
 /** 용신 오행으로부터 5신(용·희·기·구·한) 배정 */
 export function rolesFor(yongsin: Element): Record<Element, GodRole> {
@@ -392,17 +402,22 @@ export function analyzeYongsin(n: NatalChars, el: ElementAnalysis, st: StrengthA
   // 1) 억부
   let eokbu: Element;
   let eokbuReason: string;
+  let eokbuCase: EokbuCase;
   if (st.score >= 48) {
     if (gp['인성'] > gp['비겁'] * 1.2) {
+      eokbuCase = 'insung';
       eokbu = E('재성');
       eokbuReason = `인성(${gp['인성'].toFixed(0)}%)이 과해 신강하므로 재성으로 인성을 제어(재극인)`;
     } else if (gp['관성'] >= 30) {
+      eokbuCase = 'clash';
       eokbu = E('식상');
       eokbuReason = `비겁(${gp['비겁'].toFixed(0)}%)으로 신강하지만 관살(${gp['관성'].toFixed(0)}%)도 이미 강해 더 보태지 않고, 식상으로 비겁을 설기하면서 관살을 제어(식상제살)`;
     } else if (gp['관성'] >= 8) {
+      eokbuCase = 'control';
       eokbu = E('관성');
       eokbuReason = `비겁(${gp['비겁'].toFixed(0)}%)으로 신강하고 관성(${gp['관성'].toFixed(0)}%)이 쓸 만큼 있어 관성으로 비겁을 제어`;
     } else {
+      eokbuCase = 'release';
       eokbu = E('식상');
       eokbuReason = `비겁(${gp['비겁'].toFixed(0)}%)으로 신강하나 관성이 약해(${gp['관성'].toFixed(0)}%) 식상으로 힘을 설기(식상생재 구조 지향)`;
     }
@@ -411,12 +426,15 @@ export function analyzeYongsin(n: NatalChars, el: ElementAnalysis, st: StrengthA
     opp.sort((a, b) => b[1] - a[1]);
     const top = opp[0][0];
     if (top === '재성') {
+      eokbuCase = 'wealth';
       eokbu = E('비겁');
       eokbuReason = `재성(${gp['재성'].toFixed(0)}%)이 가장 강해 신약(재다신약)하므로 비겁으로 재성을 감당`;
     } else if (top === '관성') {
+      eokbuCase = 'pressure';
       eokbu = E('인성');
       eokbuReason = `관성(${gp['관성'].toFixed(0)}%)이 가장 강해 신약하므로 인성으로 관을 흡수해 일간을 생함(살인상생)`;
     } else {
+      eokbuCase = 'drain';
       eokbu = E('인성');
       eokbuReason = `식상(${gp['식상'].toFixed(0)}%)이 가장 강해 신약하므로 인성으로 식상을 제어하고 일간을 생함`;
     }
@@ -511,7 +529,7 @@ export function analyzeYongsin(n: NatalChars, el: ElementAnalysis, st: StrengthA
   }
 
   return {
-    yongsin, heesin, gisin, gusin, hansin, roles, elementScore, method, eokbu, eokbuReason,
+    yongsin, heesin, gisin, gusin, hansin, roles, elementScore, method, eokbu, eokbuReason, eokbuCase,
     johu: { stems: jStems, element: johuEl, urgent, reason: johuReason },
     special, reasoning, confidence,
   };

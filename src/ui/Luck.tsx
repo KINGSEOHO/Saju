@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { BRANCHES, STEMS, pillarHanja, pillarKo, type LuckPillar, type SajuAnalysis, type Wolun } from '../engine/index.ts';
+import { groupOf } from '../engine/tenGods.ts';
 import { readLuck, type LuckReading } from '../report/luckReading.ts';
+import { DECADE_THEME } from '../report/storyKb.ts';
 import { DivergingBars, ScorePill } from './Charts.tsx';
-import { SectionTitle } from './common.tsx';
+import { Gloss, SectionTitle } from './common.tsx';
 
 function roleLine(l: LuckPillar) {
   return `천간 ${STEMS[l.pillar.stem].hanja} ${l.stemTenGod}(${l.stemRole}) · 지지 ${BRANCHES[l.pillar.branch].hanja} ${l.branchTenGod}(${l.branchRole})`;
@@ -66,7 +68,9 @@ function ReadingLists({ r, compact = false }: { r: LuckReading; compact?: boolea
               <span aria-hidden className="mt-0.5 font-bold text-sky-600">
                 ✓
               </span>
-              <span>{t}</span>
+              <span>
+                <Gloss text={t} />
+              </span>
             </li>
           ))}
         </ul>
@@ -79,7 +83,9 @@ function ReadingLists({ r, compact = false }: { r: LuckReading; compact?: boolea
               <span aria-hidden className="mt-0.5 font-bold text-rose-600">
                 !
               </span>
-              <span>{t}</span>
+              <span>
+                <Gloss text={t} />
+              </span>
             </li>
           ))}
         </ul>
@@ -93,7 +99,9 @@ function ReadingLists({ r, compact = false }: { r: LuckReading; compact?: boolea
                 <span aria-hidden className="mt-0.5 text-stone-400">
                   ·
                 </span>
-                <span>{t}</span>
+                <span>
+                <Gloss text={t} />
+              </span>
               </li>
             ))}
           </ul>
@@ -134,7 +142,9 @@ export function FeaturedReading({
       <div className="mt-4">
         <ReadingLists r={r} />
       </div>
-      <p className="mt-4 text-xs text-stone-500">근거 · {r.evidence}</p>
+      <p className="mt-4 text-xs text-stone-500">
+        <Gloss text={`근거 · ${r.evidence}`} />
+      </p>
       {footer}
     </div>
   );
@@ -171,13 +181,17 @@ function MonthCard({ a, w }: { a: SajuAnalysis; w: Wolun }) {
           <span aria-hidden className="font-bold text-sky-600">
             ✓
           </span>
-          <span>{r.good[0]}</span>
+          <span>
+            <Gloss text={r.good[0]} />
+          </span>
         </div>
         <div className="flex gap-2">
           <span aria-hidden className="font-bold text-rose-600">
             !
           </span>
-          <span>{r.caution[0]}</span>
+          <span>
+            <Gloss text={r.caution[0]} />
+          </span>
         </div>
       </div>
       {(r.good.length > 1 || r.caution.length > 1 || r.notes.length > 0) && (
@@ -188,7 +202,9 @@ function MonthCard({ a, w }: { a: SajuAnalysis; w: Wolun }) {
           </summary>
           <div className="mt-3 border-t border-stone-100 pt-3 dark:border-stone-800">
             <ReadingLists r={r} compact />
-            <p className="mt-3 text-xs text-stone-500">근거 · {r.evidence}</p>
+            <p className="mt-3 text-xs text-stone-500">
+              <Gloss text={`근거 · ${r.evidence}`} />
+            </p>
           </div>
         </details>
       )}
@@ -221,7 +237,9 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
         id="luck"
         kicker="월운 · 세운 · 대운"
         title="운의 흐름"
-        desc="들어오는 기운이 이 사주에 도움이 되는지(용신·희신) 부담이 되는지(기신·구신), 원국과 부딪히거나 합하는지를 보고 풀이했습니다. 점수 50점이 보통입니다. 좋은 시기에도 조심할 것이 있고, 힘든 시기에도 할 수 있는 일이 있습니다."
+        desc={
+          <Gloss text="그 달·그해에 들어오는 기운이 나에게 필요한 기운(용신·희신)인지 부담되는 기운(기신·구신)인지, 타고난 글자(원국)와 부딪히거나 손잡는지를 보고 풀이했어요. 50점이 보통이에요. 좋은 시기에도 조심할 것이 있고, 힘든 시기에도 할 수 있는 일이 있어요." />
+        }
       />
       <div className="mb-5 flex flex-wrap gap-1" role="tablist">
         {tabBtn('wolun', '이번 달 · 월별')}
@@ -302,7 +320,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
                     <td className="px-2 py-2">
                       <ScorePill score={s.combined} />
                     </td>
-                    <td className="px-2 py-2 text-xs text-stone-600 dark:text-stone-400">{s.flags.join(' · ') || '—'}</td>
+                    <td className="px-2 py-2 text-xs text-stone-600 dark:text-stone-400">{s.flags.length ? <Gloss text={s.flags.join(' · ')} /> : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -313,12 +331,15 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
 
       {tab === 'daeun' && (
         <div>
-          <p className="mb-4 text-sm text-stone-700 dark:text-stone-300">
-            {d.forward ? '순행' : '역행'} 대운 · {d.basisJie}까지 {d.diffDays.toFixed(2)}일 ÷ 3 ={' '}
+          <p className="text-[15px] text-stone-800 dark:text-stone-200">
+            10년마다 바뀌는 큰 운(<Gloss text="대운" />)은{' '}
             <b>
               만 {d.startAgeYears}세 {d.startAgeMonths}개월
             </b>
-            부터 시작 (전통 대운수 {d.daeunsu})
+            부터 시작해요. 인생의 계절이 바뀌는 것과 비슷해서, 같은 사람도 어떤 10년을 지나느냐에 따라 관심사와 고민이 달라져요.
+          </p>
+          <p className="mt-1 mb-4 text-xs text-stone-500">
+            {d.forward ? '순행' : '역행'} 대운 · {d.basisJie}까지 {d.diffDays.toFixed(2)}일 ÷ 3 = 만 {d.startAgeYears}세 {d.startAgeMonths}개월 (전통 대운수 {d.daeunsu})
           </p>
           <DivergingBars
             ariaLabel="대운별 점수"
@@ -344,10 +365,17 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
                     <ScorePill score={x.score} />
                   </div>
                   <div className="mt-1 text-xs text-stone-500">
-                    만 {Math.floor(x.startAge)}세~ · {x.startYear}~{x.endYear}년 · 12운성 {x.stage}
+                    만 {Math.floor(x.startAge)}세~ · {x.startYear}~{x.endYear}년
                   </div>
-                  <div className="mt-1 text-sm text-stone-700 dark:text-stone-300">{roleLine(x)}</div>
-                  {x.flags.length > 0 && <div className="mt-1 text-xs text-amber-800 dark:text-amber-300">{x.flags.join(' · ')}</div>}
+                  <div className="mt-1 font-bold">{DECADE_THEME[groupOf(x.stemTenGod)].label}의 10년</div>
+                  <div className="mt-0.5 text-xs text-stone-600 dark:text-stone-400">
+                    <Gloss text={`${roleLine(x)} · 12운성 ${x.stage}`} />
+                  </div>
+                  {x.flags.length > 0 && (
+                    <div className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                      <Gloss text={x.flags.join(' · ')} />
+                    </div>
+                  )}
                 </div>
               );
             })}

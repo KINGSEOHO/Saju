@@ -1,17 +1,21 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react';
-import { analyze, ELEMENT_KO, pillarHanja, type BirthInput, type SajuAnalysis } from './engine/index.ts';
+import { analyze, pillarHanja, pillarKo, type BirthInput, type SajuAnalysis } from './engine/index.ts';
+import { groupOf } from './engine/tenGods.ts';
 import { flushQueue, send, sessionId } from './lib/api.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
 import { generateReport, type Report } from './report/generate.ts';
 import { readLuck } from './report/luckReading.ts';
+import { elWord, LEVEL_PLAIN } from './report/plain.ts';
+import { DECADE_THEME } from './report/storyKb.ts';
 import { Admin } from './ui/Admin.tsx';
 import { ElementsPanel, InteractionsPanel, StrengthPanel } from './ui/Analysis.tsx';
 import { BirthForm } from './ui/BirthForm.tsx';
-import { GLOSSARY, Term } from './ui/common.tsx';
+import { Disclosure, Gloss, GLOSSARY, Term } from './ui/common.tsx';
 import { ReviewForm } from './ui/Feedback.tsx';
 import { LuckPanel, monthLabel, SwitchNote, upcomingMonths } from './ui/Luck.tsx';
 import { Manseryeok, PillarHeader } from './ui/Manseryeok.tsx';
 import { Faq } from './ui/Faq.tsx';
+import { HitsCard } from './ui/Hits.tsx';
 import { ReportView } from './ui/ReportView.tsx';
 
 // 웹툰 그림·대본은 크기가 커서 필요할 때 따로 불러온다.
@@ -68,7 +72,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <header className="no-print sticky top-0 z-30 border-b border-stone-200/80 bg-paper/90 backdrop-blur dark:border-stone-800 dark:bg-stone-950/90">
+      <header data-sticky-head className="no-print sticky top-0 z-30 border-b border-stone-200/80 bg-paper/90 backdrop-blur dark:border-stone-800 dark:bg-stone-950/90">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <a href="#/" className="flex items-center gap-2.5 font-bold">
             <span className="hanja flex size-8 items-center justify-center rounded-full bg-brand-800 text-white dark:bg-brand-300 dark:text-brand-900">命</span>
@@ -164,7 +168,7 @@ function Result({ input }: { input: BirthInput }) {
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<MainTab>('report');
-  const tabsRef = useRef<HTMLDivElement>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if ('a' in result) {
@@ -202,19 +206,28 @@ function Result({ input }: { input: BirthInput }) {
       /* 클립보드 불가 */
     }
   };
-  const selectTab = (t: MainTab) => {
+  // 탭 막대가 위에 붙은 채로 탭을 바꾸면 새 탭의 처음부터 보여 준다.
+  // 요약 카드의 바로가기(jump)는 항상 해당 탭 내용까지 내려간다.
+  const selectTab = (t: MainTab, jump = false) => {
     setTab(t);
-    const top = (tabsRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY - 56;
-    if (window.scrollY > top) window.scrollTo({ top });
+    const head = document.querySelector<HTMLElement>('[data-sticky-head]')?.offsetHeight ?? 56;
+    const top = (areaRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY - head;
+    if (jump || window.scrollY > top) window.scrollTo({ top, behavior: jump ? 'smooth' : 'auto' });
   };
   const strengths = summary?.blocks.find((b) => b.heading.includes('무기'))?.items ?? [];
   const weaknesses = summary?.blocks.find((b) => b.heading.includes('약점'))?.items ?? [];
   const clean = (t: string) => t.replace(/^\[[^\]]+\]\s*/, '').replace(/^그러나 과하면:\s*/, '');
-  const facts: { label: string; value: ReactNode; term: string }[] = [
-    { label: '일주', value: <span className="hanja text-lg">{pillarHanja(p.day)}</span>, term: '일주' },
-    { label: '타고난 힘', value: a.strength.level, term: a.strength.score >= 48 ? '신강' : '신약' },
-    { label: '필요한 기운', value: `${ELEMENT_KO[a.yongsin.yongsin]} (용신)`, term: '용신' },
-    { label: '지금의 10년', value: a.currentDaeun ? <span className="hanja text-lg">{pillarHanja(a.currentDaeun.pillar)}</span> : '-', term: '대운' },
+  const cd = a.currentDaeun;
+  const facts: { label: string; value: ReactNode; sub: string; term: string }[] = [
+    { label: '나를 나타내는 글자', value: <span className="hanja text-lg">{pillarHanja(p.day)}</span>, sub: `${pillarKo(p.day)}일주`, term: '일주' },
+    { label: '타고난 힘', value: LEVEL_PLAIN[a.strength.level].short, sub: a.strength.level, term: a.strength.score >= 48 ? '신강' : '신약' },
+    { label: '가장 필요한 기운', value: elWord(a.yongsin.yongsin), sub: '용신', term: '용신' },
+    {
+      label: '지금의 10년',
+      value: cd ? `${DECADE_THEME[groupOf(cd.stemTenGod)].label}` : '-',
+      sub: cd ? `${pillarHanja(cd.pillar)} 대운 · ${cd.startYear}~${cd.endYear}` : '',
+      term: '대운',
+    },
   ];
 
   return (
@@ -257,22 +270,27 @@ function Result({ input }: { input: BirthInput }) {
         <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {facts.map((f) => (
             <div key={f.label} className="rounded-2xl bg-stone-50 px-4 py-3 dark:bg-stone-800/60">
-              <div className="text-xs text-stone-500">
-                <Term t={f.term}>{f.label}</Term>
-              </div>
-              <div className="mt-0.5 text-base font-bold">{f.value}</div>
+              <div className="text-xs text-stone-500">{f.label}</div>
+              <div className="mt-0.5 text-base leading-snug font-bold">{f.value}</div>
+              {f.sub && (
+                <div className="mt-0.5 text-[11px] text-stone-500">
+                  <Term t={f.term}>{f.sub}</Term>
+                </div>
+              )}
             </div>
           ))}
         </div>
 
+        <HitsCard key={encodeInput(input)} a={a} />
+
         {report && (
           <Suspense fallback={<div className="no-print mt-6 h-[150px] rounded-2xl bg-gradient-to-br from-[#10172e] to-[#1c2546]" />}>
-            <CrossBanner a={a} report={report} onOpen={() => selectTab('cross')} />
+            <CrossBanner a={a} report={report} onOpen={() => selectTab('cross', true)} />
           </Suspense>
         )}
 
         <Suspense fallback={<div className="no-print mt-4 h-[118px] rounded-2xl border border-amber-200 bg-amber-50/70 sm:h-[134px] dark:border-amber-900 dark:bg-amber-950/30" />}>
-          <WebtoonTeaser a={a} onOpen={() => selectTab('webtoon')} />
+          <WebtoonTeaser a={a} onOpen={() => selectTab('webtoon', true)} />
         </Suspense>
 
         {(strengths.length > 0 || weaknesses.length > 0) && (
@@ -285,7 +303,9 @@ function Result({ input }: { input: BirthInput }) {
                     <span className="text-sky-600" aria-hidden>
                       ●
                     </span>
-                    <span className="line-clamp-2">{clean(s.text)}</span>
+                    <span className="line-clamp-2">
+                      <Gloss text={clean(s.text)} />
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -298,7 +318,9 @@ function Result({ input }: { input: BirthInput }) {
                     <span className="text-rose-600" aria-hidden>
                       ●
                     </span>
-                    <span className="line-clamp-2">{clean(s.text)}</span>
+                    <span className="line-clamp-2">
+                      <Gloss text={clean(s.text)} />
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -312,7 +334,7 @@ function Result({ input }: { input: BirthInput }) {
               <div className="text-sm font-bold text-brand-700 dark:text-brand-300">
                 이번 달 운세 <span className="font-normal text-stone-500">· {month.label.title} ({month.label.since})</span>
               </div>
-              <button type="button" onClick={() => selectTab('luck')} className="no-print text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
+              <button type="button" onClick={() => selectTab('luck', true)} className="no-print text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
                 월별 풀이 전체 보기 →
               </button>
             </div>
@@ -322,13 +344,17 @@ function Result({ input }: { input: BirthInput }) {
                 <span aria-hidden className="font-bold text-sky-600">
                   ✓
                 </span>
-                <span>{month.r.good[0]}</span>
+                <span>
+                  <Gloss text={month.r.good[0]} />
+                </span>
               </div>
               <div className="flex gap-2">
                 <span aria-hidden className="font-bold text-rose-600">
                   !
                 </span>
-                <span>{month.r.caution[0]}</span>
+                <span>
+                  <Gloss text={month.r.caution[0]} />
+                </span>
               </div>
             </div>
             <SwitchNote a={a} w={month.w} />
@@ -338,7 +364,7 @@ function Result({ input }: { input: BirthInput }) {
         {a.warnings.some((w) => w.kind !== 'unknownTime') && (
           <button
             type="button"
-            onClick={() => selectTab('chart')}
+            onClick={() => selectTab('chart', true)}
             className="no-print mt-5 w-full rounded-xl bg-amber-50 px-4 py-2.5 text-left text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
           >
             ⚠ 출생 시각이 경계에 가까워 결과가 달라질 수 있어요. <u>만세력 탭에서 확인하기</u>
@@ -346,82 +372,91 @@ function Result({ input }: { input: BirthInput }) {
         )}
       </section>
 
-      <div ref={tabsRef} className="no-print sticky top-14 z-20 -mx-4 bg-paper/95 py-2 backdrop-blur dark:bg-stone-950/95">
-        <div className="relative">
-          <div className="overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex w-max min-w-full gap-1 rounded-2xl border border-stone-200 bg-white p-1 dark:border-stone-800 dark:bg-stone-900" role="tablist">
-              {MAIN_TABS.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === t.id}
-                  onClick={(e) => {
-                    selectTab(t.id);
-                    e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
-                  }}
-                  className={`relative flex flex-1 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold whitespace-nowrap transition ${tab === t.id ? 'tab-on' : 'tab-off'}`}
-                >
-                  <span aria-hidden className="hanja text-[13px] opacity-75">
-                    {t.icon}
-                  </span>
-                  {t.label}
-                  {t.isNew && tab !== t.id && <span className="rounded bg-amber-400 px-1 text-[9px] leading-4 font-extrabold text-amber-950">NEW</span>}
-                </button>
-              ))}
+      {/* 탭 막대와 내용을 한 상자에 담아, 상자의 윗변 = 탭 막대의 원래 자리로 쓴다.
+          내용이 짧아도 탭 막대를 맨 위까지 올릴 수 있도록 최소 높이를 화면만큼 둔다. */}
+      <div ref={areaRef} className="min-h-screen space-y-6 print:min-h-0">
+        <div data-sticky-tabs className="no-print sticky top-14 z-20 -mx-4 bg-paper/95 py-2 backdrop-blur dark:bg-stone-950/95">
+          <div className="relative">
+            <div className="overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex w-max min-w-full gap-1 rounded-2xl border border-stone-200 bg-white p-1 dark:border-stone-800 dark:bg-stone-900" role="tablist">
+                {MAIN_TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === t.id}
+                    onClick={(e) => {
+                      selectTab(t.id);
+                      e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+                    }}
+                    className={`relative flex flex-1 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold whitespace-nowrap transition ${tab === t.id ? 'tab-on' : 'tab-off'}`}
+                  >
+                    <span aria-hidden className="hanja text-[13px] opacity-75">
+                      {t.icon}
+                    </span>
+                    {t.label}
+                    {t.isNew && tab !== t.id && <span className="rounded bg-amber-400 px-1 text-[9px] leading-4 font-extrabold text-amber-950">NEW</span>}
+                  </button>
+                ))}
+              </div>
             </div>
+            <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-paper to-transparent sm:hidden dark:from-stone-950" />
           </div>
-          <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-paper to-transparent sm:hidden dark:from-stone-950" />
         </div>
-      </div>
 
-      {tab === 'report' && (
-        <>
-          <ReportView a={a} />
-          <ReviewForm a={a} />
-        </>
-      )}
-      {(tab === 'cross' || tab === 'mbti' || tab === 'job') && report && (
-        <Suspense fallback={<div className="card text-center text-sm text-stone-500">교차 분석을 계산하는 중…</div>}>
-          <CrossTabs a={a} report={report} tab={tab} />
-        </Suspense>
-      )}
-      {tab === 'webtoon' && report && (
-        <Suspense fallback={<div className="card text-center text-sm text-stone-500">웹툰을 그리는 중…</div>}>
-          <WebtoonPanel a={a} report={report} />
-        </Suspense>
-      )}
-      {tab === 'luck' && <LuckPanel a={a} />}
-      {tab === 'chart' && (
-        <>
-          <Manseryeok a={a} />
-          <Glossary />
-        </>
-      )}
-      {tab === 'detail' && (
-        <>
-          <ElementsPanel a={a} />
-          <StrengthPanel a={a} />
-          <InteractionsPanel a={a} />
-        </>
-      )}
+        {tab === 'report' && (
+          <>
+            <ReportView a={a} />
+            <ReviewForm a={a} />
+          </>
+        )}
+        {(tab === 'cross' || tab === 'mbti' || tab === 'job') && report && (
+          <Suspense fallback={<div className="card text-center text-sm text-stone-500">교차 분석을 계산하는 중…</div>}>
+            <CrossTabs a={a} report={report} tab={tab} />
+          </Suspense>
+        )}
+        {tab === 'webtoon' && report && (
+          <Suspense fallback={<div className="card text-center text-sm text-stone-500">웹툰을 그리는 중…</div>}>
+            <WebtoonPanel a={a} report={report} />
+          </Suspense>
+        )}
+        {tab === 'luck' && <LuckPanel a={a} />}
+        {tab === 'chart' && (
+          <>
+            <Manseryeok a={a} />
+            <Glossary />
+          </>
+        )}
+        {tab === 'detail' && (
+          <>
+            <ElementsPanel a={a} />
+            <StrengthPanel a={a} />
+            <InteractionsPanel a={a} />
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
 function Glossary() {
+  const entries = Object.entries(GLOSSARY);
   return (
     <section className="card">
-      <h2 className="text-xl font-bold">용어 풀이</h2>
-      <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">결과 화면에서 점선 밑줄이 있는 단어는 눌러서 설명을 볼 수 있어요.</p>
-      <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-        {Object.entries(GLOSSARY).map(([k, v]) => (
-          <div key={k}>
-            <dt className="font-bold">{k}</dt>
-            <dd className="text-sm text-stone-600 dark:text-stone-400">{v}</dd>
-          </div>
-        ))}
-      </dl>
+      <h2 className="text-xl font-bold">용어 사전</h2>
+      <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">결과 화면 곳곳의 점선 밑줄 단어는 눌러서 바로 뜻을 볼 수 있어요. 여기에는 {entries.length}개 용어를 모두 모았어요.</p>
+      <div className="mt-4">
+        <Disclosure summary={`용어 ${entries.length}개 펼쳐 보기`}>
+          <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            {entries.map(([k, v]) => (
+              <div key={k}>
+                <dt className="font-bold">{k}</dt>
+                <dd className="text-sm text-stone-600 dark:text-stone-400">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </Disclosure>
+      </div>
     </section>
   );
 }

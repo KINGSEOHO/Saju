@@ -15,7 +15,7 @@ export type { BirthInput, Pillar, PillarResult, BoundaryWarning } from './pillar
 export { fmtKst } from './pillars.ts';
 export type { Interaction, Position } from './interactions.ts';
 export type { SinsalHit } from './sinsal.ts';
-export type { ElementAnalysis, StrengthAnalysis, YongsinAnalysis, Gyeokguk, GodRole } from './strength.ts';
+export type { ElementAnalysis, StrengthAnalysis, StrengthLevel, YongsinAnalysis, Gyeokguk, GodRole, EokbuCase } from './strength.ts';
 export type { Daeun, DaeunInfo, Seun, Wolun, LuckPillar } from './luck.ts';
 export type { TenGod, TenGodGroup, TwelveStage } from './tenGods.ts';
 

@@ -10,7 +10,7 @@ import { crossReport } from '../report/cross.ts';
 import type { Report } from '../report/generate.ts';
 import { ExtrasForm } from './Cross.tsx';
 import { SectionRating } from './Feedback.tsx';
-import { SectionTitle } from './common.tsx';
+import { scrollToStart, SectionTitle } from './common.tsx';
 
 const TABS: { id: EpisodeId; no: number; label: string }[] = [
   { id: 'persona', no: 1, label: '나라는 사람' },
@@ -68,6 +68,7 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
   const [notes, setNotes] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  const jumpRef = useRef(false);
   const [png, setPng] = useState<{ key: string; blob: Blob } | null>(null);
   const [msg, setMsg] = useState('');
   const key = comic ? `${comic.id}:${comic.title}:${comic.subtitle}:${comic.beats.length}` : '';
@@ -104,8 +105,14 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
     const next = TABS[i + 1];
     if (!next) return;
     choose(next.id);
-    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    jumpRef.current = true;
   };
+  // 다음 화가 화면에 그려진 뒤, 그 화의 제목(웹툰 시작)이 머리말 바로 아래 오도록 올린다
+  useEffect(() => {
+    if (!jumpRef.current) return;
+    jumpRef.current = false;
+    scrollToStart(stripRef.current ?? topRef.current);
+  }, [id]);
 
   const ready = png?.key === key ? png.blob : null;
   const track = () => send('events', { sessionId: sessionId(), type: 'share' });
@@ -131,7 +138,7 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
 
   return (
     <section className="card">
-      <div ref={topRef} className="scroll-mt-20" />
+      <div ref={topRef} />
       <SectionTitle
         kicker="명경사주에만 있는 기능"
         title="인생 웹툰"

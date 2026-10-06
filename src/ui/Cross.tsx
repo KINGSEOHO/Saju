@@ -1,13 +1,14 @@
 /** 교차 검증 · MBTI × 사주 · 직업 × 운 탭 */
 import { useState, type ReactNode } from 'react';
-import { ELEMENT_HANJA, ELEMENT_KO, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
+import type { BirthInput, SajuAnalysis } from '../engine/index.ts';
 import { encodeInput } from '../lib/share.ts';
 import { SYSTEM_LABEL, type CrossReport, type ThemeResult } from '../report/cross.ts';
 import { JOB_SUGGEST } from '../report/job.ts';
 import { AXES, AXIS_INFO, MBTI_LIST, MBTI_PROFILE, sajuAxes } from '../report/mbti.ts';
 import { IdentityCardView } from './IdentityCard.tsx';
 import { JobPicker } from './JobPicker.tsx';
-import { SectionTitle } from './common.tsx';
+import { elWord } from '../report/plain.ts';
+import { EL_VAR, Gloss, SectionTitle } from './common.tsx';
 
 function setExtras(input: BirthInput, patch: Partial<Pick<BirthInput, 'mbti' | 'job'>>) {
   window.location.hash = `/r?${encodeInput({ ...input, ...patch })}`;
@@ -69,7 +70,9 @@ function ThemeCard({ t }: { t: ThemeResult }) {
           <span className="shrink-0 text-xs font-semibold text-stone-600 dark:text-stone-300">{pct}% 일치</span>
         </div>
       </div>
-      <p className="mt-3 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">{t.text}</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">
+        <Gloss text={t.text} />
+      </p>
       <details className="group mt-3">
         <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:text-stone-300 [&::-webkit-details-marker]:hidden">
           <span aria-hidden className="transition group-open:rotate-90">
@@ -84,7 +87,10 @@ function ThemeCard({ t }: { t: ThemeResult }) {
                 {e.agree ? '✓' : '✗'}
               </span>
               <span>
-                <b>{SYSTEM_LABEL[e.system]}</b> <span className="text-stone-600 dark:text-stone-400">— {e.text}</span>
+                <b>{SYSTEM_LABEL[e.system]}</b>{' '}
+                <span className="text-stone-600 dark:text-stone-400">
+                  — <Gloss text={e.text} />
+                </span>
               </span>
             </li>
           ))}
@@ -132,7 +138,9 @@ function TtiCard({ x }: { x: CrossReport }) {
               {y.year}년 · {y.animal} 해
             </div>
             <div className="mt-0.5 font-bold">{y.line}</div>
-            <p className="mt-1 text-sm leading-relaxed text-stone-700 dark:text-stone-300">{y.text}</p>
+            <p className="mt-1 text-sm leading-relaxed text-stone-700 dark:text-stone-300">
+              <Gloss text={y.text} />
+            </p>
           </div>
         ))}
       </div>
@@ -186,14 +194,18 @@ export function CrossPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
         <h3 className="text-lg font-bold text-amber-700 dark:text-amber-300">한눈에 보기</h3>
         <ul className="mt-2 space-y-1.5 text-[15px]">
           {x.glance.map((g) => (
-            <li key={g}>· {g}</li>
+            <li key={g}>
+              · <Gloss text={g} />
+            </li>
           ))}
         </ul>
       </div>
 
       <div>
         <h3 className="text-lg font-bold text-amber-700 dark:text-amber-300">종합 요약</h3>
-        <p className="mt-2 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">{x.summary}</p>
+        <p className="mt-2 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">
+          <Gloss text={x.summary} />
+        </p>
       </div>
 
       <TtiCard x={x} />
@@ -281,7 +293,9 @@ export function MbtiPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
           {m.differ > 0 && <span className="rounded-full bg-violet-600 px-2.5 py-0.5 text-xs font-bold text-white">겉과 속이 다른 축 {m.differ}개</span>}
           <span className="text-xs text-stone-500">사주로 본 경향 {m.sajuType.replaceAll('x', '·')}</span>
         </div>
-        <p className="mt-2 text-[15px] leading-relaxed">{m.summary}</p>
+        <p className="mt-2 text-[15px] leading-relaxed">
+          <Gloss text={m.summary} />
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -297,15 +311,23 @@ export function MbtiPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
               <AxisScale axis={ax.axis} score={ax.saju.score} user={ax.user} />
               <p className="mt-1 text-center text-[11px] text-stone-500">막대 위 표시가 사주로 계산한 위치 · 진하게 표시된 글자가 내 MBTI</p>
             </div>
-            <p className="mt-3 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">{ax.text}</p>
-            {ax.saju.basis.length > 0 && <p className="mt-2 text-xs text-stone-500">사주 근거: {ax.saju.basis.join(' · ')}</p>}
+            <p className="mt-3 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">
+              <Gloss text={ax.text} />
+            </p>
+            {ax.saju.basis.length > 0 && (
+              <p className="mt-2 text-xs text-stone-500">
+                <Gloss text={`사주 근거: ${ax.saju.basis.join(' · ')}`} />
+              </p>
+            )}
           </article>
         ))}
       </div>
 
       <div className="rounded-2xl border border-stone-200 p-4 dark:border-stone-800">
         <h3 className="font-bold">핵심 엔진 비교</h3>
-        <p className="mt-2 text-[15px] leading-relaxed">{m.engine.text}</p>
+        <p className="mt-2 text-[15px] leading-relaxed">
+          <Gloss text={m.engine.text} />
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -315,7 +337,7 @@ export function MbtiPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
 
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 sm:p-5 dark:border-emerald-900 dark:bg-emerald-950/20">
         <h3 className="font-bold text-emerald-900 dark:text-emerald-200">
-          개운법 — 필요한 기운 {ELEMENT_KO[g.element]}({ELEMENT_HANJA[g.element]}) 채우기
+          개운법 — 필요한 기운 {elWord(g.element)} 채우기
         </h3>
         <ul className="mt-3 space-y-2 text-[15px]">
           {g.habits.map((h) => (
@@ -361,8 +383,12 @@ function InsightList({ title, tone, items }: { title: string; tone: 'good' | 'ba
             <div className="font-semibold">
               {i + 1}. {it.title}
             </div>
-            <p className="mt-0.5 text-sm leading-relaxed text-stone-700 dark:text-stone-300">{it.text}</p>
-            <p className="mt-0.5 text-xs text-stone-500">근거: {it.basis}</p>
+            <p className="mt-0.5 text-sm leading-relaxed text-stone-700 dark:text-stone-300">
+              <Gloss text={it.text} />
+            </p>
+            <p className="mt-0.5 text-xs text-stone-500">
+              <Gloss text={`근거: ${it.basis}`} />
+            </p>
           </li>
         ))}
       </ol>
@@ -426,8 +452,71 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
             <span className="rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-bold text-amber-950">{j.fit.label}</span>
             <Bar value={j.fit.score} tone="brand" />
           </div>
-          <p className="mt-3 text-[15px] leading-relaxed">{j.fit.text}</p>
-          <p className="mt-1 text-xs text-stone-500">근거: {j.fit.basis}</p>
+          <p className="mt-3 text-[15px] leading-relaxed">
+            <Gloss text={j.fit.text} />
+          </p>
+          {j.fit.env.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-bold">이 일의 환경과 나</h4>
+              <p className="mt-0.5 text-xs leading-relaxed text-stone-500">
+                일마다 많이 쓰는 기운(오행)이 있어요. 그 기운이 나에게 필요한 쪽인지, 부담되는 쪽인지 하나씩 풀었어요. 부담이 된다는 건 그 일이 나쁘다는 뜻이 아니라, 그런 일이 몰릴수록 남보다 빨리 지친다는 뜻이에요.
+              </p>
+              <ul className="mt-2.5 space-y-2.5">
+                {j.fit.env.map((e) => (
+                  <li
+                    key={e.el}
+                    className={`rounded-2xl border p-4 ${
+                      e.tone === 'good'
+                        ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20'
+                        : e.tone === 'bad'
+                          ? 'border-rose-200 bg-rose-50/50 dark:border-rose-900 dark:bg-rose-950/20'
+                          : 'border-stone-200 dark:border-stone-800'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="flex items-center gap-1.5 font-extrabold">
+                        <span aria-hidden className="size-2.5 rounded-full" style={{ background: EL_VAR[e.el] }} />
+                        {elWord(e.el)} = {e.short}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                          e.tone === 'good'
+                            ? 'bg-emerald-600 text-white'
+                            : e.tone === 'bad'
+                              ? 'bg-rose-500 text-white'
+                              : 'bg-stone-200 text-stone-700 dark:bg-stone-700 dark:text-stone-200'
+                        }`}
+                      >
+                        {e.tone === 'good' ? '나에게 필요한 기운' : e.tone === 'bad' ? '나에게 부담되는 기운' : '무난한 기운'}
+                      </span>
+                    </div>
+                    <dl className="mt-2 space-y-1.5 text-[15px] leading-relaxed">
+                      <div>
+                        <dt className="inline font-bold text-stone-600 dark:text-stone-400">이 일에서는 · </dt>
+                        <dd className="inline">{e.what}</dd>
+                      </div>
+                      <div>
+                        <dt className="inline font-bold text-stone-600 dark:text-stone-400">나에게는 · </dt>
+                        <dd className="inline">{e.me}</dd>
+                      </div>
+                      {e.tip && (
+                        <div>
+                          <dt className="inline font-bold text-stone-600 dark:text-stone-400">이렇게 해 보세요 · </dt>
+                          <dd className="inline">{e.tip}</dd>
+                        </div>
+                      )}
+                    </dl>
+                    <p className="mt-1.5 text-xs text-stone-500">
+                      <Gloss text={`근거: ${e.basis}`} />
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className="mt-3 text-xs text-stone-500">
+            <Gloss text={`근거: ${j.fit.basis}`} />
+          </p>
           <p className="mt-1 text-xs text-stone-500">적합도는 사주 구조와 이 일이 쓰는 힘의 겹침일 뿐, 실제 성과는 경험·노력·환경이 더 크게 좌우합니다.</p>
         </Block>
       )}
@@ -435,8 +524,12 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
       <Block title="지금의 운">
         <div className="rounded-2xl border border-stone-200 p-4 dark:border-stone-800">
           <div className="font-bold">{j.now.title}</div>
-          <p className="mt-1.5 text-[15px] leading-relaxed">{j.now.text}</p>
-          <p className="mt-1 text-xs text-stone-500">근거: {j.now.basis}</p>
+          <p className="mt-1.5 text-[15px] leading-relaxed">
+            <Gloss text={j.now.text} />
+          </p>
+          <p className="mt-1 text-xs text-stone-500">
+            <Gloss text={`근거: ${j.now.basis}`} />
+          </p>
         </div>
       </Block>
 
@@ -447,8 +540,12 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
               <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-white dark:bg-brand-300 dark:text-brand-900">{i + 1}</span>
               <div>
                 <div className="font-bold">{p.title}</div>
-                <p className="mt-0.5 text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">{p.text}</p>
-                <p className="mt-0.5 text-xs text-stone-500">근거: {p.basis}</p>
+                <p className="mt-0.5 text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">
+                  <Gloss text={p.text} />
+                </p>
+                <p className="mt-0.5 text-xs text-stone-500">
+                  <Gloss text={`근거: ${p.basis}`} />
+                </p>
               </div>
             </li>
           ))}
@@ -469,7 +566,9 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
           {j.timing.caution.length > 0 && <span className="mr-1 ml-2 text-stone-500">버티며 준비</span>}
           <YearChips years={j.timing.caution.slice(0, 5)} cls="bg-rose-500 text-white" />
         </div>
-        <p className="mt-2 text-[15px] leading-relaxed">{j.timing.text}</p>
+        <p className="mt-2 text-[15px] leading-relaxed">
+          <Gloss text={j.timing.text} />
+        </p>
       </Block>
 
       {j.role && (
@@ -481,7 +580,9 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
       <Block title="사주가 가리키는 다른 길">
         <ul className="space-y-1 text-[15px]">
           {j.alternatives.map((t) => (
-            <li key={t}>· {t}</li>
+            <li key={t}>
+              · <Gloss text={t} />
+            </li>
           ))}
         </ul>
       </Block>

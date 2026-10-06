@@ -1,192 +1,345 @@
-import { ELEMENT_HANJA, ELEMENT_KO, STEMS, type Element, type GodRole, type SajuAnalysis, type TenGodGroup } from '../engine/index.ts';
+/** 전문 분석 탭 — 사주를 몰라도 읽히도록 쉬운 말을 앞에, 전문 용어는 회색 꼬리표로 */
+import type { ReactNode } from 'react';
+import { ELEMENT_HANJA, STEMS, type Element, type GodRole, type Interaction, type SajuAnalysis, type TenGodGroup } from '../engine/index.ts';
+import { josa } from '../engine/josa.ts';
 import { elementOfGroup } from '../engine/tenGods.ts';
-import { ElementBars, GroupBars, StrengthGauge } from './Charts.tsx';
-import { EL_VAR, SectionTitle } from './common.tsx';
+import {
+  EL_FORCE, EL_WORD, GROUP_PLAIN, GYEOK_PLAIN, INTER_PLAIN, LEVEL_PLAIN, POS_LIFE, POS_SHORT, ROLE_PLAIN, SINSAL_NICK, TEN_GOD_PLAIN,
+  elWord, strengthChecks, yongsinWhy,
+} from '../report/plain.ts';
+import { ElementBars, GroupBars, TugBar } from './Charts.tsx';
+import { Disclosure, EL_VAR, Gloss, SectionTitle, Term } from './common.tsx';
 
 const GROUPS: TenGodGroup[] = ['비겁', '식상', '재성', '관성', '인성'];
-const GROUP_DESC: Record<TenGodGroup, string> = { 비겁: '나·동료', 식상: '표현·재능', 재성: '재물·현실', 관성: '조직·명예', 인성: '학습·보호' };
-const POS_KO: Record<string, string> = { year: '년', month: '월', day: '일', hour: '시', daeun: '대운', seun: '세운' };
+
+function Step({ no, title, children }: { no: string; title: string; children: ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-stone-200 p-4 sm:p-5 dark:border-stone-800">
+      <div className="text-xs font-bold text-brand-700 dark:text-brand-300">
+        {no} {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Expert({ lines }: { lines: string[] }) {
+  return (
+    <div className="mt-4">
+      <Disclosure summary={<span className="text-stone-500">전문가용 판단 근거 보기</span>}>
+        <ul className="space-y-1.5 text-sm text-stone-700 dark:text-stone-300">
+          {lines.map((r, i) => (
+            <li key={i} className="flex gap-2">
+              <span aria-hidden className="text-stone-400">
+                ›
+              </span>
+              <span>
+                <Gloss text={r} />
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Disclosure>
+    </div>
+  );
+}
 
 export function ElementsPanel({ a }: { a: SajuAnalysis }) {
-  const dayEl = STEMS[a.pillars.day.stem].element;
+  const me = STEMS[a.pillars.day.stem].element;
+  const pc = a.elements.percent;
   const tgc = a.elements.tenGodCount;
+  const order = (Object.keys(pc) as Element[]).sort((x, y) => pc[y] - pc[x]);
+  const top = order[0];
+  const missing = a.elements.missing;
+  const gp = a.elements.groupPercent;
+  const gTop = [...GROUPS].sort((x, y) => gp[y] - gp[x])[0];
   return (
     <section className="card">
       <SectionTitle
         id="elements"
         kicker="오행 · 십성"
-        title="기운의 분포"
-        desc="글자 수만 세지 않고 지장간 비율, 월지(계절) 가중치, 삼합·방합의 합화까지 반영한 실제 세력입니다."
+        title="내 사주의 다섯 기운"
+        desc="사주 여덟 글자는 나무·불·흙·쇠·물 다섯 기운으로 이루어져 있어요. 막대가 길수록 그 기운이 강해요. 글자 수만 세지 않고 태어난 계절과 글자 속에 숨은 기운까지 반영한 실제 세기예요."
       />
       <div className="grid gap-8 lg:grid-cols-2">
         <div>
-          <h3 className="mb-3 text-sm font-bold">오행 세력 (가중)</h3>
-          <ElementBars percent={a.elements.percent} count={a.elements.count} />
-          <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            {a.elements.missing.length > 0 && <span className="chip">글자에 없는 오행: {a.elements.missing.map((e) => ELEMENT_KO[e]).join(', ')}</span>}
-            {a.elements.excessive.length > 0 && <span className="chip">과다: {a.elements.excessive.map((e) => ELEMENT_KO[e]).join(', ')}</span>}
-          </div>
+          <h3 className="mb-3 text-sm font-bold">
+            다섯 기운의 세기 <span className="font-normal text-stone-500">· <Term t="오행" /></span>
+          </h3>
+          <ElementBars percent={pc} count={a.elements.count} me={me} />
+          <ul className="mt-4 space-y-1.5 text-sm text-stone-700 dark:text-stone-300">
+            <li>
+              <b>‘나’는 {josa(elWord(me), '이에요/예요')}.</b> {EL_FORCE[me].force}({EL_FORCE[me].keys})을 타고났어요.
+            </li>
+            <li>
+              <b>
+                가장 강한 기운은 {elWord(top)}, {pc[top].toFixed(0)}%예요.
+              </b>{' '}
+              {top === me ? '나와 같은 기운이라 내 색깔이 진하게 드러나요.' : `${EL_FORCE[top].force}(${EL_FORCE[top].keys})이 삶에서 크게 작용해요.`}
+            </li>
+            {missing.length > 0 && (
+              <li>
+                <b>글자에 없는 기운: {missing.map(elWord).join('·')}</b> — 없다고 나쁜 건 아니지만, 그 기운이 맡는 일({missing.map((e) => EL_FORCE[e].keys).join(' / ')})은 의식해서 채워야 해요.
+              </li>
+            )}
+          </ul>
         </div>
         <div>
-          <h3 className="mb-3 text-sm font-bold">십성 세력 (일간 제외)</h3>
+          <h3 className="mb-1 text-sm font-bold">
+            나와의 관계로 본 다섯 가지 힘 <span className="font-normal text-stone-500">· <Term t="십성" /></span>
+          </h3>
+          <p className="mb-3 text-xs leading-relaxed text-stone-500">같은 기운도 ‘나’와 어떤 사이냐에 따라 뜻이 달라져요. 나를 뺀 나머지 글자의 힘을 다섯 갈래로 나눴어요.</p>
           <GroupBars
-            data={GROUPS.map((g) => ({ label: g, sub: `${GROUP_DESC[g]}·${ELEMENT_KO[elementOfGroup(dayEl, g)]}`, value: a.elements.groupPercent[g], el: elementOfGroup(dayEl, g) }))}
+            data={GROUPS.map((g) => {
+              const el = elementOfGroup(me, g);
+              return {
+                label: GROUP_PLAIN[g].name,
+                sub: (
+                  <>
+                    <Term t={g} /> · {GROUP_PLAIN[g].who}
+                  </>
+                ),
+                value: gp[g],
+                el,
+              };
+            })}
           />
+          <p className="mt-3 text-sm text-stone-700 dark:text-stone-300">
+            가장 큰 힘은 <b>{GROUP_PLAIN[gTop].name}</b>({gp[gTop].toFixed(0)}%)이에요. 삶에서 {GROUP_PLAIN[gTop].who} 이야기가 자주 중심에 놓여요.
+          </p>
           <div className="mt-4 grid grid-cols-5 gap-1 text-center text-xs">
             {(['비견', '겁재', '식신', '상관', '편재', '정재', '편관', '정관', '편인', '정인'] as const).map((t) => (
-              <div key={t} className={`rounded-lg px-1 py-1.5 ${tgc[t] ? 'bg-stone-100 dark:bg-stone-800' : 'text-stone-400'}`}>
-                <div>{t}</div>
-                <div className="font-bold tabular-nums">{tgc[t]}</div>
+              <div key={t} className={`rounded-lg px-0.5 py-1.5 ${tgc[t] ? 'bg-stone-100 dark:bg-stone-800' : 'text-stone-400'}`}>
+                <div className="font-semibold">{t}</div>
+                <div className="text-[10px] leading-tight opacity-80">{TEN_GOD_PLAIN[t]}</div>
+                <div className="mt-0.5 font-bold tabular-nums">{tgc[t]}</div>
               </div>
             ))}
           </div>
-          <p className="mt-1.5 text-[11px] text-stone-500">천간 + 지지 본기 기준 개수</p>
+          <p className="mt-1.5 text-[11px] text-stone-500">열 가지로 더 잘게 나눈 글자 수(위 글자 + 아래 글자의 주된 기운)</p>
         </div>
       </div>
     </section>
   );
 }
 
-const ROLE_STYLE: Record<GodRole, string> = {
-  용신: 'ring-2 ring-sky-500',
-  희신: 'ring-1 ring-sky-300',
-  한신: '',
-  구신: 'ring-1 ring-rose-300',
-  기신: 'ring-2 ring-rose-500',
-};
-const ROLE_DESC: Record<GodRole, string> = {
-  용신: '가장 필요한 기운',
-  희신: '용신을 돕는 기운',
-  한신: '영향이 적은 기운',
-  구신: '기신을 돕는 기운',
-  기신: '가장 해로운 기운',
+const TILE: Record<GodRole, string> = { 용신: '가장 필요', 희신: '도와줌', 한신: '무난', 구신: '부담 키움', 기신: '가장 부담' };
+const TILE_STYLE: Record<GodRole, string> = {
+  용신: 'border-sky-500 bg-sky-50 ring-2 ring-sky-500 dark:bg-sky-950/40',
+  희신: 'border-sky-300 bg-sky-50/50 dark:border-sky-800 dark:bg-sky-950/20',
+  한신: 'border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900',
+  구신: 'border-rose-300 bg-rose-50/50 dark:border-rose-800 dark:bg-rose-950/20',
+  기신: 'border-rose-500 bg-rose-50 ring-2 ring-rose-500 dark:bg-rose-950/40',
 };
 
 export function StrengthPanel({ a }: { a: SajuAnalysis }) {
+  const st = a.strength;
+  const lv = LEVEL_PLAIN[st.level];
+  const checks = strengthChecks(a);
   const y = a.yongsin;
+  const why = yongsinWhy(a);
   const order: GodRole[] = ['용신', '희신', '한신', '구신', '기신'];
   const byRole = Object.fromEntries((Object.entries(y.roles) as [Element, GodRole][]).map(([e, r]) => [r, e])) as Record<GodRole, Element>;
+  const gk = GYEOK_PLAIN[a.gyeokguk.name];
+  const strongTerm = st.score >= 48 ? '신강' : '신약';
   return (
     <section className="card">
-      <SectionTitle id="strength" kicker="신강약 · 격국 · 용신" title="명식의 구조" desc="판단 과정을 모두 공개합니다. 용신은 학파에 따라 달라질 수 있어, 억부·조후를 함께 보여 드립니다." />
-      <div className="grid gap-8 lg:grid-cols-2">
-        <div>
-          <h3 className="mb-3 text-sm font-bold">일간의 힘</h3>
-          <StrengthGauge score={a.strength.score} level={a.strength.level} />
-          <ul className="mt-4 space-y-1.5 text-sm text-stone-700 dark:text-stone-300">
-            {a.strength.reasoning.map((r, i) => (
-              <li key={i} className="flex gap-2">
-                <span aria-hidden className="text-stone-400">
-                  ›
+      <SectionTitle
+        id="strength"
+        kicker="사주의 힘 · 필요한 기운 · 큰 틀"
+        title="내 사주는 어떤 구조일까?"
+        desc="사주를 몰라도 읽을 수 있게 풀었어요. 회색 글씨는 전문 용어이고, 점선 밑줄이 있는 말은 누르면 뜻이 나와요."
+      />
+      <div className="space-y-4">
+        <Step no="①" title="내 힘은 센 편일까, 약한 편일까?">
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+            <span className="text-2xl font-extrabold">{lv.title}</span>
+            <span className="text-sm text-stone-500">
+              <Term t={st.level.startsWith('중화') ? st.level : strongTerm}>{st.level}</Term> · {st.score.toFixed(1)}%
+            </span>
+          </div>
+          <div className="mt-4">
+            <TugBar mine={st.score} />
+          </div>
+          <p className="mt-4 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">{lv.desc}</p>
+          {st.score < 48 && <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">‘약하다’는 건 나쁘다는 뜻이 아니에요. 내 엔진과 짊어진 짐의 비율일 뿐이에요.</p>}
+          <h4 className="mt-5 text-sm font-bold">이렇게 판단했어요</h4>
+          <ul className="mt-2 space-y-2">
+            {checks.map((c) => (
+              <li key={c.term} className="flex gap-3 rounded-xl bg-stone-50 p-3 dark:bg-stone-800/50">
+                <span
+                  aria-label={c.ok ? '예' : '아니요'}
+                  className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-sm font-bold ${c.ok ? 'bg-sky-600 text-white' : 'bg-stone-300 text-stone-700 dark:bg-stone-600 dark:text-stone-200'}`}
+                >
+                  {c.ok ? '✓' : '×'}
                 </span>
-                {r}
+                <div className="min-w-0">
+                  <div className="text-sm font-bold">
+                    {c.q} <span className="ml-0.5 text-xs font-normal text-stone-500"><Term t={c.term} /></span>
+                  </div>
+                  <p className="mt-0.5 text-sm leading-relaxed text-stone-700 dark:text-stone-300">{c.text}</p>
+                </div>
               </li>
             ))}
           </ul>
-        </div>
-        <div className="space-y-5">
-          <div>
-            <h3 className="mb-2 text-sm font-bold">격국</h3>
-            <div className="rounded-xl bg-stone-50 p-4 dark:bg-stone-800/50">
-              <div className="text-lg font-bold">{a.gyeokguk.name}</div>
-              <p className="mt-1 text-sm text-stone-700 dark:text-stone-300">{a.gyeokguk.description}</p>
-            </div>
+          <Expert lines={st.reasoning} />
+        </Step>
+
+        <Step no="②" title="나에게 필요한 기운, 부담되는 기운">
+          <div className="mt-1 text-2xl font-extrabold">{josa(elWord(y.yongsin), '이/가')} 가장 필요해요</div>
+          <div className="text-sm text-stone-500">
+            <Term t="용신">용신</Term> · 기울어진 균형을 맞춰 주는 기운
           </div>
-          <div>
-            <h3 className="mb-2 text-sm font-bold">
-              용신 체계 <span className="ml-1 text-xs font-normal text-stone-500">판단 방법: {y.method} · 확실성 {y.confidence}</span>
-            </h3>
-            <div className="grid grid-cols-5 gap-2">
-              {order.map((r) => {
-                const e = byRole[r];
-                return (
-                  <div key={r} className={`rounded-xl bg-white p-2 text-center dark:bg-stone-900 ${ROLE_STYLE[r]} border border-stone-200 dark:border-stone-700`}>
-                    <div className="text-[11px] font-semibold text-stone-500">{r}</div>
-                    <div className="mt-1 flex items-center justify-center gap-1 text-xl font-bold">
-                      <span aria-hidden className="size-2.5 rounded-full" style={{ background: EL_VAR[e] }} />
-                      {ELEMENT_KO[e]}
-                    </div>
-                    <div className="hanja text-xs text-stone-500">{ELEMENT_HANJA[e]}</div>
-                    <div className="mt-1 hidden text-[10px] leading-tight text-stone-500 sm:block">{ROLE_DESC[r]}</div>
+          <p className="mt-3 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">
+            {why.why} {why.final}
+          </p>
+          <div className="mt-4 grid grid-cols-5 gap-1.5">
+            {order.map((r) => {
+              const e = byRole[r];
+              return (
+                <div key={r} className={`rounded-xl border px-0.5 py-1.5 text-center ${TILE_STYLE[r]}`}>
+                  <div className="text-[11px] leading-tight font-bold text-stone-600 dark:text-stone-300">{TILE[r]}</div>
+                  <div className="mt-1 flex items-center justify-center gap-1 text-[15px] font-extrabold whitespace-nowrap sm:text-lg">
+                    <span aria-hidden className="hidden size-2 shrink-0 rounded-full sm:inline-block" style={{ background: EL_VAR[e] }} />
+                    {EL_WORD[e]}
                   </div>
-                );
-              })}
-            </div>
-            <ul className="mt-3 space-y-1.5 text-sm text-stone-700 dark:text-stone-300">
-              {y.reasoning.map((r, i) => (
-                <li key={i} className="flex gap-2">
-                  <span aria-hidden className="text-stone-400">
-                    ›
-                  </span>
-                  {r}
-                </li>
-              ))}
-              {y.johu.stems.length > 0 && (
-                <li className="flex gap-2 text-xs text-stone-500">
-                  <span aria-hidden>›</span>궁통보감 조후 천간: {y.johu.stems.map((s) => `${STEMS[s].hanja}(${STEMS[s].ko})`).join(' → ')}
-                </li>
-              )}
-            </ul>
+                  <div className="hanja text-xs text-stone-500">{ELEMENT_HANJA[e]}</div>
+                  <div className="mt-0.5 text-[10px] text-stone-500">
+                    <Term t={r} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+          <p className="mt-3 text-sm leading-relaxed text-stone-700 dark:text-stone-300">
+            쉽게 말해 {elWord(y.yongsin)}·{elWord(y.heesin)} 기운이 들어오는 해·사람·환경은 힘이 되고, {elWord(y.gisin)}·{elWord(y.gusin)} 기운이 강해지는 때는 무리하지 않는 게 좋아요. 색·음식·습관으로 채우는 법은 풀이 리포트의 ‘개운법’ 탭에 있어요.
+          </p>
+          <p className="mt-1.5 text-xs text-stone-500">
+            {ROLE_PLAIN.용신.long}을 찾는 방법은 학파마다 조금씩 달라요. {why.sure}
+          </p>
+          <Expert
+            lines={[
+              ...y.reasoning,
+              `판단 방법: ${y.method} · 확실성 ${y.confidence}`,
+              ...(y.johu.stems.length ? [`궁통보감 조후 천간: ${y.johu.stems.map((s) => `${STEMS[s].hanja}(${STEMS[s].ko})`).join(' → ')}`] : []),
+            ]}
+          />
+        </Step>
+
+        {gk && (
+          <Step no="③" title="사주의 큰 틀 — 타고난 역할">
+            <div className="mt-1 text-2xl font-extrabold">{gk.title}</div>
+            <div className="text-sm text-stone-500">
+              <Term t={a.gyeokguk.name}>{a.gyeokguk.name}</Term> · 태어난 달의 기운으로 정하는 사주의 틀이에요
+            </div>
+            <p className="mt-3 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">
+              {gk.text}
+              {!a.gyeokguk.transparent && ' 다만 이 구조가 겉으로 뚜렷하게 드러난 편은 아니라, 성향이 은근하게 나타나요.'}
+            </p>
+            <Expert lines={[`${a.gyeokguk.name}: ${a.gyeokguk.description}`]} />
+          </Step>
+        )}
       </div>
     </section>
   );
 }
+
+/** 글자 관계를 쉬운 말로 */
+function interPlain(it: Interaction): string {
+  switch (it.kind) {
+    case '천간합':
+    case '육합':
+      return '손을 잡아 서로 묶여요. 협력과 인연이 생기지만, 각자의 색깔은 옅어질 수 있어요.';
+    case '삼합':
+    case '반합':
+    case '방합':
+      return it.element ? `뭉쳐서 ${elWord(it.element)} 기운이 강해져요.` : '뭉쳐서 한 기운이 강해져요.';
+    case '천간충':
+      return '생각과 결정이 서로 부딪혀요. 마음이 자주 흔들릴 수 있어요.';
+    case '육충':
+      return '정면으로 부딪혀요. 이동·변동·헤어짐이 잦을 수 있어요.';
+    case '삼형':
+    case '형':
+      return '서로 긁어 대요. 마찰·다툼, 수술·서류 문제를 조심하라는 신호예요.';
+    case '자형':
+      return '같은 글자끼리 부딪혀 스스로를 괴롭혀요. 자책하기 쉬워요.';
+    case '파':
+      return '계획이 깨지거나 어긋나기 쉬워요.';
+    case '해':
+      return '은근히 방해하고 서운함이 쌓이기 쉬워요.';
+    case '원진':
+      return '끌리면서도 미운, 애증이 생기기 쉬워요.';
+    case '귀문':
+      return '촉이 좋고 예민해요. 신경이 날카로워지기 쉬워요.';
+  }
+}
+
+const NATURE: Record<'good' | 'bad' | 'mixed', { label: string; cls: string }> = {
+  good: { label: '도움이 되는 별', cls: 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100' },
+  bad: { label: '조심할 별', cls: 'bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-100' },
+  mixed: { label: '양날의 별', cls: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100' },
+};
 
 export function InteractionsPanel({ a }: { a: SajuAnalysis }) {
   const goodSinsal = a.sinsal.filter((s) => s.nature === 'good');
   const otherSinsal = a.sinsal.filter((s) => s.nature !== 'good');
   return (
     <section className="card">
-      <SectionTitle id="sinsal" kicker="합충형파해 · 신살" title="글자 사이의 관계" desc="신살은 “있다/없다”보다 어디에 어떻게 놓였는지가 중요합니다. 현대적 의미로 장단점을 함께 적었습니다." />
+      <SectionTitle
+        id="sinsal"
+        kicker="합·충 · 신살"
+        title="글자끼리의 사이"
+        desc="사주 글자들끼리도 손을 잡는 짝, 부딪히는 짝이 있어요. 손을 잡으면 협력·인연을, 부딪히면 변화·마찰을 뜻해요. 신살은 글자 조합에 붙는 별명으로, 좋은 쪽과 조심할 쪽이 함께 있어요."
+      />
       <div className="grid gap-8 lg:grid-cols-2">
         <div>
-          <h3 className="mb-3 text-sm font-bold">합·충·형·파·해</h3>
+          <h3 className="mb-3 text-sm font-bold">손잡는 글자, 부딪히는 글자</h3>
           {a.interactions.length === 0 ? (
-            <p className="text-sm text-stone-500">원국 안에 뚜렷한 합·충·형 관계가 없습니다. 글자들이 서로 간섭하지 않아 성향이 비교적 일관됩니다.</p>
+            <p className="text-sm text-stone-500">사주 안에 뚜렷하게 손잡거나 부딪히는 글자가 없어요. 글자들이 서로 간섭하지 않아 성향이 비교적 한결같아요.</p>
           ) : (
             <ul className="space-y-2">
-              {a.interactions.map((it, i) => (
-                <li key={i} className="flex items-start gap-3 rounded-lg bg-stone-50 px-3 py-2 dark:bg-stone-800/50">
-                  <span
-                    className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-xs font-bold ${
-                      it.kind.includes('합') ? 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100' : 'bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-100'
-                    }`}
-                  >
-                    {it.kind}
-                  </span>
-                  <div className="text-sm">
-                    <span className="hanja font-bold">{it.chars}</span>
-                    <span className="ml-1 text-xs text-stone-500">({it.positions.map((p) => POS_KO[p]).join('·')}){it.adjacent ? ' · 인접' : ''}</span>
-                    <div className="text-stone-700 dark:text-stone-300">{it.description}</div>
-                  </div>
-                </li>
-              ))}
+              {a.interactions.map((it, i) => {
+                const good = it.kind.includes('합');
+                return (
+                  <li key={i} className="rounded-xl bg-stone-50 px-3 py-2.5 dark:bg-stone-800/50">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold ${good ? 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100' : 'bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-100'}`}>
+                        {INTER_PLAIN[it.kind] ?? it.kind}
+                      </span>
+                      <span className="hanja font-bold">{it.chars}</span>
+                      <span className="text-xs text-stone-500">
+                        <Term t={it.kind} />
+                        {it.adjacent ? ' · 바로 옆이라 힘이 큼' : ''}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-stone-500">{it.positions.map((p) => POS_LIFE[p] ?? p).join(' ↔ ')}</div>
+                    <p className="mt-0.5 text-sm text-stone-800 dark:text-stone-200">{interPlain(it)}</p>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
         <div>
-          <h3 className="mb-3 text-sm font-bold">신살</h3>
+          <h3 className="mb-3 text-sm font-bold">
+            사주에 붙은 별명 <span className="font-normal text-stone-500">· <Term t="신살" /></span>
+          </h3>
           <ul className="space-y-2">
             {[...goodSinsal, ...otherSinsal].map((s) => (
-              <li key={s.name} className="rounded-lg border border-stone-200 px-3 py-2 dark:border-stone-800">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold">{s.name}</span>
-                  <span
-                    className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                      s.nature === 'good'
-                        ? 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100'
-                        : s.nature === 'bad'
-                          ? 'bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-100'
-                          : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100'
-                    }`}
-                  >
-                    {s.nature === 'good' ? '길신' : s.nature === 'bad' ? '흉살' : '양면'}
+              <li key={s.name} className="rounded-xl border border-stone-200 px-3 py-2.5 dark:border-stone-800">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-bold">{SINSAL_NICK[s.name] ?? s.name}</span>
+                  <span className="text-xs text-stone-500">
+                    <Term t={s.name.replace(/\(.*\)$/, '')}>{s.name}</Term>
                   </span>
-                  <span className="text-xs text-stone-500">{s.positions.map((p) => POS_KO[p] + '주').join('·')} · {s.basis}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${NATURE[s.nature].cls}`}>{NATURE[s.nature].label}</span>
                 </div>
-                <p className="mt-1 text-sm text-stone-700 dark:text-stone-300">{s.meaning}</p>
+                <p className="mt-1 text-sm text-stone-800 dark:text-stone-200">
+                  <Gloss text={s.meaning} />
+                </p>
+                <p className="mt-0.5 text-[11px] text-stone-500">
+                  자리: {s.positions.map((p) => POS_SHORT[p] ?? POS_LIFE[p] ?? p).join('·')} · {s.basis}
+                </p>
               </li>
             ))}
           </ul>
@@ -195,4 +348,3 @@ export function InteractionsPanel({ a }: { a: SajuAnalysis }) {
     </section>
   );
 }
-

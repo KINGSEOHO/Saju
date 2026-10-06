@@ -4,21 +4,24 @@
  * - 모든 막대에 호버/포커스 툴팁, 색 외에 텍스트 라벨 병기
  * - 운세 점수는 발산형(50 기준): 유리=파랑, 불리=빨강, 중립축=회색
  */
-import { useState } from 'react';
-import { ELEMENT_KO, ELEMENTS, type Element } from '../engine/index.ts';
+import { useState, type ReactNode } from 'react';
+import { ELEMENT_HANJA, ELEMENT_KO, ELEMENTS, type Element } from '../engine/index.ts';
+import { EL_WORD } from '../report/plain.ts';
 import { EL_VAR } from './common.tsx';
 
-export function ElementBars({ percent, count, label = '세력' }: { percent: Record<Element, number>; count: Record<Element, number>; label?: string }) {
+export function ElementBars({ percent, count, me, label = '세력' }: { percent: Record<Element, number>; count: Record<Element, number>; me?: Element; label?: string }) {
   const max = Math.max(...ELEMENTS.map((e) => percent[e]), 1);
   return (
     <div className="space-y-2.5" role="list" aria-label={`오행 ${label} 분포`}>
       {ELEMENTS.map((e) => (
-        <div key={e} role="listitem" className="grid grid-cols-[3.5rem_1fr_5.5rem] items-center gap-3">
-          <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-800 dark:text-stone-200">
-            <span aria-hidden className="size-2.5 rounded-full" style={{ background: EL_VAR[e] }} />
-            {ELEMENT_KO[e]}
+        <div key={e} role="listitem" className="grid grid-cols-[5.25rem_1fr_4.75rem] items-center gap-2.5">
+          <div className="flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap text-stone-800 dark:text-stone-200">
+            <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: EL_VAR[e] }} />
+            {EL_WORD[e]}
+            <span className="hanja text-xs font-normal text-stone-500">{ELEMENT_HANJA[e]}</span>
+            {me === e && <span className="rounded bg-brand-700 px-1 text-[10px] leading-4 font-bold text-white dark:bg-brand-300 dark:text-brand-900">나</span>}
           </div>
-          <div className="relative h-3 rounded-sm bg-stone-100 dark:bg-stone-800" title={`${ELEMENT_KO[e]} ${percent[e].toFixed(1)}% · ${count[e]}글자`}>
+          <div className="relative h-3 rounded-sm bg-stone-100 dark:bg-stone-800" title={`${EL_WORD[e]}(${ELEMENT_KO[e]}) ${percent[e].toFixed(1)}% · ${count[e]}글자`}>
             <div
               className="absolute inset-y-0 left-0 rounded-r-[4px]"
               style={{ width: `${(percent[e] / max) * 100}%`, background: EL_VAR[e], minWidth: percent[e] > 0 ? 3 : 0 }}
@@ -33,15 +36,15 @@ export function ElementBars({ percent, count, label = '세력' }: { percent: Rec
   );
 }
 
-export function GroupBars({ data }: { data: { label: string; sub: string; value: number; el: Element }[] }) {
+export function GroupBars({ data }: { data: { label: string; sub: ReactNode; value: number; el: Element }[] }) {
   const max = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {data.map((d) => (
-        <div key={d.label} className="grid grid-cols-[6.5rem_1fr_3rem] items-center gap-3">
-          <div className="text-sm font-semibold whitespace-nowrap text-stone-800 dark:text-stone-200">
-            {d.label}
-            <span className="ml-1 text-[10px] font-normal text-stone-500">{d.sub}</span>
+        <div key={d.label} className="grid grid-cols-[8.25rem_1fr_2.75rem] items-center gap-2.5">
+          <div className="min-w-0 leading-tight">
+            <div className="text-sm font-semibold text-stone-800 dark:text-stone-200">{d.label}</div>
+            <div className="mt-0.5 text-[11px] text-stone-500">{d.sub}</div>
           </div>
           <div className="relative h-3 rounded-sm bg-stone-100 dark:bg-stone-800" title={`${d.label} ${d.value.toFixed(1)}%`}>
             <div className="absolute inset-y-0 left-0 rounded-r-[4px]" style={{ width: `${(d.value / max) * 100}%`, background: EL_VAR[d.el], minWidth: d.value > 0 ? 3 : 0 }} />
@@ -53,44 +56,25 @@ export function GroupBars({ data }: { data: { label: string; sub: string; value:
   );
 }
 
-const LEVELS = [
-  { at: 0, name: '극약' },
-  { at: 18, name: '태약' },
-  { at: 29, name: '신약' },
-  { at: 40, name: '중화신약' },
-  { at: 48, name: '중화신강' },
-  { at: 56, name: '신강' },
-  { at: 68, name: '태강' },
-  { at: 80, name: '극왕' },
-];
-
-/** 신강·신약 게이지: 단일 값 + 구간 눈금 */
-export function StrengthGauge({ score, level }: { score: number; level: string }) {
+/** 내 편 vs 바깥 기운 줄다리기 막대 (50% = 균형) */
+export function TugBar({ mine }: { mine: number }) {
+  const m = Math.min(100, Math.max(0, mine));
   return (
     <div>
-      <div className="flex items-baseline justify-between">
-        <div className="text-3xl font-bold tabular-nums text-stone-900 dark:text-stone-50">
-          {score.toFixed(1)}
-          <span className="text-base font-medium text-stone-500">%</span>
-        </div>
-        <div className="text-lg font-semibold text-stone-800 dark:text-stone-200">{level}</div>
+      <div className="flex items-end justify-between text-sm font-bold">
+        <span className="text-sky-700 dark:text-sky-300">내 편 {m.toFixed(0)}%</span>
+        <span className="text-rose-600 dark:text-rose-300">바깥 기운 {(100 - m).toFixed(0)}%</span>
       </div>
-      <div className="relative mt-3 h-2.5 rounded-full bg-gradient-to-r from-[var(--div-neg)] via-[var(--div-mid)] to-[var(--div-pos)] opacity-80">
-        <div
-          className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-stone-900 shadow dark:border-stone-900 dark:bg-white"
-          style={{ left: `${Math.min(100, Math.max(0, score))}%` }}
-          aria-label={`현재 위치 ${score.toFixed(1)}%`}
-        />
-        <div className="absolute top-[-4px] h-[18px] w-px bg-stone-500" style={{ left: '48%' }} aria-hidden />
+      <div className="relative mt-1.5 flex h-3.5 overflow-hidden rounded-full" role="img" aria-label={`내 편 ${m.toFixed(0)}%, 바깥 기운 ${(100 - m).toFixed(0)}%`}>
+        <div className="h-full bg-sky-500" style={{ width: `${m}%` }} />
+        <div className="h-full flex-1 bg-rose-400/80" />
+        <div aria-hidden className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-white/90 dark:bg-stone-900/90" />
       </div>
-      <div className="relative mt-1.5 h-4 text-[10px] text-stone-500">
-        {LEVELS.map((l) => (
-          <span key={l.name} className="absolute -translate-x-0" style={{ left: `${l.at}%` }}>
-            {['극약', '신약', '중화신강', '태강'].includes(l.name) ? l.name : ''}
-          </span>
-        ))}
+      <div className="mt-1.5 grid grid-cols-[1fr_auto_1fr] gap-2 text-[11px] leading-snug text-stone-500">
+        <span>나와 같은 기운 + 나를 키워 주는 기운</span>
+        <span className="text-center">↑ 균형</span>
+        <span className="text-right">내가 쓰고·다루고·눌리는 기운</span>
       </div>
-      <p className="mt-1 text-xs text-stone-500">← 일간이 약함 · 48% 기준선(균형) · 일간이 강함 →</p>
     </div>
   );
 }

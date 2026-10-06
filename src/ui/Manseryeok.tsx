@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { BRANCHES, STEMS, fmtKst, pillarHanja, type SajuAnalysis } from '../engine/index.ts';
-import { CharTile, Disclosure, ElementTag, SectionTitle } from './common.tsx';
+import { CharTile, Disclosure, ElementTag, Gloss, SectionTitle } from './common.tsx';
 
 const ORDER = ['hour', 'day', 'month', 'year'] as const;
 const LABEL: Record<string, string> = { hour: '시주', day: '일주', month: '월주', year: '년주' };
@@ -54,7 +54,7 @@ export function Manseryeok({ a }: { a: SajuAnalysis }) {
   const row = (title: string, render: (x: NonNullable<(typeof cols)[number]>) => ReactNode) => (
     <tr className="border-t border-stone-100 dark:border-stone-800">
       <th scope="row" className="py-2 pr-1 text-left text-[11px] font-semibold text-stone-500 sm:pr-2 sm:text-xs">
-        {title}
+        <Gloss text={title} />
       </th>
       {cols.map((c, i) => (
         <td key={i} className="px-0.5 py-2 text-center text-xs sm:px-1 sm:text-sm">
@@ -66,7 +66,7 @@ export function Manseryeok({ a }: { a: SajuAnalysis }) {
 
   return (
     <section className="card">
-      <SectionTitle id="manse" kicker="만세력" title="사주 원국" desc="천문 계산으로 산출한 네 기둥과 각 글자의 십성·지장간·12운성·신살입니다." />
+      <SectionTitle id="manse" kicker="만세력" title="사주 원국" desc={<Gloss text="천문 계산으로 산출한 네 기둥(태어난 해·달·날·시)과 각 글자의 십성·지장간·12운성·신살이에요. 점선 밑줄을 누르면 뜻이 나와요." />} />
       <div className="-mx-2 overflow-x-auto">
         <table className="w-full min-w-[330px] table-fixed">
           <thead>

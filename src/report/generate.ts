@@ -14,6 +14,7 @@ import { elementOfGroup, groupOf, groupOfElement } from '../engine/tenGods.ts';
 import { incomeRoute, investmentRisk, orgRatio as computeOrgRatio, wealthCapacity } from './metrics.ts';
 import { buildGaeun, gaeunBlocks, type GaeunData } from './gaeun.ts';
 import { buildStories, readMinutes, type StoryPara } from './story.ts';
+import { LEVEL_PLAIN, elWord } from './plain.ts';
 import {
   DAY_MASTER, ELEMENT_JOBS, ELEMENT_ORGAN, GROUP_JOBS, GROUP_MISSING, SPOUSE_PALACE, STAGE_ON_DAY, TEN_GOD_TRAIT,
 } from './kb.ts';
@@ -694,9 +695,9 @@ export function generateReport(a: SajuAnalysis): Report {
     const items: Statement[] = [];
     items.push(
       S(
-        `${pillarHanja(a.pillars.day)} 일주, ${a.gyeokguk.name}, ${a.strength.level}. 용신은 ${elKo(a.yongsin.yongsin)}(${a.yongsin.method}), 희신 ${elKo(a.yongsin.heesin)}, 기신 ${elKo(a.yongsin.gisin)}.`,
+        `나를 뜻하는 글자는 ${dm.image}입니다. 타고난 힘은 ‘${LEVEL_PLAIN[a.strength.level].short}’이고, 가장 필요한 기운은 ${elWord(a.yongsin.yongsin)}, 가장 부담되는 기운은 ${elWord(a.yongsin.gisin)}입니다.`,
         'neutral',
-        `용신 판단 확실성: ${a.yongsin.confidence}`,
+        `${pillarHanja(a.pillars.day)}일주 · ${a.gyeokguk.name} · ${a.strength.level} · 용신 ${elKo(a.yongsin.yongsin)}(${a.yongsin.method}) · 희신 ${elKo(a.yongsin.heesin)} · 기신 ${elKo(a.yongsin.gisin)} · 판단 확실성 ${a.yongsin.confidence}`,
       ),
     );
     const allSections = [personality, love, career, wealth, health];
@@ -722,11 +723,12 @@ export function generateReport(a: SajuAnalysis): Report {
     const d = a.daeun.list;
     const best = [...d].sort((x, y) => y.score - x.score)[0];
     const worst = [...d].sort((x, y) => x.score - y.score)[0];
-    items.push(S(`가장 좋은 대운: ${pillarKo(best.pillar)} 대운 (만 ${Math.floor(best.startAge)}세~, ${best.startYear}~${best.endYear}년). ${GROUP_LUCK_THEME[groupOf(best.stemTenGod)]}.`, 'positive', `대운 점수 ${best.score}`));
-    items.push(S(`가장 힘든 대운: ${pillarKo(worst.pillar)} 대운 (만 ${Math.floor(worst.startAge)}세~, ${worst.startYear}~${worst.endYear}년). 이 시기에는 확장보다 방어가 원칙입니다.`, 'negative', `대운 점수 ${worst.score}`));
+    const signals = (flags: string[]) => (flags.length ? ` 함께 오는 신호: ${flags.map((f) => f.split(': ')[1] ?? f).join(', ')}.` : '');
+    items.push(S(`가장 순풍이 부는 10년: 만 ${Math.floor(best.startAge)}세부터(${best.startYear}~${best.endYear}년). ${GROUP_LUCK_THEME[groupOf(best.stemTenGod)]}.`, 'positive', `${pillarKo(best.pillar)} 대운 · 점수 ${best.score}`));
+    items.push(S(`가장 몸을 낮출 10년: 만 ${Math.floor(worst.startAge)}세부터(${worst.startYear}~${worst.endYear}년). 이 시기에는 확장보다 방어가 원칙입니다.`, 'negative', `${pillarKo(worst.pillar)} 대운 · 점수 ${worst.score}`));
     if (a.currentDaeun) {
       const c = a.currentDaeun;
-      items.push(S(`지금은 ${pillarKo(c.pillar)} 대운(${c.startYear}~${c.endYear}) 중입니다. ${GROUP_LUCK_THEME[groupOf(c.stemTenGod)]}. ${c.flags.length ? `원국과의 관계: ${c.flags.join(', ')}.` : ''}`, c.score >= 58 ? 'positive' : c.score < 42 ? 'negative' : 'neutral', `대운 점수 ${c.score}`));
+      items.push(S(`지금은 ${c.startYear}~${c.endYear}년의 10년을 지나고 있습니다. ${GROUP_LUCK_THEME[groupOf(c.stemTenGod)]}.${signals(c.flags)}`, c.score >= 58 ? 'positive' : c.score < 42 ? 'negative' : 'neutral', `${pillarKo(c.pillar)} 대운 · 점수 ${c.score}${c.flags.length ? ` · ${c.flags.map((f) => f.split(':')[0]).join(', ')}` : ''}`));
     }
     const thisYear = a.seun.find((s) => s.year === a.currentSajuYear);
     const nextYear = a.seun.find((s) => s.year === a.currentSajuYear + 1);
@@ -736,9 +738,9 @@ export function generateReport(a: SajuAnalysis): Report {
       const g2 = groupOf(y.branchTenGod);
       items.push(
         S(
-          `${y.year}년(${pillarKo(y.pillar)}): 천간 ${y.stemTenGod}·지지 ${y.branchTenGod}. ${GROUP_LUCK_THEME[g1]}${g2 !== g1 ? ` / ${GROUP_LUCK_THEME[g2]}` : ''}. 종합 ${y.combined}점${y.flags.length ? ` — ${y.flags.join(', ')}` : ''}.`,
+          `${y.year}년(${pillarKo(y.pillar)}): ${GROUP_LUCK_THEME[g1]}${g2 !== g1 ? ` / ${GROUP_LUCK_THEME[g2]}` : ''}. 종합 ${y.combined}점.${signals(y.flags)}`,
           y.combined >= 60 ? 'positive' : y.combined < 42 ? 'negative' : 'neutral',
-          `세운 ${y.score}점 + 대운 ${y.daeun?.score ?? '-'}점`,
+          `천간 ${y.stemTenGod}·지지 ${y.branchTenGod} · 세운 ${y.score}점 + 대운 ${y.daeun?.score ?? '-'}점${y.flags.length ? ` · ${y.flags.map((f) => f.split(':')[0]).join(', ')}` : ''}`,
         ),
       );
     }
@@ -750,7 +752,7 @@ export function generateReport(a: SajuAnalysis): Report {
     heading: '운을 보강하는 생활 습관 (용신 활용)',
     items: [S(`${gaeun.headline}. 색·장소·음식·사람·습관별로 가까이할 것과 멀리할 것은 ‘개운법’ 탭에 정리했습니다.`, 'positive', `용신 ${elKo(a.yongsin.yongsin)} · 기신 ${elKo(a.yongsin.gisin)}`)],
   });
-  summary.headline = `${pillarHanja(a.pillars.day)}일주 · ${a.gyeokguk.name} · ${a.strength.level} · 용신 ${josa(elKo(a.yongsin.yongsin), '이/가')} 핵심`;
+  summary.headline = `${pillarHanja(a.pillars.day)}일주 · ${LEVEL_PLAIN[a.strength.level].short} · ${josa(elWord(a.yongsin.yongsin), '이/가')} 필요한 사주`;
 
   const gaeunSec: ReportSection = { id: 'gaeun', title: '개운법', headline: gaeun.headline, blocks: gaeunBlocks(gaeun.data), gaeun: gaeun.data, story: gaeun.story };
   const sections = [summary, gaeunSec, personality, love, career, wealth, health];

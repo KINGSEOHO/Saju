@@ -5,13 +5,14 @@
  * 그리고 지금의 대운·세운이 어떤 단계인지 보고 "지금 가장 먼저 준비할 것"을 정리한다.
  * 적합도는 사주 구조와 직업이 요구하는 능력의 겹침일 뿐, 실제 성과는 경험·노력·환경이 더 크게 좌우한다.
  */
-import { ELEMENT_HANJA, ELEMENT_KO, type Element, type SajuAnalysis, type TenGodGroup } from '../engine/index.ts';
+import { ELEMENT_HANJA, ELEMENT_KO, STEMS, type Element, type GodRole, type SajuAnalysis, type TenGodGroup } from '../engine/index.ts';
 import { josa } from '../engine/josa.ts';
-import { groupOf } from '../engine/tenGods.ts';
+import { groupOf, groupOfElement } from '../engine/tenGods.ts';
 import { ELEMENT_JOBS, GROUP_JOBS } from './kb.ts';
 import type { Report } from './generate.ts';
 import { readLuck } from './luckReading.ts';
-import { plainStatement } from './metrics.ts';
+import { isStrong, plainStatement } from './metrics.ts';
+import { GROUP_PLAIN, ROLE_PLAIN, elWord } from './plain.ts';
 
 export interface JobCategory {
   id: string;
@@ -317,6 +318,99 @@ const STUDENT_PREP: Record<TenGodGroup, string> = {
   인성: '깊이 공부하는 힘이 큰 시기입니다. 관심 분야 하나를 정해 남보다 깊이 파고드세요.',
 };
 
+/** 분야별로 각 오행 환경이 실제로 뜻하는 것 [짧게, 자세히] */
+const ENV_IN_JOB: Record<string, Partial<Record<Element, [string, string]>>> = {
+  medical: { wood: ['돌보고 회복시키는 일', '환자를 돌보고 회복시키는, 생명을 키우는 일'], metal: ['정밀한 처치와 수치', '검사 수치·처치처럼 작은 오차도 허용되지 않는 정밀함'] },
+  public: { metal: ['규정과 원칙', '법과 규정대로 판단하고 원칙을 지키는 일'], earth: ['민원과 중재', '민원과 이해관계를 중재하며 조직을 안정적으로 지키는 일'] },
+  finance: { metal: ['숫자와 규정', '숫자와 규정을 한 치 오차 없이 맞추는 일'], water: ['돈과 정보의 흐름', '돈과 정보의 흐름을 쉼 없이 읽어야 하는 일'] },
+  creative: { fire: ['드러내고 평가받기', '작품을 세상에 드러내고 조회수·평가로 반응을 받는 일'], wood: ['새로 기획하기', '없던 것을 새로 기획하고 키워 내는 일'] },
+  it: { fire: ['마감과 속도', '화면 앞에서 마감에 맞춰 빠르게 결과물을 내는 일'], water: ['깊은 논리와 데이터', '보이지 않는 데이터와 논리를 깊이 파고드는 일, 밤늦게까지 이어지는 집중'] },
+  edu: { wood: ['사람을 키우는 일', '새 학생·새 학기처럼 사람을 키우고 늘 새로 시작하는 일'], water: ['혼자 연구하는 시간', '자료를 찾고 연구하며 혼자 깊이 생각하는 시간이 긴 일'] },
+  sales: { fire: ['앞에 나서는 일', '사람 앞에 나서서 말하고, 반응과 실적이 바로 드러나는 일'], wood: ['끝없는 새 기획', '새 고객·새 캠페인을 끝없이 기획하고 넓혀 가는 일'] },
+  business: { earth: ['붙잡고 버티기', '사람·돈·공간을 붙잡고 관리하며 버티는 일'], fire: ['알리고 모으기', '가게와 브랜드를 알리고 사람을 모으는 일'] },
+  tech: { metal: ['기계와 정밀함', '기계·공구·금속을 다루는 정밀한 일'], earth: ['현장 책임', '현장(땅·건물)을 책임지고 묵묵히 버티는 일'] },
+  office: { earth: ['조율과 운영', '부서 사이를 조율하고 정해진 업무를 안정적으로 굴리는 일'], metal: ['규정과 서류', '규정·결재·서류를 정확히 맞추는 일'] },
+  service: { fire: ['손님 응대', '불·열·조명 앞에서 손님을 직접 응대하는 일'], wood: ['새 메뉴·스타일', '메뉴·스타일을 새로 개발하고 손님을 단골로 키우는 일'] },
+  travel: { water: ['쉼 없는 이동', '쉼 없이 움직이고 흘러 다니는 일, 정해진 자리 없이 이동하는 생활'] },
+  property: { earth: ['땅과 계약', '땅과 건물, 계약을 다루며 오래 기다리는 일'], wood: ['키우고 가꾸기', '식물과 자연을 키우고 가꾸는 일'] },
+  care: { wood: ['회복을 돕는 일', '사람의 회복과 성장을 돕는 일'], water: ['감정을 품는 일', '남의 깊은 이야기와 감정을 받아 주고 오래 품는 일'] },
+  sports: { fire: ['뜨거운 승부', '몸을 뜨겁게 쓰고 승부를 겨루는 일'], wood: ['꾸준한 단련', '몸과 실력을 꾸준히 키워 가는 일'] },
+  freelance: { fire: ['나를 알리는 일', '나를 드러내고 알려야 일감이 들어오는 생활'], water: ['혼자 일하는 시간', '출퇴근 없이 흘러가는 생활, 혼자 일하는 긴 시간'] },
+};
+const ENV_GENERIC: Record<Element, [string, string]> = {
+  wood: ['새로 시작하는 일', '새로 시작하고 키워 가는 일, 끝없이 새 일이 생기는 환경'],
+  fire: ['드러나는 일', '사람 앞에 드러나고 빠르게 결과를 내야 하는 환경'],
+  earth: ['붙잡고 지키는 일', '사람과 일을 중재하고 안정적으로 지켜야 하는 환경'],
+  metal: ['정확해야 하는 일', '규칙과 정확성이 중요한, 실수 하나에 책임이 따르는 환경'],
+  water: ['생각이 많은 일', '생각·정보·이동이 많고 혼자 깊이 파고드는 환경'],
+};
+
+/** 그 환경의 기운이 나(일간)에게 무엇인지에 따라 실제로 생기는 일 */
+const ENV_EFFECT: Record<TenGodGroup, { good: string; bad: string; tip: string }> = {
+  비겁: {
+    good: '나와 같은 기운이라, 이런 환경에서 일할수록 자신감과 버티는 힘이 붙어요.',
+    bad: '나와 같은 기운인데 이미 내 힘이 센 사주라, 더해지면 넘쳐요. 고집 대결·주도권 다툼·경쟁 피로로 나타나기 쉬워요.',
+    tip: '역할과 공을 처음부터 분명히 나누고, 같은 걸 두고 겨루기보다 나만의 영역을 만드세요.',
+  },
+  식상: {
+    good: '내 힘을 밖으로 꺼내 쓰게 하는 기운이라, 넘치는 힘이 표현과 결과물로 풀려 일할수록 오히려 개운해져요.',
+    bad: '내 힘을 밖으로 꺼내 쓰게 하는 기운인데, 힘이 넉넉하지 않은 사주라 꺼내 쓰기만 하면 금방 방전돼요. 하루 종일 말하고 만든 날 유난히 녹초가 되는 이유예요.',
+    tip: '말·발표·창작이 몰린 날 다음엔 회복 시간을 미리 잡고, 동시에 벌이는 일을 두 개 이하로 줄이세요.',
+  },
+  재성: {
+    good: '내가 다루는 돈·성과의 기운이라, 힘이 넉넉한 이 사주에선 일한 만큼 실적과 보상으로 바뀌어요.',
+    bad: '내가 감당해야 하는 돈·성과의 기운인데, 사주의 힘에 비해 짐이 커지기 쉬워요. 실적·매출 압박이 남보다 더 무겁게 느껴질 수 있어요.',
+    tip: '목표를 작게 쪼개 기록하고, 혼자 다 떠안지 말고 도움을 요청하세요. 돈이 걸린 결정은 하루 미뤄서 하세요.',
+  },
+  관성: {
+    good: '나를 다잡는 규칙·책임의 기운이라, 힘이 넘치는 이 사주에선 기준이 분명할수록 힘이 한 방향으로 모여요.',
+    bad: '나를 누르는 규칙·평가·책임의 기운인데, 사주의 힘에 비해 누르는 힘이 커지기 쉬워요. 눈치·평가 스트레스, “내가 다 책임져야 한다”는 압박으로 나타나요.',
+    tip: '평가 기준을 미리 물어 두고, 퇴근 뒤엔 업무 알림을 끄세요. 책임은 나눠 지는 거라는 걸 기억하세요.',
+  },
+  인성: {
+    good: '나를 채워 주는 배움·도움의 기운이라, 힘이 부족한 이 사주에선 배우고 도움받을수록 힘이 붙어요.',
+    bad: '나를 채워 주는 배움·생각의 기운인데, 이미 충분히 채워진 사주라 더해지면 생각만 많아지고 실행이 느려져요.',
+    tip: '공부와 준비는 70%에서 멈추고 실행하세요. 자료 조사가 길어지면 마감부터 정하세요.',
+  },
+};
+
+export interface JobEnv {
+  el: Element;
+  role: GodRole;
+  tone: 'good' | 'mid' | 'bad';
+  /** 이 일에서 그 기운이 뜻하는 것 */
+  short: string;
+  what: string;
+  /** 나에게 생기는 일 */
+  me: string;
+  tip: string | null;
+  basis: string;
+}
+
+/** 일의 환경(오행)이 이 사주에 어떻게 작용하는지 — 무엇을 뜻하고, 나에게 무슨 일이 생기고, 어떻게 할지 */
+export function jobEnv(a: SajuAnalysis, catId: string, els: Element[]): JobEnv[] {
+  const me = STEMS[a.pillars.day.stem].element;
+  const strong = isStrong(a);
+  return els.map((e) => {
+    const role = a.yongsin.roles[e];
+    const tone = ROLE_PLAIN[role].tone;
+    const g = groupOfElement(me, e);
+    const [short, what] = ENV_IN_JOB[catId]?.[e] ?? ENV_GENERIC[e];
+    const supportive = g === '비겁' || g === '인성';
+    // 신강·신약으로 설명되는 경우만 십성별 문장을 쓰고, 조후·특수격으로 정해진 경우는 일반 문장
+    const usual = tone === 'good' ? supportive !== strong : supportive === strong;
+    let meText: string;
+    let tip: string | null = null;
+    if (tone === 'mid') meText = '좋지도 나쁘지도 않은 기운이라, 이 환경 자체가 큰 변수는 아니에요.';
+    else if (tone === 'good') meText = usual ? ENV_EFFECT[g].good : '이 사주의 기울어진 균형을 맞춰 주는 기운이라, 이런 환경에서 일할수록 기운이 채워져요.';
+    else {
+      meText = usual ? ENV_EFFECT[g].bad : '이 사주에서 이미 넘치는 쪽을 더 키우는 기운이라, 이런 환경이 길어질수록 남보다 빨리 지치기 쉬워요.';
+      tip = usual ? ENV_EFFECT[g].tip : `이런 일이 몰리는 시기엔 쉬는 시간을 일정에 먼저 넣고, 필요한 기운인 ${elWord(a.yongsin.yongsin)}의 습관(개운법 탭)으로 균형을 맞추세요.`;
+    }
+    return { el: e, role, tone, short, what, me: meText, tip, basis: `${ELEMENT_KO[e]}(${ELEMENT_HANJA[e]}) = ${role} · 나에게는 ${g}` };
+  });
+}
+
 export interface JobPoint {
   title: string;
   text: string;
@@ -327,7 +421,7 @@ export interface JobAnalysis {
   input: string;
   category: JobCategory;
   freelance: boolean;
-  fit: { score: number; label: string; text: string; basis: string } | null;
+  fit: { score: number; label: string; text: string; basis: string; env: JobEnv[] } | null;
   strengths: JobPoint[];
   cautions: JobPoint[];
   now: JobPoint;
@@ -363,12 +457,21 @@ export function analyzeJob(a: SajuAnalysis, report: Report, jobText: string): Jo
     const envGood = els.filter((e) => ['용신', '희신'].includes(a.yongsin.roles[e]));
     const envBad = els.filter((e) => ['기신', '구신'].includes(a.yongsin.roles[e]));
     const parts = [`${fieldJ('은/는')} ${cat.need}이 필요한 일입니다.`];
-    if (strong.length) parts.push(`${who}의 사주에는 이 일이 쓰는 ${strong.map((g) => `${g}(${gp[g].toFixed(0)}%)`).join('·')}의 힘이 충분합니다.`);
-    if (weak.length) parts.push(`반면 ${weak.map((g) => `${g}(${gp[g].toFixed(0)}%)`).join('·')}은 약해, 그 부분은 노력과 요령으로 채워야 합니다.`);
-    if (!strong.length && !weak.length) parts.push(`이 일이 쓰는 힘(${needs.join('·')})이 사주에 보통 수준으로 있습니다.`);
-    if (envGood.length) parts.push(`일의 환경이 가진 ${envGood.map((e) => `${ELEMENT_KO[e]}(${ELEMENT_HANJA[e]})`).join('·')} 기운은 이 사주에 필요한 기운이라, 일할수록 기운이 채워지는 쪽입니다.`);
-    if (envBad.length) parts.push(`다만 ${envBad.map((e) => `${ELEMENT_KO[e]}(${ELEMENT_HANJA[e]})`).join('·')} 기운이 강한 환경은 이 사주에 부담이 될 수 있어, 일과 휴식의 경계를 분명히 하는 것이 좋습니다.`);
-    fit = { score, label, text: parts.join(' '), basis: `필요한 힘 ${needs.map((g) => `${g} ${gp[g].toFixed(0)}%`).join(' · ')}${els.length ? ` · 일의 오행 ${els.map((e) => `${ELEMENT_KO[e]}(${a.yongsin.roles[e]})`).join('·')}` : ''}` };
+    const gName = (g: TenGodGroup) => `${GROUP_PLAIN[g].name}(${g} ${gp[g].toFixed(0)}%)`;
+    if (strong.length) parts.push(`${who}의 사주에는 이 일이 쓰는 ${josa(strong.map(gName).join('·'), '이/가')} 충분합니다.`);
+    if (weak.length) parts.push(`반면 ${josa(weak.map(gName).join('·'), '은/는')} 약해, 그 부분은 노력과 요령으로 채워야 합니다.`);
+    if (!strong.length && !weak.length) parts.push(`이 일이 쓰는 힘(${needs.map((g) => GROUP_PLAIN[g].name).join('·')})이 사주에 보통 수준으로 있습니다.`);
+    const env = jobEnv(a, cat.id, els);
+    const q = (e: Element) => `‘${env.find((x) => x.el === e)!.short}’`;
+    if (envGood.length) parts.push(`이 일의 ${envGood.map(q).join('·')} 쪽은 이 사주에 필요한 기운이라, 일할수록 기운이 채워지는 쪽입니다.`);
+    if (envBad.length) parts.push(`다만 ${envBad.map(q).join('·')} 쪽은 이 사주에 부담이 되는 기운이라, 그런 일이 몰릴수록 남보다 빨리 지치기 쉽습니다. 아래에 무엇이 왜 부담인지, 어떻게 하면 되는지 풀어 두었어요.`);
+    fit = {
+      score,
+      label,
+      text: parts.join(' '),
+      basis: `필요한 힘 ${needs.map((g) => `${g} ${gp[g].toFixed(0)}%`).join(' · ')}${els.length ? ` · 일의 오행 ${els.map((e) => `${ELEMENT_KO[e]}(${a.yongsin.roles[e]})`).join('·')}` : ''}`,
+      env,
+    };
   }
 
   // 살릴 강점: 가장 강한 기운 두 개

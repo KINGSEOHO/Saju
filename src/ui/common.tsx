@@ -1,5 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { BRANCHES, ELEMENT_HANJA, ELEMENT_KO, STEMS, type Element } from '../engine/index.ts';
+import { glossOf, glossSplit } from '../report/glossary.ts';
+
+export { GLOSSARY } from '../report/glossary.ts';
 
 export const EL_VAR: Record<Element, string> = {
   wood: 'var(--el-wood)',
@@ -73,28 +77,18 @@ export function Disclosure({ summary, children, defaultOpen = false }: { summary
   );
 }
 
-/** 호버/포커스 툴팁 */
-export function Tip({ content, children }: { content: ReactNode; children: ReactNode }) {
-  const [show, setShow] = useState(false);
-  return (
-    <span
-      className="relative inline-flex"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-      onFocus={() => setShow(true)}
-      onBlur={() => setShow(false)}
-    >
-      {children}
-      {show && (
-        <span
-          role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-max max-w-[16rem] -translate-x-1/2 rounded-lg bg-stone-900 px-3 py-2 text-xs leading-relaxed text-white shadow-lg dark:bg-stone-100 dark:text-stone-900"
-        >
-          {content}
-        </span>
-      )}
-    </span>
-  );
+/** 화면 위에 붙어 다니는 머리말(헤더 + 결과 탭 막대)의 높이 */
+export function stickyHeight(): number {
+  const head = document.querySelector<HTMLElement>('[data-sticky-head]')?.offsetHeight ?? 0;
+  const tabs = document.querySelector<HTMLElement>('[data-sticky-tabs]')?.offsetHeight ?? 0;
+  return head + tabs;
+}
+
+/** 요소의 시작이 머리말 바로 아래에 오도록 부드럽게 스크롤 */
+export function scrollToStart(el: HTMLElement | null | undefined, gap = 12) {
+  if (!el) return;
+  const top = el.getBoundingClientRect().top + window.scrollY - stickyHeight() - gap;
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }
 
 export const TONE_STYLE = {
@@ -104,32 +98,107 @@ export const TONE_STYLE = {
   neutral: { label: '해설', icon: '·', bar: 'bg-stone-300 dark:bg-stone-600', pill: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300' },
 } as const;
 
-/** 명리 용어 쉬운 풀이 (점선 밑줄 + 탭/호버 시 설명) */
-export const GLOSSARY: Record<string, string> = {
-  일간: '태어난 날의 천간. 사주에서 “나 자신”을 뜻하는 글자입니다.',
-  일주: '태어난 날의 기둥(천간+지지). 나와 배우자 자리를 봅니다.',
-  십성: '일간(나)을 기준으로 다른 글자와의 관계를 10가지로 나눈 것. 재물·직업·인간관계를 읽는 핵심 도구입니다.',
-  용신: '사주의 균형을 맞추기 위해 가장 필요한 기운. 이 기운이 들어오는 시기가 대체로 유리합니다.',
-  기신: '사주의 균형을 더 무너뜨리는 기운. 이 기운이 강한 시기는 조심하는 것이 좋습니다.',
-  대운: '10년 단위로 바뀌는 큰 운의 흐름입니다.',
-  세운: '해마다 바뀌는 그 해의 운입니다.',
-  월운: '절기(입춘·경칩 등) 기준으로 바뀌는 달의 운입니다.',
-  신강: '일간(나)의 힘이 강한 사주. 주도적이지만 고집이 세질 수 있습니다.',
-  신약: '일간(나)의 힘이 약한 사주. 협력·환경의 도움이 중요합니다.',
-  격국: '사주의 큰 틀(구조). 주로 태어난 달을 기준으로 정하며 적성을 볼 때 씁니다.',
-  신살: '특정 글자 조합에 붙는 별칭. 장단점이 함께 있는 보조 지표입니다.',
-  지장간: '지지(아래 글자) 속에 숨어 있는 천간. 겉으로 드러나지 않는 성향·잠재력입니다.',
-  오행: '목(나무)·화(불)·토(흙)·금(쇠)·수(물) 다섯 가지 기운입니다.',
-};
+/** 한 번에 하나의 풀이만 열어 둔다 */
+let closeOpenTerm: (() => void) | null = null;
 
-export function Term({ t, children }: { t: keyof typeof GLOSSARY | string; children?: ReactNode }) {
-  const desc = GLOSSARY[t];
-  if (!desc) return <>{children ?? t}</>;
+/**
+ * 사주 용어 — 점선 밑줄, 누르면(마우스는 올리면) 쉬운 풀이가 뜬다.
+ * 풀이 상자는 화면 밖으로 넘치지 않게 화면 기준으로 띄우고, 스크롤하면 닫는다.
+ */
+export function Term({ t, children }: { t: string; children?: ReactNode }) {
+  const hit = glossOf(t);
+  const ref = useRef<HTMLSpanElement>(null);
+  const id = useId();
+  const [box, setBox] = useState<{ left: number; top: number; up: boolean; w: number; pinned: boolean } | null>(null);
+  const close = useCallback(() => setBox(null), []);
+  useEffect(() => {
+    if (!box) return;
+    closeOpenTerm = close;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    const onDown = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) close();
+    };
+    window.addEventListener('scroll', close, { passive: true, capture: true });
+    window.addEventListener('resize', close);
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown);
+    return () => {
+      window.removeEventListener('scroll', close, { capture: true });
+      window.removeEventListener('resize', close);
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown);
+      if (closeOpenTerm === close) closeOpenTerm = null;
+    };
+  }, [box, close]);
+  if (!hit) return <>{children ?? t}</>;
+  const open = (pinned: boolean) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const w = Math.min(300, vw - 24);
+    const left = Math.min(Math.max(12, r.left + r.width / 2 - w / 2), vw - w - 12);
+    const up = r.top > window.innerHeight * 0.6;
+    if (closeOpenTerm && closeOpenTerm !== close) closeOpenTerm();
+    setBox({ left, top: up ? r.top - 8 : r.bottom + 8, up, w, pinned });
+  };
   return (
-    <Tip content={desc}>
-      <span tabIndex={0} className="cursor-help underline decoration-stone-400 decoration-dotted underline-offset-4 outline-none">
-        {children ?? t}
-      </span>
-    </Tip>
+    <span
+      ref={ref}
+      role="button"
+      tabIndex={0}
+      aria-expanded={!!box}
+      aria-describedby={box ? id : undefined}
+      onClick={(e) => {
+        // 체크박스 라벨·카드 안에서도 용어만 열리게
+        e.preventDefault();
+        e.stopPropagation();
+        if (box?.pinned) close();
+        else open(true);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (box) close();
+          else open(true);
+        }
+      }}
+      onPointerEnter={(e) => e.pointerType === 'mouse' && !box && open(false)}
+      onPointerLeave={(e) => e.pointerType === 'mouse' && box && !box.pinned && close()}
+      className="cursor-help underline decoration-stone-400 decoration-dotted underline-offset-[5px] outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-brand-300 dark:decoration-stone-500"
+    >
+      {children ?? t}
+      {box &&
+        createPortal(
+          <span
+            id={id}
+            role="tooltip"
+            style={{ left: box.left, top: box.top, width: box.w, transform: box.up ? 'translateY(-100%)' : undefined }}
+            className="pointer-events-none fixed z-50 block rounded-xl bg-stone-900 px-3.5 py-2.5 text-left text-[13px] leading-relaxed font-normal text-white shadow-xl dark:bg-stone-100 dark:text-stone-900"
+          >
+            <b className="mr-1 text-amber-300 dark:text-amber-700">{hit.key}</b>
+            {hit.desc}
+          </span>,
+          document.body,
+        )}
+    </span>
+  );
+}
+
+/** 글 속 사주 용어에 자동으로 밑줄을 긋는다(같은 용어는 처음 한 번만) */
+export function Gloss({ text, max }: { text: string; max?: number }) {
+  const parts = useMemo(() => glossSplit(text, max), [text, max]);
+  return (
+    <>
+      {parts.map((p, i) =>
+        typeof p === 'string' ? (
+          p
+        ) : (
+          <Term key={i} t={p.key}>
+            {p.text}
+          </Term>
+        ),
+      )}
+    </>
   );
 }
