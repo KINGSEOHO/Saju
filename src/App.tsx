@@ -386,9 +386,9 @@ function Result({ input }: { input: BirthInput }) {
           <CrossTabs a={a} report={report} tab={tab} />
         </Suspense>
       )}
-      {tab === 'webtoon' && (
+      {tab === 'webtoon' && report && (
         <Suspense fallback={<div className="card text-center text-sm text-stone-500">웹툰을 그리는 중…</div>}>
-          <WebtoonPanel a={a} />
+          <WebtoonPanel a={a} report={report} />
         </Suspense>
       )}
       {tab === 'luck' && <LuckPanel a={a} />}

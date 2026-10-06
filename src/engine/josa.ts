@@ -18,7 +18,7 @@ function hasBatchim(word: string): { has: boolean; rieul: boolean } {
 }
 
 /** josa('목', '을/를') → '목을' */
-export function josa(word: string, pair: '을/를' | '이/가' | '은/는' | '과/와' | '으로/로' | '이에요/예요' | '이라/라'): string {
+export function josa(word: string, pair: '을/를' | '이/가' | '은/는' | '과/와' | '으로/로' | '이에요/예요' | '이라/라' | '아/야' | '이랑/랑'): string {
   const { has, rieul } = hasBatchim(word);
   const [a, b] = pair.split('/');
   if (pair === '으로/로') return word + (has && !rieul ? a : b);
