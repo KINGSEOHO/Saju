@@ -11,6 +11,8 @@ import {
 import { josa } from '../engine/josa.ts';
 import { twelveSinsal } from '../engine/sinsal.ts';
 import { elementOfGroup, groupOf, groupOfElement } from '../engine/tenGods.ts';
+import { incomeRoute, investmentRisk, orgRatio as computeOrgRatio, wealthCapacity } from './metrics.ts';
+import { buildStories, readMinutes, type StoryPara } from './story.ts';
 import {
   DAY_MASTER, ELEMENT_JOBS, ELEMENT_ORGAN, GROUP_JOBS, GROUP_MISSING, SPOUSE_PALACE, STAGE_ON_DAY, TEN_GOD_TRAIT,
 } from './kb.ts';
@@ -44,6 +46,10 @@ export interface ReportSection {
   headline: string;
   blocks: ReportBlock[];
   timeline?: { title: string; items: YearSignal[] };
+  /** 이야기형 풀이 (긴 문단) */
+  story?: StoryPara[];
+  /** 이야기를 읽는 데 걸리는 대략적인 시간(분) */
+  readMinutes?: number;
 }
 export interface Report {
   sections: ReportSection[];
@@ -52,7 +58,7 @@ export interface Report {
 
 const S = (text: string, tone: Tone, evidence?: string, weight = 1, topic?: string): Statement => ({ text, tone, evidence, weight, topic });
 
-const GROUP_LUCK_THEME: Record<TenGodGroup, string> = {
+export const GROUP_LUCK_THEME: Record<TenGodGroup, string> = {
   비겁: '자기 주도·독립·경쟁의 흐름. 동료·형제·경쟁자 문제와 지출이 늘기 쉬움',
   식상: '표현·생산·변화의 흐름. 새로운 일과 창작, 이직 욕구가 커짐',
   재성: '재물·현실·활동의 흐름. 돈의 규모와 활동 반경이 커짐',
@@ -385,9 +391,7 @@ export function generateReport(a: SajuAnalysis): Report {
   // 3. 직업·이직
   // -------------------------------------------------------------------------
   const career: ReportSection = { id: 'career', title: '직업·이직', headline: '', blocks: [] };
-  const orgScore = gp['관성'] + gp['인성'] + tgc['정관'] * 4 + tgc['정인'] * 2;
-  const indScore = gp['식상'] + gp['비겁'] + tgc['편재'] * 4 + tgc['상관'] * 3;
-  const orgRatio = Math.round((orgScore / (orgScore + indScore)) * 100);
+  const orgRatio = computeOrgRatio(a);
   {
     const items: Statement[] = [];
     items.push(S(`${a.gyeokguk.name}: ${a.gyeokguk.description}`, 'neutral', `월지 ${BRANCHES[a.pillars.month.branch].hanja}에서 ${STEMS[a.gyeokguk.stem].hanja}(${a.gyeokguk.tenGod}) ${a.gyeokguk.transparent ? '투출' : '본기'}`));
@@ -505,18 +509,14 @@ export function generateReport(a: SajuAnalysis): Report {
   const jaeEl = elementOfGroup(dayEl, '재성');
   {
     const items: Statement[] = [];
-    let capacity: string;
-    if (strong && jae >= 15) {
-      capacity = '큼';
+    const capacity = wealthCapacity(a);
+    if (capacity === '큼') {
       items.push(S(`일간이 힘이 있고(${a.strength.level}) 재성도 갖춰져(${fmtPct(jae)}) 돈을 벌고 지키는 힘이 함께 있습니다(신왕재왕 경향). 기회가 왔을 때 규모를 키울 수 있는 구조입니다.`, 'positive', `${a.strength.level}, 재성 ${fmtPct(jae)}`, 3, 'jae'));
-    } else if (!strong && jae >= 28) {
-      capacity = '부담';
+    } else if (capacity === '부담') {
       items.push(S(`재성은 많은데 일간이 약해(재다신약) 돈이 눈앞에 보여도 내 것으로 만들기 어렵고, 돈 때문에 몸과 마음이 고생하기 쉽습니다. 큰돈보다 감당 가능한 규모를 꾸준히 지키는 것이 오히려 부자가 되는 길입니다.`, 'negative', `${a.strength.level}, 재성 ${fmtPct(jae)}`, 3, 'jae'));
-    } else if (jae < 8) {
-      capacity = '작음';
+    } else if (capacity === '작음') {
       items.push(S(`재성이 약해(${fmtPct(jae)}) 돈에 대한 감각과 모으는 힘이 약한 편입니다. 수입보다 “새지 않게 하는 구조”(자동 저축·위탁 관리)가 재산을 결정합니다.`, 'negative', `재성 ${fmtPct(jae)}`, 2.5, 'missing-재성'));
     } else {
-      capacity = '보통';
       items.push(S(`재물 그릇은 보통 수준입니다(재성 ${fmtPct(jae)}, ${a.strength.level}). 한 번에 크게 버는 구조보다 꾸준히 쌓는 구조에서 성과가 납니다.`, 'neutral', `재성 ${fmtPct(jae)}`));
     }
     if (gp['식상'] >= 15 && jae >= 12) items.push(S('식상생재: 기술·재능·콘텐츠를 돈으로 바꾸는 흐름이 있습니다. 내 능력을 상품화할수록 수입이 늘어납니다.', 'positive', `식상 ${fmtPct(gp['식상'])} → 재성 ${fmtPct(jae)}`));
@@ -539,7 +539,7 @@ export function generateReport(a: SajuAnalysis): Report {
   }
   {
     const items: Statement[] = [];
-    const route = (['식상', '관성', '인성', '비겁'] as TenGodGroup[]).sort((x, y) => gp[y] - gp[x])[0];
+    const route = incomeRoute(a);
     const ROUTE_TEXT: Record<string, string> = {
       식상: '기술·콘텐츠·서비스처럼 “내가 만들어 내는 것”의 대가로 돈이 들어오는 구조입니다. 결과물을 상품화하고 가격을 매기는 연습이 수입을 키웁니다.',
       관성: '직장·직위·조직이 주는 급여와 성과급이 주 수입원인 구조입니다. 몸값(연봉 협상·승진)을 관리하는 것이 곧 재테크입니다.',
@@ -567,7 +567,7 @@ export function generateReport(a: SajuAnalysis): Report {
       const jaePos = a.positions.filter((p) => p.gongmang && groupOfElement(dayEl, STEMS[mainStemOf(p.pillar.branch)].element) === '재성');
       if (jaePos.length) items.push(S('재성이 공망에 걸려 기대한 수익이 실속 없이 끝나는 일이 생기기 쉽습니다. 계약서·정산 확인을 철저히 하세요.', 'caution', '재성 공망'));
     }
-    const risk = (strong ? 1 : 0) + (jae >= 15 ? 1 : 0) + (gp['비겁'] < 28 ? 1 : 0) - (tgc['겁재'] > 0 && tgc['편재'] > 0 ? 1 : 0);
+    const risk = investmentRisk(a);
     items.push(
       S(
         risk >= 3
@@ -761,7 +761,13 @@ export function generateReport(a: SajuAnalysis): Report {
   }
   summary.headline = `${pillarHanja(a.pillars.day)}일주 · ${a.gyeokguk.name} · ${a.strength.level} · 용신 ${josa(elKo(a.yongsin.yongsin), '이/가')} 핵심`;
 
-  return { sections: [summary, personality, love, career, wealth, health], confidenceNotes };
+  const sections = [summary, personality, love, career, wealth, health];
+  const stories = buildStories(a, sections);
+  for (const sec of sections) {
+    sec.story = stories[sec.id];
+    sec.readMinutes = readMinutes(sec.story);
+  }
+  return { sections, confidenceNotes };
 }
 
 function pickDistinct<T extends Statement & { sec: string }>(arr: T[], n: number): T[] {
