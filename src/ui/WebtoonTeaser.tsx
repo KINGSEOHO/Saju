@@ -18,8 +18,8 @@ export default function WebtoonTeaser({ a, onOpen }: { a: SajuAnalysis; onOpen: 
       </div>
       <div className="min-w-0">
         <div className="text-xs font-bold text-amber-700 dark:text-amber-300">NEW · 명경사주에만 있는 기능</div>
-        <div className="mt-0.5 text-base font-extrabold sm:text-lg">내 사주로 그린 인생 웹툰</div>
-        <div className="mt-0.5 text-sm text-stone-600 dark:text-stone-400">1화 나라는 사람 · 2화 일과 나 · 3화 인생 연대기 →</div>
+        <div className="mt-0.5 text-base font-extrabold sm:text-lg">내 사주로 그린 개그 웹툰</div>
+        <div className="mt-0.5 text-sm text-stone-600 dark:text-stone-400">명경이가 내 사주를 탈탈 털어 준다 · 1화 나라는 사람 →</div>
       </div>
     </button>
   );

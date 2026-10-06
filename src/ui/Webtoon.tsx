@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FONT, PW, PanelArt, TextBeatArt } from '../comic/art.tsx';
 import { episodes } from '../comic/episodes.ts';
-import { isText, type Comic, type EpisodeId } from '../comic/types.ts';
+import { isText, type Comic, type EpisodeId, type Panel } from '../comic/types.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { send, sessionId } from '../lib/api.ts';
 import { downloadBlob, escXml, shareOrDownload, svgStringToPng } from '../lib/svgImage.ts';
@@ -42,7 +42,7 @@ export async function comicToPng(comic: Comic, els: SVGSVGElement[], site: strin
     .join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="${escXml(FONT)}">
 <rect width="${W}" height="${H}" fill="#fffdf8"/>
-<text x="${M}" y="38" font-size="15" font-weight="700" fill="#34518c">명경사주 · 사주로 그린 인생 웹툰</text>
+<text x="${M}" y="38" font-size="15" font-weight="700" fill="#34518c">명경사주 · 내 사주로 그린 개그 웹툰</text>
 <text x="${M}" y="78" font-size="29" font-weight="800" fill="#1c1917">${escXml(`${comic.no}화 · ${comic.title}`)}</text>
 <text x="${M}" y="106" font-size="16" fill="#57534e">${escXml(comic.subtitle)}</text>
 ${body}
@@ -52,6 +52,12 @@ ${body}
   // 아이폰 캔버스 한도(약 1,670만 화소) 안에서 가장 선명하게
   const scale = Math.min(2, Math.sqrt(15_000_000 / (W * H)));
   return svgStringToPng(svg, W, H, scale);
+}
+
+/** 화면 낭독기용 컷 설명 */
+function panelLabel(p: Panel): string {
+  const talk = p.split ? p.split.flatMap((h) => [h.label, ...h.talk.map((l) => l.text)]) : p.talk.map((l) => l.text);
+  return [p.cover?.title, p.cap, ...talk].filter(Boolean).join(' / ') || p.title;
 }
 
 export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report }) {
@@ -129,7 +135,7 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
       <SectionTitle
         kicker="명경사주에만 있는 기능"
         title="인생 웹툰"
-        desc="풀이 리포트를 바탕으로 그린 회차별 만화예요. 장면 하나하나가 사주의 구조에서 나왔고, 컷마다 왼쪽 아래에 근거를 적어 두었어요. 좋은 장면만 고르지 않고, 약점도 솔직하게 넣었습니다."
+        desc="내 사주로 그린 개그 웹툰이에요. 웃기게 그렸지만 장면의 뼈대는 모두 사주 구조에서 나왔고, 컷마다 왼쪽 아래에 근거를 적어 두었어요. 거울 요정 명경이는 좋은 말만 하지 않습니다."
       />
       <div className="grid grid-cols-2 gap-1 rounded-2xl border border-stone-200 bg-stone-50 p-1 sm:grid-cols-4 dark:border-stone-800 dark:bg-stone-900" role="tablist" aria-label="웹툰 회차">
         {TABS.map((t) => {
@@ -179,7 +185,7 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
               {comic.beats.map((b, i) => (
                 <figure key={`${comic.id}-${i}`} className="m-0">
                   <div className="overflow-hidden shadow-sm sm:rounded-[3px]">
-                    {isText(b) ? <TextBeatArt b={b} /> : <PanelArt p={b} label={[b.caption, ...b.lines.map((l) => l.text)].filter(Boolean).join(' / ') || b.title} />}
+                    {isText(b) ? <TextBeatArt b={b} /> : <PanelArt p={b} label={panelLabel(b)} />}
                   </div>
                   {notes && b.note && (
                     <figcaption className="mx-5 mt-2 rounded-xl bg-stone-50 px-4 py-3 text-sm leading-relaxed text-stone-700 sm:mx-0 dark:bg-stone-800/60 dark:text-stone-300">

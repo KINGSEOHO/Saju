@@ -5,20 +5,21 @@ import { STEMS, type Element, type SajuAnalysis, type TenGodGroup } from '../eng
 import { josa } from '../engine/josa.ts';
 import { groupOf } from '../engine/tenGods.ts';
 import type { CrossReport } from '../report/cross.ts';
-import type { Actor, Age, Beat, Bg, Face, Held, Line, Mood, Panel, PanelTone, Pose, PropSpec, Role, Shot, TextBeat, Wear } from './types.ts';
+import { EL_COLOR } from './toon.tsx';
+import type { Actor, Age, Beat, Bg, Face, Held, Line, Panel, PanelTone, Pose, PropSpec, Role, TextBeat, Wear } from './types.ts';
 
 /** 주인공 옷 색 = 일간 오행 */
-export const OUTFIT: Record<Element, string> = { wood: '#6cb27f', fire: '#ec7966', earth: '#e6b553', metal: '#9eaccc', water: '#5a8fd8' };
+export const OUTFIT: Record<Element, string> = EL_COLOR;
 /** 쉬운 말로 부르는 오행 */
 export const EL_WORD: Record<Element, string> = { wood: '나무', fire: '불', earth: '흙', metal: '쇠', water: '물' };
 export const GROUPS: TenGodGroup[] = ['비겁', '식상', '재성', '관성', '인성'];
 export const pct = (n: number) => `${n.toFixed(0)}%`;
 
 const CASUAL: Record<Element, [Wear, Wear]> = {
-  wood: ['knit', 'knit'],
+  wood: ['tee', 'cardigan'],
   fire: ['tee', 'tee'],
-  earth: ['knit', 'blouse'],
-  metal: ['shirt', 'blouse'],
+  earth: ['cardigan', 'cardigan'],
+  metal: ['shirt', 'shirt'],
   water: ['hoodie', 'hoodie'],
 };
 
@@ -38,26 +39,26 @@ export interface WorkSet {
 
 const desk = (x: number, extra: PropSpec[] = []): PropSpec[] => [{ kind: 'desk', x }, ...extra];
 const WORK: Record<string, Omit<WorkSet, 'id'>> = {
-  it: { kind: 'work', bg: 'office', wear: 'hoodie', held: 'laptop', props: desk(420, [{ kind: 'monitor', x: 450 }]), place: '사무실', task: '코드 리뷰' },
-  office: { kind: 'work', bg: 'office', wear: 'shirt', held: 'document', props: desk(420, [{ kind: 'laptop', x: 450 }]), place: '사무실', task: '보고서' },
-  finance: { kind: 'work', bg: 'office', wear: 'suit', held: 'document', props: desk(420, [{ kind: 'monitor', x: 450 }]), place: '사무실', task: '결산 자료' },
-  public: { kind: 'work', bg: 'office', wear: 'shirt', held: 'document', props: desk(420, [{ kind: 'papers', x: 460 }]), place: '사무실', task: '서류 검토' },
-  creative: { kind: 'work', bg: 'studio', wear: 'tee', held: 'tablet', props: [{ kind: 'easel', x: 470 }], place: '작업실', task: '시안 작업' },
-  medical: { kind: 'work', bg: 'hospital', wear: 'coat', held: 'notebook', props: [], place: '병원', task: '회진' },
+  it: { kind: 'work', bg: 'office', wear: 'hoodie', held: 'laptop', props: desk(470, [{ kind: 'monitor', x: 500 }]), place: '사무실', task: '코드 리뷰' },
+  office: { kind: 'work', bg: 'office', wear: 'shirt', held: 'document', props: desk(470), place: '사무실', task: '보고서' },
+  finance: { kind: 'work', bg: 'office', wear: 'suit', held: 'calculator', props: desk(470, [{ kind: 'monitor', x: 500 }]), place: '사무실', task: '결산 자료' },
+  public: { kind: 'work', bg: 'office', wear: 'shirt', held: 'document', props: desk(470, [{ kind: 'papers', x: 500, y: 330 }]), place: '사무실', task: '서류 검토' },
+  creative: { kind: 'work', bg: 'studio', wear: 'tee', held: 'tablet', props: [], place: '작업실', task: '시안 작업' },
+  medical: { kind: 'work', bg: 'hospital', wear: 'coat', held: 'document', props: [], place: '병원', task: '회진' },
   edu: { kind: 'work', bg: 'school', wear: 'cardigan', held: 'book', props: [], place: '교실', task: '수업 준비' },
   sales: { kind: 'work', bg: 'street', wear: 'suit', held: 'phone', props: [], place: '거래처', task: '고객 미팅' },
   business: { kind: 'work', bg: 'cafe', wear: 'shirt', held: 'tablet', props: [], place: '가게', task: '매출 정리' },
-  tech: { kind: 'work', bg: 'office', wear: 'track', held: 'document', props: desk(420, [{ kind: 'papers', x: 460 }]), place: '현장 사무실', task: '도면 검토' },
+  tech: { kind: 'work', bg: 'office', wear: 'shirt', held: 'document', props: desk(470), place: '현장 사무실', task: '도면 검토' },
   service: { kind: 'work', bg: 'cafe', wear: 'apron', held: 'coffee', props: [], place: '매장', task: '오픈 준비' },
-  travel: { kind: 'work', bg: 'city', wear: 'suit', held: 'bag', props: [], place: '현장', task: '일정 점검' },
-  property: { kind: 'work', bg: 'city', wear: 'shirt', held: 'document', props: [], place: '현장', task: '계약 준비' },
-  care: { kind: 'work', bg: 'cafe', wear: 'knit', held: 'notebook', props: [], place: '상담실', task: '상담 기록' },
-  sports: { kind: 'work', bg: 'gym', wear: 'track', held: 'notebook', props: [{ kind: 'dumbbell', x: 480 }], place: '센터', task: '수업' },
+  travel: { kind: 'work', bg: 'street', wear: 'suit', held: 'bag', props: [], place: '현장', task: '일정 점검' },
+  property: { kind: 'work', bg: 'street', wear: 'shirt', held: 'document', props: [], place: '현장', task: '계약 준비' },
+  care: { kind: 'work', bg: 'cafe', wear: 'cardigan', held: 'book', props: [], place: '상담실', task: '상담 기록' },
+  sports: { kind: 'work', bg: 'gym', wear: 'tee', held: 'document', props: [], place: '센터', task: '수업' },
   student: { kind: 'study', bg: 'school', wear: 'uniform', held: 'book', props: [], place: '학교', task: '과제' },
-  home: { kind: 'life', bg: 'home', wear: 'apron', held: 'notebook', props: [], place: '집', task: '살림' },
-  transition: { kind: 'life', bg: 'home', wear: 'tee', held: 'laptop', props: [], place: '집', task: '지원서 쓰기' },
+  home: { kind: 'life', bg: 'kitchen', wear: 'apron', held: 'bowl', props: [], place: '집', task: '살림' },
+  transition: { kind: 'life', bg: 'room', wear: 'tee', held: 'laptop', props: [], place: '집', task: '지원서 쓰기' },
   freelance: { kind: 'work', bg: 'cafe', wear: 'tee', held: 'laptop', props: [], place: '카페', task: '마감' },
-  other: { kind: 'work', bg: 'office', wear: 'shirt', held: 'document', props: desk(420, [{ kind: 'laptop', x: 450 }]), place: '일터', task: '업무' },
+  other: { kind: 'work', bg: 'office', wear: 'shirt', held: 'document', props: desk(470), place: '일터', task: '업무' },
   retired: { kind: 'life', bg: 'park', wear: 'cardigan', held: 'book', props: [], place: '동네', task: '하루 일과' },
 };
 
@@ -85,7 +86,7 @@ export interface Ctx {
   episode: 'persona' | 'work' | 'life' | 'mbti';
   me: (x: number, face: Face, pose: Pose, extra?: Partial<Actor>) => Actor;
   other: (role: Role, x: number, face: Face, pose: Pose, extra?: Partial<Actor>) => Actor;
-  mirror: (x: number, face: Face, extra?: Partial<Actor>) => Actor;
+  mirror: (x: number, face: Face, pose?: Pose, extra?: Partial<Actor>) => Actor;
 }
 
 function givenName(name: string): string {
@@ -112,12 +113,11 @@ export function makeCtx(a: SajuAnalysis, x: CrossReport | null, episode: Ctx['ep
   const young = age === 'kid' || age === 'teen';
   let id = job?.category.id ?? (young ? 'student' : age === 'senior' ? 'retired' : 'other');
   if (!WORK[id]) id = 'other';
-  const base = WORK[id];
-  const work: WorkSet = { id, ...base };
+  const work: WorkSet = { id, ...WORK[id] };
   if (id === 'student') {
     // 대학생·수험생은 교복 대신 후드티, 장소는 도서관
     if (age === 'adult' || age === 'senior') Object.assign(work, { bg: 'library', wear: 'hoodie', place: '도서관' });
-    else if (age === 'kid') Object.assign(work, { wear: 'kidtee' });
+    else if (age === 'kid') Object.assign(work, { wear: 'tee' });
   }
   const genderOf = (role: Role): 'male' | 'female' => {
     switch (role) {
@@ -129,6 +129,8 @@ export function makeCtx(a: SajuAnalysis, x: CrossReport | null, episode: Ctx['ep
         return male ? 'male' : 'female';
       case 'parent':
         return 'female';
+      case 'coworker':
+        return male ? 'female' : 'male';
       default:
         return a.pillars.day.stem % 2 === 0 ? 'male' : 'female';
     }
@@ -149,7 +151,7 @@ export function makeCtx(a: SajuAnalysis, x: CrossReport | null, episode: Ctx['ep
     el,
     work,
     episode,
-    me: (xx, face, pose, extra = {}) => ({ role: 'me', x: xx, face, pose, gender: male ? 'male' : 'female', outfit: color, age, ...extra }),
+    me: (xx, face, pose, extra = {}) => ({ role: 'me', x: xx, face, pose, gender: male ? 'male' : 'female', outfit: color, el, age, ...extra }),
     other: (role, xx, face, pose, extra = {}) => ({
       role,
       x: xx,
@@ -160,7 +162,7 @@ export function makeCtx(a: SajuAnalysis, x: CrossReport | null, episode: Ctx['ep
       ...(episode === 'work' && id === 'medical' && (role === 'boss' || role === 'coworker') ? { wear: 'coat' as const } : {}),
       ...extra,
     }),
-    mirror: (xx, face, extra = {}) => ({ role: 'mirror', x: xx, face, pose: 'idle', ...extra }),
+    mirror: (xx, face, pose = 'stand', extra = {}) => ({ role: 'mirror', x: xx, face, pose, ...extra }),
   };
 }
 
@@ -171,63 +173,77 @@ export const heySsi = (c: Ctx, text: string) => (c.ssi ? `${c.ssi}, ${text}` : t
 
 export const say = (by: number, text: string, kind: Line['kind'] = 'say', alt?: Line['alt']): Line => ({ by, text, kind, alt });
 export const think = (by: number, text: string, alt?: Line['alt']): Line => ({ by, text, kind: 'think', alt });
+export const shout = (by: number, text: string, alt?: Line['alt']): Line => ({ by, text, kind: 'shout', alt });
+export const whisper = (by: number, text: string, alt?: Line['alt']): Line => ({ by, text, kind: 'whisper', alt });
 
-export type Scene = Pick<Panel, 'bg' | 'actors' | 'lines'> & Partial<Pick<Panel, 'props' | 'sfx' | 'mood' | 'shot' | 'height' | 'zoom' | 'focus'>>;
+export type Scene = Pick<Panel, 'bg' | 'cast' | 'talk'> & Partial<Pick<Panel, 'props' | 'sfx' | 'marks' | 'shot' | 'h' | 'focus' | 'drama' | 'split'>>;
+
+const WORK_BG = new Set<Bg>(['office', 'officeNight', 'meeting']);
 
 /** 장면 배경(과 그 장면 속 나이)에 맞는 주인공 옷 */
 function wearFor(c: Ctx, bg: Bg, age: Age): Wear {
   const casual = CASUAL[c.el][c.male ? 0 : 1];
-  if (age === 'kid') return bg === 'bedroom' ? 'pajama' : 'kidtee';
   if (bg === 'bedroom') return 'pajama';
+  if (age === 'kid') return 'tee';
   if (age === 'teen') return bg === 'school' || bg === 'library' ? 'uniform' : 'hoodie';
   if (age === 'senior') return 'cardigan';
   const work = c.work;
   const now = age === c.age;
-  if (now && c.episode === 'work' && work.kind !== 'life' && (bg === work.bg || bg === 'office' || bg === 'officeNight')) return work.wear;
-  if (bg === 'office' || bg === 'officeNight') return now && work.kind === 'work' && (work.bg === 'office' || work.bg === 'city' || work.bg === 'street') ? work.wear : 'shirt';
+  if (now && c.episode === 'work' && work.kind !== 'life' && (bg === work.bg || WORK_BG.has(bg))) return work.wear;
+  if (WORK_BG.has(bg)) return now && work.kind === 'work' && (work.bg === 'office' || work.bg === 'street') ? work.wear : 'shirt';
   if (bg === 'hospital') return now && work.id === 'medical' ? 'coat' : casual;
   if (bg === 'studio' && now && work.id === 'creative') return work.wear;
   return casual;
 }
 
+const dressCast = (cast: Actor[], bg: Bg, c: Ctx): Actor[] => cast.map((x) => (x.role === 'me' && !x.wear ? { ...x, wear: wearFor(c, bg, x.age ?? c.age) } : x));
+
 /** 주인공 옷만 장면에 맞춘다 (인생 연대기처럼 장면마다 나이가 다른 경우) */
 export function dress(s: Scene, c: Ctx): Scene {
-  return { ...s, actors: s.actors.map((x) => (x.role === 'me' && !x.wear ? { ...x, wear: wearFor(c, s.bg, x.age ?? c.age) } : x)) };
+  const split = s.split?.map((h) => ({ ...h, cast: dressCast(h.cast, h.bg, c) })) as Panel['split'];
+  return { ...s, cast: dressCast(s.cast, s.bg, c), ...(split ? { split } : {}) };
 }
 
-/** 나이에 맞게 장면을 다듬는다: 10대 이하는 학교 장면으로, 65세 이상은 또래 인물로. 주인공 옷도 장면에 맞춘다 */
-export function adapt(s0: Scene, c: Ctx): Scene {
-  const pick = (l: Line) => (c.young ? l.alt?.young : c.senior ? l.alt?.senior : undefined) ?? l.text;
-  let s: Scene = { ...s0, lines: s0.lines.map((l) => ({ ...l, text: pick(l), alt: undefined })) };
-  if (c.senior) {
-    s = { ...s, actors: s.actors.map((x): Actor => (x.role === 'friend' || x.role === 'coworker' ? { ...x, role: 'elder', age: 'senior', gender: c.male ? 'male' : 'female' } : x)) };
-  } else if (c.young) {
-    const bg: Bg = s.bg === 'office' || s.bg === 'officeNight' ? 'school' : s.bg;
-    const actors = s.actors.map((x): Actor => {
+/** 나이에 맞게 대사·인물을 고른다 */
+function adaptCast(cast: Actor[], c: Ctx): Actor[] {
+  if (c.senior) return cast.map((x): Actor => (x.role === 'friend' || x.role === 'coworker' ? { ...x, role: 'elder', age: 'senior', gender: c.male ? 'male' : 'female' } : x));
+  if (c.young)
+    return cast.map((x): Actor => {
       if (x.role === 'boss') return { ...x, role: 'teacher' };
       if (x.role === 'coworker' || x.role === 'partner') return { ...x, role: 'friend', age: c.age, gender: c.male ? 'male' : 'female' };
       if (x.role === 'friend') return { ...x, age: c.age };
       return x;
     });
-    s = { ...s, bg, actors };
-  }
+  return cast;
+}
+
+const pickLine = (c: Ctx) => (l: Line): Line => ({ ...l, text: (c.young ? l.alt?.young : c.senior ? l.alt?.senior : undefined) ?? l.text, alt: undefined });
+
+/** 나이에 맞게 장면을 다듬는다: 10대 이하는 학교 장면으로, 65세 이상은 또래 인물로. 주인공 옷도 장면에 맞춘다 */
+export function adapt(s0: Scene, c: Ctx): Scene {
+  const bgOf = (bg: Bg): Bg => (c.young && WORK_BG.has(bg) ? 'school' : bg);
+  const split = s0.split?.map((h) => ({ ...h, bg: bgOf(h.bg), cast: adaptCast(h.cast, c), talk: h.talk.map(pickLine(c)) })) as Panel['split'];
+  const s: Scene = { ...s0, bg: bgOf(s0.bg), cast: adaptCast(s0.cast, c), talk: s0.talk.map(pickLine(c)), ...(split ? { split } : {}) };
   return dress(s, c);
 }
 
 /** 그림 컷 (나이에 맞게 다듬는다) */
-export function cut(c: Ctx, title: string, caption: string, scene: Scene, extra: Partial<Panel> = {}): Panel {
-  return { title, caption, ...adapt(scene, c), ...extra };
+export function cut(c: Ctx, title: string, cap: string, scene: Scene, extra: Partial<Panel> = {}): Panel {
+  return { title, ...(cap ? { cap } : {}), ...adapt(scene, c), ...extra };
 }
 
 /** 그림 컷 (장면 그대로, 옷만 맞춘다) */
-export function cutRaw(c: Ctx, title: string, caption: string, scene: Scene, extra: Partial<Panel> = {}): Panel {
+export function cutRaw(c: Ctx, title: string, cap: string, scene: Scene, extra: Partial<Panel> = {}): Panel {
   const s = dress(scene, c);
-  const lines = s.lines.map((l) => ({ ...l, alt: undefined }));
-  return { title, caption, ...s, lines, ...extra };
+  return { title, ...(cap ? { cap } : {}), ...s, talk: s.talk.map(pickLine(c)), ...extra };
 }
 
 /** 글 칸 */
 export const text = (t: string, style: TextBeat['style'] = 'plain', extra: Partial<TextBeat> = {}): TextBeat => ({ type: 'text', text: t, style, ...extra });
+/** 장 제목 */
+export const chapter = (no: string, t: string, extra: Partial<TextBeat> = {}): TextBeat => ({ type: 'text', text: t, style: 'chapter', no, title: t, ...extra });
+/** 시간 경과 */
+export const later = (t: string): TextBeat => ({ type: 'text', text: t, style: 'time', title: t });
 
 export function toneOf(score: number): PanelTone {
   return score >= 58 ? 'good' : score < 42 ? 'bad' : 'neutral';
@@ -253,7 +269,12 @@ export function phaseOf(a: SajuAnalysis) {
   return { d, g, tone, next, ng, ntone, switching, year };
 }
 
-/** 상반신·얼굴 컷을 줄여 쓰는 도구 */
-export const shot = (s: Shot, mood?: Mood): Pick<Scene, 'shot' | 'mood'> => (mood ? { shot: s, mood } : { shot: s });
+/** 다음 화 제목 (2화는 나이·직업에 따라 이름이 다르다) */
+export function workTitle(c: Ctx): string {
+  if (c.x?.job) return '일과 나';
+  if (c.work.kind === 'study') return '공부와 나';
+  if (c.senior) return '나의 하루';
+  return '일과 나';
+}
 
 export type { Beat };

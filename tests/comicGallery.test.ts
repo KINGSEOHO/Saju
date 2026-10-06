@@ -1,5 +1,5 @@
 /**
- * 웹툰 그림 갤러리 — 모든 표정·자세·옷·소품·배경·카메라를 렌더링해 예외 없이 그려지는지 확인한다.
+ * 웹툰 그림 갤러리 — 모든 표정·자세·소품·효과·장식·배경·소품·카메라를 렌더링해 예외 없이 그려지는지 확인한다.
  * COMIC_GALLERY=경로.html 을 주면 눈으로 확인할 수 있는 HTML 파일도 만든다.
  */
 import { writeFileSync } from 'node:fs';
@@ -8,173 +8,152 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { PanelArt, TextBeatArt } from '../src/comic/art.tsx';
-import type { Actor, Bg, Face, Fx, Held, Mood, Panel, Pose, PropSpec, Wear } from '../src/comic/types.ts';
+import type { Acc, Actor, Bg, Face, Fx, Held, MonsterKind, Panel, Pose, PropSpec, TextBeat } from '../src/comic/types.ts';
 
-const FACES: Face[] = ['neutral', 'smile', 'grin', 'laugh', 'sad', 'cry', 'angry', 'surprised', 'worried', 'determined', 'nervous', 'love', 'tired', 'proud', 'thinking', 'shock', 'shy', 'calm', 'annoyed', 'sparkle'];
-const POSES: Pose[] = ['idle', 'cheer', 'point', 'think', 'hold', 'wave', 'facepalm', 'fist', 'fighting', 'shrug', 'cross', 'cheeks', 'hips', 'scratch', 'mouth'];
-const WEARS: Wear[] = ['tee', 'shirt', 'suit', 'hoodie', 'knit', 'blouse', 'coat', 'apron', 'uniform', 'track', 'cardigan', 'dress', 'kidtee', 'pajama'];
-const HELD: Held[] = ['document', 'phone', 'book', 'money', 'trophy', 'coffee', 'gift', 'mic', 'heart', 'wallet', 'umbrella', 'brush', 'cake', 'certificate', 'notebook', 'drawing', 'coin', 'bag', 'laptop', 'tablet', 'flower'];
-const FX: Fx[] = ['sweat', 'anger', 'sparkle', 'hearts', 'gloom', 'exclaim', 'question', 'bulb', 'zzz', 'music', 'steam', 'flame', 'cloud', 'shine', 'tears', 'dots'];
-const BGS: Bg[] = ['office', 'officeNight', 'home', 'cafe', 'park', 'city', 'school', 'night', 'mountain', 'stage', 'library', 'dinner', 'crossroad', 'rain', 'sea', 'money', 'gym', 'bedroom', 'burst', 'gloom', 'sparkle', 'hospital', 'studio', 'street'];
-const MOODS: Mood[] = ['soft', 'sparkle', 'gloom', 'tone', 'lines', 'warm', 'cool', 'dark', 'flowers'];
-const PROPS: PropSpec['kind'][] = ['desk', 'papers', 'laptop', 'coins', 'moneyBag', 'chartUp', 'chartDown', 'books', 'signpost', 'bench', 'table', 'plant', 'boxes', 'calendar', 'clock', 'whiteboard', 'bed', 'dumbbell', 'easel', 'monitor'];
+const FACES: Face[] = ['plain', 'smile', 'happy', 'grin', 'smug', 'proud', 'surprised', 'shock', 'scream', 'sad', 'cry', 'angry', 'rage', 'dead', 'soul', 'star', 'money', 'love', 'blush', 'nervous', 'tired', 'sleep', 'think', 'serious', 'drool', 'blank'];
+const POSES: Pose[] = ['stand', 'wave', 'cheer', 'point', 'hold', 'think', 'cross', 'shrug', 'facepalm', 'fist', 'hips', 'run', 'jump', 'otl', 'lie', 'flat', 'sit', 'bow', 'beg', 'lift', 'phone'];
+const HELD: Held[] = ['phone', 'coffee', 'tea', 'document', 'docs', 'book', 'laptop', 'tablet', 'money', 'moneybag', 'wallet', 'card', 'mic', 'trophy', 'candle', 'magnifier', 'water', 'noodle', 'barbell', 'umbrella', 'calculator', 'paper', 'flag', 'cake', 'plant', 'globe', 'crayon', 'piggy', 'test', 'bag', 'box', 'sword', 'controller', 'plush', 'ticket', 'chicken', 'spoon', 'bowl', 'shovel', 'heart'];
+const FX: Fx[] = ['sweat', 'drops', 'vein', 'steam', 'gloom', 'sparkle', 'hearts', 'question', 'exclaim', 'bulb', 'bulbs', 'zzz', 'music', 'soul', 'aura', 'stars', 'shake', 'speed', 'moths', 'cloud', 'dots', 'lightning', 'fire'];
+const ACC: Acc[] = ['sunglasses', 'glasses', 'bandage', 'beard', 'cobweb', 'roots', 'nest', 'stone', 'zipper', 'headband', 'crown', 'halo', 'cape', 'wings', 'redface', 'darkcircles', 'cap'];
+const BGS: Bg[] = ['room', 'bedroom', 'office', 'officeNight', 'meeting', 'cafe', 'street', 'subway', 'park', 'school', 'library', 'gym', 'beach', 'mountain', 'night', 'rain', 'stage', 'shop', 'hospital', 'studio', 'map', 'dungeon', 'kitchen', 'white', 'speed', 'burst', 'gloom', 'sparkle', 'flame', 'dark', 'drama', 'space', 'flowers', 'lightning', 'blue'];
+const PROPS: PropSpec['kind'][] = ['desk', 'monitor', 'chair', 'sofa', 'bed', 'table', 'whiteboard', 'window', 'door', 'wall', 'tree', 'bench', 'signpost', 'calendar', 'clock', 'books', 'bookfort', 'papers', 'crumpled', 'boxes', 'bulbpile', 'coins', 'trash', 'plant', 'tv', 'podium', 'cage', 'wheel', 'chest', 'lockdoor', 'flag', 'gift'];
+const MONSTERS: MonsterKind[] = ['slime', 'ghost', 'golem', 'dragon', 'bat'];
+const ELS = ['wood', 'fire', 'earth', 'metal', 'water'] as const;
+const COLORS = ['#7cc68d', '#f2836b', '#f0c25e', '#b9c4da', '#6aa1e6'];
 
 const chunk = <T>(xs: T[], n: number) => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
-const me = (x: number, extra: Partial<Actor> = {}): Actor => ({ role: 'me', x, face: 'smile', pose: 'idle', gender: 'male', outfit: '#ec7966', ...extra });
-const panel = (title: string, actors: Actor[], extra: Partial<Panel> = {}): Panel => ({ title, bg: 'home', caption: title, actors, lines: [], basis: '갤러리', ...extra });
+const me = (x: number, extra: Partial<Actor> = {}): Actor => ({ role: 'me', x, face: 'smile', pose: 'stand', gender: 'male', outfit: '#f2836b', el: 'fire', ...extra });
+const panel = (title: string, cast: Actor[], extra: Partial<Panel> = {}): Panel => ({ title, bg: 'room', cap: title, cast, talk: [], basis: '갤러리', ...extra });
 
 export function galleryPanels(): Panel[] {
   const out: Panel[] = [];
-  // 표정 — 얼굴 클로즈업 (남·여 번갈아)
+  // 표정 — 얼굴 클로즈업 (남·여, 오행 번갈아)
   FACES.forEach((f, i) =>
-    out.push(panel(`표정 ${f}`, [me(300, { face: f, gender: i % 2 ? 'female' : 'male', outfit: ['#6cb27f', '#ec7966', '#e6b553', '#9eaccc', '#5a8fd8'][i % 5], front: true })], { shot: 'close', mood: 'soft', caption: f })),
+    out.push(panel(`표정 ${f}`, [me(300, { face: f, gender: i % 2 ? 'female' : 'male', el: ELS[i % 5], outfit: COLORS[i % 5], front: true })], { shot: 'face', bg: 'white', cap: f, h: 300 })),
   );
   // 자세 — 전신 3명씩
-  chunk(POSES, 3).forEach((ps, i) => out.push(panel(`자세 ${i + 1}: ${ps.join(', ')}`, ps.map((p, k) => me(110 + k * 190, { pose: p, face: 'grin', gender: k % 2 ? 'female' : 'male' })), { bg: 'park' })));
-  // 옷 — 3명씩
-  chunk(WEARS, 3).forEach((ws, i) =>
-    out.push(panel(`옷 ${i + 1}: ${ws.join(', ')}`, ws.map((w, k) => me(110 + k * 190, { wear: w, face: 'smile', gender: k === 1 ? 'female' : 'male', age: w === 'kidtee' ? 'kid' : w === 'uniform' ? 'teen' : 'adult', outfit: ['#5a8fd8', '#ec7966', '#6cb27f'][k] })), { bg: 'office' })),
-  );
-  // 나이·성별
-  out.push(panel('나이 (남): kid · teen · adult · senior', (['kid', 'teen', 'adult', 'senior'] as const).map((age, k) => me(80 + k * 147, { age, face: 'smile' })), { bg: 'park' }));
-  out.push(panel('나이 (여): kid · teen · adult · senior', (['kid', 'teen', 'adult', 'senior'] as const).map((age, k) => me(80 + k * 147, { age, gender: 'female', face: 'grin', outfit: '#5a8fd8' })), { bg: 'park' }));
-  // 역할
-  out.push(
-    panel(
-      '역할: partner · friend · boss · coworker (여)',
-      (['partner', 'friend', 'boss', 'coworker'] as const).map((role, k) => ({ role, x: 80 + k * 147, face: 'smile', pose: 'idle', gender: 'female' }) as Actor),
-      { bg: 'city' },
-    ),
-  );
-  out.push(
-    panel(
-      '역할: partner · friend · boss · coworker (남)',
-      (['partner', 'friend', 'boss', 'coworker'] as const).map((role, k) => ({ role, x: 80 + k * 147, face: 'smile', pose: 'idle', gender: 'male' }) as Actor),
-      { bg: 'city' },
-    ),
-  );
-  out.push(
-    panel(
-      '역할: parent · teacher · child · elder',
-      (['parent', 'teacher', 'child', 'elder'] as const).map((role, k) => ({ role, x: 80 + k * 147, face: 'smile', pose: 'idle', gender: k === 1 ? 'male' : 'female', age: role === 'child' ? 'kid' : role === 'elder' ? 'senior' : 'adult' }) as Actor),
-      { bg: 'home' },
-    ),
-  );
-  out.push(
-    panel('역할 (남): parent · teacher · elder + 명경이', [
-      { role: 'parent', x: 80, face: 'smile', pose: 'idle', gender: 'male' },
-      { role: 'teacher', x: 230, face: 'smile', pose: 'idle', gender: 'female' },
-      { role: 'elder', x: 380, face: 'laugh', pose: 'idle', gender: 'male', age: 'senior' },
-      { role: 'mirror', x: 520, face: 'smile', pose: 'idle' },
-    ]),
+  chunk(POSES, 3).forEach((ps, i) => out.push(panel(`자세 ${i + 1}: ${ps.join(', ')}`, ps.map((p, k) => me(110 + k * 190, { pose: p, face: 'grin', gender: k % 2 ? 'female' : 'male', el: ELS[k] })), { bg: 'park' })));
+  // 오행 마크 상태
+  (['normal', 'wilt', 'flare', 'jump', 'off'] as const).forEach((sym) =>
+    out.push(panel(`오행 마크 ${sym}`, ELS.map((el, k) => me(64 + k * 118, { el, sym, outfit: COLORS[k], scale: 0.78, face: sym === 'wilt' ? 'sad' : 'smile' })), { bg: 'white' })),
   );
   // 소품
-  chunk(HELD, 3).forEach((hs, i) =>
-    out.push(panel(`소품 ${i + 1}: ${hs.join(', ')}`, hs.map((h, k) => me(110 + k * 190, { pose: h === 'umbrella' || h === 'mic' ? 'wave' : 'hold', held: h, face: 'smile' })), { bg: 'cafe' })),
+  chunk(HELD, 4).forEach((hs, i) =>
+    out.push(panel(`소품 ${i + 1}: ${hs.join(', ')}`, hs.map((h, k) => me(80 + k * 147, { pose: h === 'docs' || h === 'globe' || h === 'barbell' ? 'lift' : h === 'umbrella' || h === 'mic' ? 'wave' : 'hold', held: h, face: 'smile', scale: 0.85, heldLabel: h === 'test' ? '100' : undefined })), { bg: 'cafe' })),
   );
   // 효과
-  chunk(FX, 3).forEach((fs, i) => out.push(panel(`효과 ${i + 1}: ${fs.join(', ')}`, fs.map((f, k) => me(110 + k * 190, { fx: [f], face: 'surprised' })), { bg: 'burst', caption: '' })));
+  chunk(FX, 3).forEach((fs, i) => out.push(panel(`효과 ${i + 1}: ${fs.join(', ')}`, fs.map((f, k) => me(110 + k * 190, { fx: [f], face: f === 'soul' ? 'soul' : 'surprised', held: f === 'moths' ? 'wallet' : undefined, pose: f === 'moths' ? 'hold' : f === 'speed' ? 'run' : 'stand' })), { bg: 'white', cap: '' })));
+  // 장식
+  chunk(ACC, 3).forEach((as, i) => out.push(panel(`장식 ${i + 1}: ${as.join(', ')}`, as.map((x, k) => me(110 + k * 190, { acc: [x], face: 'plain', gender: k === 1 ? 'female' : 'male' })), { bg: 'room' })));
+  // 나이·성별
+  out.push(panel('나이 (남): kid · teen · adult · senior', (['kid', 'teen', 'adult', 'senior'] as const).map((age, k) => me(80 + k * 147, { age, face: 'smile', wear: age === 'teen' ? 'uniform' : age === 'senior' ? 'cardigan' : 'tee' })), { bg: 'park' }));
+  out.push(panel('나이 (여): kid · teen · adult · senior', (['kid', 'teen', 'adult', 'senior'] as const).map((age, k) => me(80 + k * 147, { age, gender: 'female', face: 'grin', outfit: '#6aa1e6', el: 'water', wear: age === 'teen' ? 'uniform' : age === 'senior' ? 'cardigan' : 'tee' })), { bg: 'park' }));
+  // 역할
+  for (const g of ['female', 'male'] as const) {
+    out.push(panel(`역할 (${g}): partner · friend · boss · coworker`, (['partner', 'friend', 'boss', 'coworker'] as const).map((role, k) => ({ role, x: 80 + k * 147, face: 'smile', pose: 'stand', gender: g }) as Actor), { bg: 'street' }));
+    out.push(panel(`역할 (${g}): parent · teacher · child · elder`, (['parent', 'teacher', 'child', 'elder'] as const).map((role, k) => ({ role, x: 80 + k * 147, face: 'smile', pose: 'stand', gender: g, age: role === 'child' ? 'kid' : role === 'elder' ? 'senior' : 'adult' }) as Actor), { bg: 'room' }));
+  }
+  // 옷
+  chunk(['tee', 'shirt', 'suit', 'hoodie', 'coat', 'apron', 'uniform', 'pajama', 'cardigan', 'armor'] as const, 4).forEach((ws, i) =>
+    out.push(panel(`옷 ${i + 1}: ${ws.join(', ')}`, ws.map((w, k) => me(80 + k * 147, { wear: w, face: 'smile', gender: k % 2 ? 'female' : 'male', outfit: COLORS[k], el: ELS[k] })), { bg: 'office' })),
+  );
+  // 명경이
+  out.push(
+    panel('명경이 표정·자세', (['smile', 'smug', 'shock', 'angry', 'happy'] as const).map((f, k) => ({ role: 'mirror', x: 64 + k * 118, face: f, pose: (['stand', 'point', 'cheer', 'cross', 'hold'] as const)[k], held: k === 4 ? 'mic' : undefined, scale: 0.9 }) as Actor), { bg: 'sparkle' }),
+  );
+  // 몬스터
+  out.push(panel('몬스터', MONSTERS.map((m, k) => ({ role: 'monster', monster: m, x: 64 + k * 118, face: k % 2 ? 'angry' : 'plain', pose: 'stand', scale: 0.62, tag: m }) as Actor), { bg: 'dungeon' }));
+  // 배경
+  BGS.forEach((bg) => out.push(panel(`배경 ${bg}`, [me(420, { face: 'plain', dir: -1 })], { bg, cap: bg, h: 360 })));
+  // 소품
+  chunk(PROPS, 2).forEach((ps, i) =>
+    out.push(panel(`소품 ${i + 1}: ${ps.join(', ')}`, [], { bg: 'white', props: ps.map((kind, k) => ({ kind, x: 160 + k * 280, y: kind === 'calendar' ? 200 : kind === 'whiteboard' ? 180 : kind === 'clock' ? 120 : undefined, label: '라벨', label2: '둘째' })), h: 380, cap: '' })),
+  );
+  // 글자 소품
+  out.push(panel('상태창·처방전', [me(130, { face: 'smug' })], { bg: 'map', props: [{ kind: 'status', x: 420, y: 60, rows: ['이름: 서호', '직업: 개발자', '현재 대운: 丙午 (재성)', '버프: 수입 운 ↑'] }] }));
+  out.push(panel('처방전', [{ role: 'mirror', x: 120, face: 'smug', pose: 'point' }], { bg: 'room', props: [{ kind: 'rx', x: 400, y: 70, rows: ['용신: 물(水)', '복용법: 하루 7시간 숙면', '주의: 밤샘 금지'] }] }));
+  out.push(panel('그래프·점수판', [], { bg: 'white', props: [{ kind: 'graph', x: 170, y: 60, values: [44, 61, 52] }, { kind: 'score', x: 450, y: 80, label: '사주 궁합', label2: '84점' }], cap: '' }));
+  out.push(panel('휴대폰·배터리·구름동전', [], { bg: 'white', props: [{ kind: 'phonebig', x: 150, y: 40, label: '알림', rows: ['월급 입금 +300만', '카드 결제 -120만', '카드 결제 -180만'] }, { kind: 'battery', x: 420, y: 120, values: [3] }, { kind: 'cloudcoin', x: 420, y: 300 }], cap: '' }));
+  out.push(panel('아이템 상점', [{ role: 'mirror', x: 520, face: 'happy', pose: 'hold' }], { bg: 'shop', props: [{ kind: 'shelf', x: 240, y: 90, w: 440, rows: ['검정·남색', '북쪽 산책', '검은콩', '물병', '숙면'] }] }));
   // 카메라
   out.push({
     title: '상반신 대화',
     bg: 'cafe',
     shot: 'bust',
-    caption: '상반신 컷 — 두 사람이 마주 본다',
-    actors: [me(150, { face: 'grin', pose: 'hold', held: 'coffee' }), { role: 'friend', x: 450, face: 'surprised', pose: 'idle', gender: 'female', dir: -1 }],
-    lines: [
-      { by: 1, text: '진짜? 벌써 다 정했어?' },
-      { by: 0, text: '응, 코스는 내가 다 짜 왔지!' },
+    cast: [me(160, { face: 'grin', pose: 'point' }), { role: 'friend', x: 450, face: 'shock', pose: 'stand', gender: 'female', dir: -1 }],
+    talk: [
+      { by: 0, text: '이번엔 진짜 세계 일주 간다!' },
+      { by: 1, text: '지난주엔 창업한다며?!', kind: 'shout' },
     ],
-    basis: '일간 갑목',
+    basis: '갤러리',
   });
   out.push({
-    title: '클로즈업 독백',
-    bg: 'bedroom',
-    shot: 'close',
-    caption: '하지만 속마음은…',
-    actors: [me(220, { face: 'worried', dir: 1, gender: 'female', outfit: '#5a8fd8' })],
-    lines: [{ by: 0, text: '(혹시 내가 너무 앞서간 걸까…)', kind: 'think' }],
-  });
-  out.push({ title: '눈 클로즈업', bg: 'night', shot: 'eyes', caption: '', actors: [me(300, { face: 'determined', front: true })], lines: [], sfx: [{ text: '번쩍!', x: 500, y: 70, color: '#ffd84d' }] });
-  out.push({
-    title: '명경이 등장',
-    bg: 'home',
-    shot: 'bust',
-    mood: 'sparkle',
-    caption: '그때, 거울 속 명경이가 말을 걸었다',
-    actors: [me(190, { face: 'surprised', gender: 'female', outfit: '#6cb27f' }), { role: 'mirror', x: 450, face: 'smile', pose: 'idle', dir: -1 }],
-    lines: [{ by: 1, text: '안녕! 나는 네 사주를 비추는 거울, 명경이야.' }],
+    title: '얼굴 컷 + 극화체',
+    bg: 'drama',
+    shot: 'face',
+    drama: true,
+    cast: [me(300, { face: 'serious', front: true })],
+    talk: [{ by: 0, text: '…1픽셀.' }],
+    cap: '그 순간, 나는 보았다.',
+    basis: '갤러리',
   });
   out.push({
-    title: '표지',
-    bg: 'home',
-    caption: '',
-    actors: [me(410, { face: 'grin', dir: -1, wear: 'hoodie', front: false })],
-    lines: [],
-    cover: { kicker: '1화', title: '나라는 사람', tagline: '갑목 — 방향이 정해지면 일단 직진하는 사람' },
-  });
-  for (const m of MOODS) out.push({ title: `감정 배경 ${m}`, bg: 'home', mood: m, shot: 'bust', caption: `감정 배경 ${m}`, actors: [me(300, { face: m === 'gloom' || m === 'tone' ? 'sad' : 'smile', front: true })], lines: [] });
-  for (const bg of BGS) {
-    out.push({
-      title: bg,
-      bg,
-      tone: bg === 'gloom' ? 'bad' : 'good',
-      caption: `배경 ${bg} — 내레이션은 이렇게 두 줄까지 들어갑니다. 길게 써도 줄바꿈이 됩니다.`,
-      actors: [me(200, { face: 'grin', pose: 'wave' }), { role: 'friend', x: 420, face: 'surprised', pose: 'idle', gender: 'male', dir: -1 }],
-      lines: [
-        { by: 0, text: '안녕! 오늘 날씨 정말 좋다.' },
-        { by: 1, text: '벌써 왔어?!', kind: 'shout' },
-      ],
-      basis: `배경 ${bg}`,
-    });
-  }
-  chunk(PROPS, 3).forEach((ps, i) =>
-    out.push({ title: `무대 소품 ${i + 1}`, bg: 'home', caption: `무대 소품: ${ps.join(', ')}`, actors: [], lines: [], props: ps.map((k, j) => ({ kind: k, x: 110 + j * 190, label: '안정', label2: '도전' })) }),
-  );
-  out.push({
-    title: '책상 장면',
-    bg: 'officeNight',
-    caption: '책상 뒤에 선 인물 + 생각 풍선',
-    actors: [me(300, { face: 'tired', pose: 'facepalm', fx: ['cloud'], wear: 'shirt' })],
-    lines: [{ by: 0, text: '숨 좀 쉬고 싶다… 오늘도 야근이네', kind: 'think' }],
-    props: [{ kind: 'desk', x: 300 }, { kind: 'papers', x: 210 }, { kind: 'monitor', x: 380 }],
-    badge: '버티는 시기',
-    basis: '관성 38%',
+    title: '극화체 전신',
+    bg: 'office',
+    drama: true,
+    cast: [me(200, { face: 'angry', pose: 'point' }), { role: 'boss', x: 440, face: 'shock', pose: 'stand', gender: 'male', dir: -1 }],
+    talk: [{ by: 0, text: '부장님, 그 방식은 틀렸습니다!', kind: 'shout' }],
+    basis: '갤러리',
   });
   out.push({
-    title: '저녁 데이트',
-    bg: 'dinner',
-    caption: '두 사람이 테이블 양쪽에',
-    actors: [me(150, { face: 'love', pose: 'cheeks' }), { role: 'partner', x: 450, face: 'shy', pose: 'idle', gender: 'female', dir: -1, fx: ['hearts'] }],
-    lines: [
-      { by: 1, text: '우리 앞으로도 함께하자.' },
-      { by: 0, text: '응, 좋아!' },
+    title: '효과음·주석',
+    bg: 'street',
+    cast: [me(300, { face: 'dead', pose: 'lie', fx: ['stars'] })],
+    talk: [],
+    sfx: [{ text: '털썩', x: 470, y: 160, size: 56 }],
+    marks: [{ text: '본인 맞음', x: 160, y: 140, to: [260, 300] }],
+    basis: '갤러리',
+  });
+  out.push({
+    title: '기대 vs 현실',
+    bg: 'white',
+    cast: [],
+    talk: [],
+    split: [
+      { label: '남들이 보는 나', bg: 'office', cast: [me(150, { face: 'proud', pose: 'hold', held: 'document', wear: 'suit', acc: ['halo'] })], talk: [{ by: 0, text: '맡겨만 주세요.' }] },
+      { label: '실제 나', bg: 'bedroom', cast: [me(150, { face: 'soul', pose: 'stand', wear: 'pajama', fx: ['soul'] })], talk: [{ by: 0, text: '(아무것도 하기 싫다…)', kind: 'think' }] },
     ],
-    props: [{ kind: 'table', x: 300 }],
-    badge: '지금 여기!',
-    basis: '일지합',
+    basis: '월간 정관 · 일지 식신',
   });
+  out.push({ title: '표지', bg: 'burst', cast: [me(430, { face: 'grin', pose: 'hips', dir: -1, el: 'wood', outfit: '#7cc68d' })], talk: [], cover: { kicker: '1화', title: '나라는 사람', tagline: '갑목(甲木) — 직진밖에 모르는 사람' } });
   return out;
 }
 
-describe('웹툰 그림', () => {
-  it('모든 표정·자세·옷·소품·배경·카메라가 예외 없이 그려진다', () => {
-    const panels = galleryPanels();
-    const svgs = panels.map((p) => renderToStaticMarkup(createElement(PanelArt, { p })));
-    svgs.push(renderToStaticMarkup(createElement(TextBeatArt, { b: { type: 'text', text: '하지만… 솔직히 말하면, 나에게도 약점은 있었다.', style: 'dark' } })));
-    svgs.push(renderToStaticMarkup(createElement(TextBeatArt, { b: { type: 'text', text: '그날 밤.', style: 'plain' } })));
-    for (const s of svgs) {
-      expect(s.startsWith('<svg')).toBe(true);
+const beats: TextBeat[] = [
+  { type: 'text', text: '제1장 · 타고난 기질', style: 'chapter', no: '1' },
+  { type: 'text', text: '3시간 후…', style: 'time' },
+  { type: 'text', text: '그날, 나는 깨달았다.\n나무는 돌아가지 않는다는 것을.', style: 'black' },
+  { type: 'text', text: '사주는 정해진 운명이 아니라 흐름의 지도다.', style: 'soft' },
+];
+
+describe('웹툰 그림 갤러리', () => {
+  it('모든 표정·자세·소품·효과·배경을 예외 없이 그린다', () => {
+    const svgs = galleryPanels().map((p) => renderToStaticMarkup(createElement(PanelArt, { p })));
+    const texts = beats.map((b) => renderToStaticMarkup(createElement(TextBeatArt, { b })));
+    for (const s of [...svgs, ...texts]) {
+      expect(s).toMatch(/^<svg/);
       expect(s).not.toMatch(/NaN|undefined|Infinity/);
     }
     const out = process.env.COMIC_GALLERY;
     if (out) {
-      const titles = [...panels.map((p) => p.title), '글 칸 dark', '글 칸 plain'];
       const font = resolve('node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2');
-      const html = `<!doctype html><meta charset="utf-8"><style>@font-face{font-family:'Pretendard Variable';font-weight:45 920;src:url('file://${font}') format('woff2-variations')}body{margin:0;background:#ddd;font-family:sans-serif}.g{display:grid;grid-template-columns:repeat(2,600px);gap:16px;padding:16px;align-items:start}figure{margin:0;background:#fff}figcaption{font-size:12px;padding:4px}</style><div class="g">${svgs
-        .map((s, i) => `<figure id="p${i}">${s}<figcaption>${i}. ${titles[i]}</figcaption></figure>`)
-        .join('')}</div>`;
-      writeFileSync(out, html);
+      const panels = galleryPanels();
+      writeFileSync(
+        out,
+        `<!doctype html><meta charset="utf-8"><style>@font-face{font-family:'Pretendard Variable';font-weight:45 920;src:url('file://${font}') format('woff2-variations')}body{margin:0;background:#ccc;font-family:sans-serif}.g{display:grid;grid-template-columns:repeat(2,600px);gap:10px;padding:10px;align-items:start}figure{margin:0;background:#fff}figcaption{font-size:12px;padding:4px}</style><div class="g">${[...svgs, ...texts]
+          .map((s, i) => `<figure id="p${i}">${s}<figcaption>${i < panels.length ? panels[i].title : beats[i - panels.length].text}</figcaption></figure>`)
+          .join('')}</div>`,
+      );
     }
   });
 });
