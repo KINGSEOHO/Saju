@@ -69,7 +69,8 @@ describe('MBTI × 사주 · 직업 · 교차 검증', () => {
       expect(x.themes.length).toBeGreaterThanOrEqual(2);
       expect(x.card.headline.length).toBeGreaterThan(8);
       expect(x.card.tags).toHaveLength(3);
-      expect(x.card.cards.length).toBe(4 + (input.mbti ? 1 : 0) + (input.job ? 1 : 0));
+      expect(x.card.cards.length).toBe(5 + (input.mbti ? 1 : 0) + (input.job ? 1 : 0));
+      expect(x.tti.name).toMatch(/띠$/);
       const text = JSON.stringify(x);
       expect(text, input.job).not.toMatch(BAD_TEXT);
       if (input.mbti) {
@@ -108,5 +109,37 @@ describe('MBTI × 사주 · 직업 · 교차 검증', () => {
       const [x, y] = [k[0], k[1]];
       expect(Math.min(side[x], side[y]) / Math.max(side[x], side[y]), k).toBeGreaterThan(0.6);
     }
+  });
+});
+
+describe('띠', () => {
+  const base = { gender: 'male', calendar: 'solar', hour: 12, minute: 0, longitude: 126.978, timeZone: 'Asia/Seoul', timeCorrection: 'mean', ziHourRule: 'traditional' } as const;
+  it('입춘 기준으로 띠가 바뀌고, 설날 기준과 다르면 안내한다', () => {
+    // 1990-01-20: 입춘 전·설날(1/27) 전 → 사주·설날 모두 뱀띠(己巳년)
+    const a1 = analyze({ ...base, year: 1990, month: 1, day: 20 } as BirthInput, NOW);
+    const r1 = crossReport(a1, generateReport(a1));
+    expect(r1.tti.name).toBe('뱀띠');
+    expect(r1.tti.lunarNote).toBeNull();
+    // 1990-02-01: 설날(1/27) 지남 → 설날 기준 말띠, 입춘(2/4) 전 → 사주는 뱀띠
+    const a2 = analyze({ ...base, year: 1990, month: 2, day: 1 } as BirthInput, NOW);
+    const r2 = crossReport(a2, generateReport(a2));
+    expect(r2.tti.name).toBe('뱀띠');
+    expect(r2.tti.lunarNote).toContain('말띠');
+  });
+  it('2026년(병오년, 말띠 해) 관계: 양띠 눌삼재+육합, 쥐띠 충, 호랑이띠 삼합', () => {
+    const at = (y: number) => {
+      const a = analyze({ ...base, year: y, month: 6, day: 1 } as BirthInput, NOW);
+      return crossReport(a, generateReport(a)).tti;
+    };
+    const yang = at(1991); // 辛未 양띠
+    expect(yang.name).toBe('양띠');
+    expect(yang.thisYear.samjae).toBe('눌삼재');
+    expect(yang.thisYear.relation).toBe('육합');
+    const rat = at(1996); // 丙子 쥐띠
+    expect(rat.thisYear.relation).toBe('충');
+    const tiger = at(1998); // 戊寅 호랑이띠
+    expect(tiger.thisYear.relation).toBe('삼합');
+    expect(tiger.thisYear.samjae).toBeNull();
+    expect(tiger.best).toEqual(['말띠', '개띠', '돼지띠']);
   });
 });

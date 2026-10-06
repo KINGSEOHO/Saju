@@ -6,6 +6,7 @@ import { SYSTEM_LABEL, type CrossReport, type ThemeResult } from '../report/cros
 import { JOB_SUGGEST } from '../report/job.ts';
 import { AXES, AXIS_INFO, MBTI_LIST, MBTI_PROFILE, sajuAxes } from '../report/mbti.ts';
 import { IdentityCardView } from './IdentityCard.tsx';
+import { JobPicker } from './JobPicker.tsx';
 import { SectionTitle } from './common.tsx';
 
 function setExtras(input: BirthInput, patch: Partial<Pick<BirthInput, 'mbti' | 'job'>>) {
@@ -35,15 +36,7 @@ export function ExtrasForm({ input, focus }: { input: BirthInput; focus?: 'mbti'
           ))}
         </select>
       </label>
-      <label className="block">
-        <span className="mb-1 block text-sm font-semibold">직업·하는 일</span>
-        <input className="field" list="job-suggest-r" value={job} onChange={(e) => setJob(e.target.value)} maxLength={30} placeholder="예: 개발자, 간호사, 대학생" autoFocus={focus === 'job'} autoComplete="off" />
-        <datalist id="job-suggest-r">
-          {JOB_SUGGEST.map((j) => (
-            <option key={j} value={j} />
-          ))}
-        </datalist>
-      </label>
+      <JobPicker value={job} onChange={setJob} onPick={(j) => setExtras(input, { mbti: mbti || undefined, job: j })} autoFocus={focus === 'job'} />
       <button type="submit" className="btn-primary">
         반영하기
       </button>
@@ -101,13 +94,67 @@ function ThemeCard({ t }: { t: ThemeResult }) {
   );
 }
 
+const TONE_CLS = {
+  good: 'border-emerald-300 bg-emerald-50/70 dark:border-emerald-800 dark:bg-emerald-950/30',
+  neutral: 'border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800/40',
+  bad: 'border-rose-300 bg-rose-50/70 dark:border-rose-800 dark:bg-rose-950/30',
+};
+
+/** 띠로 본 나 — 성향, 올해·내년과의 관계, 잘 맞는 띠 */
+function TtiCard({ x }: { x: CrossReport }) {
+  const t = x.tti;
+  return (
+    <div className="rounded-2xl border border-rose-200 p-4 sm:p-5 dark:border-rose-900/60">
+      <div className="flex items-baseline gap-2">
+        <span aria-hidden className="hanja text-2xl text-rose-500">
+          {t.hanja}
+        </span>
+        <h3 className="text-lg font-bold">
+          띠로 본 나 — {t.name} <span className="text-stone-500 dark:text-stone-400">· {t.nick}</span>
+        </h3>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {t.keywords.map((k) => (
+          <span key={k} className="chip">
+            #{k}
+          </span>
+        ))}
+      </div>
+      <p className="mt-3 text-[15px] leading-relaxed">
+        <b>강점</b> · {t.good}
+        <br />
+        <b>그림자</b> · {t.shadow}
+      </p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {[t.thisYear, t.nextYear].map((y) => (
+          <div key={y.year} className={`rounded-xl border p-3 ${TONE_CLS[y.tone]}`}>
+            <div className="text-xs font-semibold text-stone-500">
+              {y.year}년 · {y.animal} 해
+            </div>
+            <div className="mt-0.5 font-bold">{y.line}</div>
+            <p className="mt-1 text-sm leading-relaxed text-stone-700 dark:text-stone-300">{y.text}</p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-sm">
+        <b className="text-emerald-700 dark:text-emerald-400">잘 맞는 띠</b> {t.best.join(' · ')}
+        <span className="mx-2 text-stone-300">|</span>
+        <b className="text-rose-600 dark:text-rose-400">부딪히기 쉬운 띠</b> {t.caution.join(' · ')}
+      </p>
+      <p className="mt-2 text-xs leading-relaxed text-stone-500">
+        띠 성향과 삼재는 민간에서 전해 오는 해석이라 교차 검증에서 한 체계로만 셉니다.{t.lunarNote ? ` ${t.lunarNote}` : ''}
+      </p>
+    </div>
+  );
+}
+
 export function CrossPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
   const title = a.input.name ? `${a.input.name}님의 명경 카드` : '나의 명경 카드';
   const missing = [!x.mbti && 'MBTI', !x.job && '직업'].filter(Boolean) as string[];
   return (
     <section className="card space-y-8">
       <SectionTitle
-        kicker="사주 · 운 · MBTI · 직업"
+        kicker="사주 · 운 · 띠 · MBTI · 직업"
         title="교차 검증"
         desc="한 가지 체계만 보면 우연일 수 있지만, 여러 체계가 같은 방향을 가리키면 그 특성은 더 확실합니다. 체계마다 따로 판정하고, 일치한 개수를 그대로 보여 드려요."
       />
@@ -116,7 +163,7 @@ export function CrossPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
       {missing.length > 0 && (
         <div className="no-print rounded-2xl border border-dashed border-brand-300 bg-brand-50/50 p-4 dark:border-brand-700 dark:bg-brand-900/20">
           <p className="text-sm font-semibold">{missing.join('·')}을 넣으면 교차 검증이 더 정확해져요.</p>
-          <p className="mt-0.5 text-xs text-stone-500">지금은 사주 원국과 대운·세운 두 체계로만 비교했어요. 입력값은 서버로 보내지 않습니다.</p>
+          <p className="mt-0.5 text-xs text-stone-500">지금은 사주 원국·대운·띠 세 체계로 비교했어요. 입력값은 서버로 보내지 않습니다.</p>
           <div className="mt-3">
             <ExtrasForm input={a.input} />
           </div>
@@ -148,6 +195,8 @@ export function CrossPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
         <h3 className="text-lg font-bold text-amber-700 dark:text-amber-300">종합 요약</h3>
         <p className="mt-2 text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">{x.summary}</p>
       </div>
+
+      <TtiCard x={x} />
 
       <div>
         <h3 className="text-lg font-bold text-amber-700 dark:text-amber-300">상세 교차 포인트</h3>

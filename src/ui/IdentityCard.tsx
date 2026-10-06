@@ -5,6 +5,8 @@ import { escXml, SVG_FONT, shareOrDownload, svgStringToPng } from '../lib/svgIma
 import type { IdentityCard } from '../report/cross.ts';
 
 const ICON_COLOR: Record<string, string> = { 命: '#f2c14e', 氣: '#7dd3a8', 運: '#8ab4f8', 年: '#f9a8d4', 性: '#c4b5fd', 業: '#fdba74' };
+/** 띠 카드(아이콘이 띠의 한자)는 붉은 계열 */
+const TTI_COLOR = '#fca5a5';
 
 export function IdentityCardView({ card, title }: { card: IdentityCard; title: string }) {
   const [msg, setMsg] = useState('');
@@ -49,11 +51,11 @@ export function IdentityCardView({ card, title }: { card: IdentityCard; title: s
           <div className="mt-6 grid gap-2 text-left sm:grid-cols-2">
             {card.cards.map((c) => (
               <div key={c.system} className="flex gap-3 rounded-xl bg-white/[0.06] px-3.5 py-3">
-                <span aria-hidden className="hanja shrink-0 text-xl leading-7" style={{ color: ICON_COLOR[c.icon] }}>
+                <span aria-hidden className="hanja shrink-0 text-xl leading-7" style={{ color: ICON_COLOR[c.icon] ?? TTI_COLOR }}>
                   {c.icon}
                 </span>
                 <div className="min-w-0">
-                  <div className="text-[11px] font-semibold" style={{ color: ICON_COLOR[c.icon] }}>
+                  <div className="text-[11px] font-semibold" style={{ color: ICON_COLOR[c.icon] ?? TTI_COLOR }}>
                     {c.system}
                   </div>
                   <div className="text-[15px] leading-snug font-bold">{c.line}</div>
@@ -129,7 +131,7 @@ export function cardSvg(card: IdentityCard, site: string): { svg: string; width:
   card.cards.forEach((c, i) => {
     const x = P + (i % 2) * (cw + 12);
     const yy = y + Math.floor(i / 2) * (ch + 10);
-    const color = ICON_COLOR[c.icon] ?? '#f2c14e';
+    const color = ICON_COLOR[c.icon] ?? TTI_COLOR;
     out.push(`<rect x="${x}" y="${yy}" width="${cw}" height="${ch}" rx="14" fill="#ffffff" fill-opacity="0.06"/>`);
     out.push(`<text x="${x + 18}" y="${yy + 34}" font-size="22" fill="${color}">${escXml(c.icon)}</text>`);
     out.push(`<text x="${x + 52}" y="${yy + 26}" font-size="12" font-weight="600" fill="${color}">${escXml(c.system)}</text>`);

@@ -1,5 +1,5 @@
 /**
- * 교차 검증 — 사주 원국 · 대운/세운 · MBTI · 직업이 같은 방향을 가리키는 특성을 찾는다.
+ * 교차 검증 — 사주 원국 · 대운/세운 · 띠 · MBTI · 직업이 같은 방향을 가리키는 특성을 찾는다.
  *
  * 원칙
  *  - 각 특성(테마)마다 체계별로 "그렇다/아니다"를 따로 판정하고, 일치한 개수를 그대로 보여 준다.
@@ -15,9 +15,10 @@ import { readLuck } from './luckReading.ts';
 import { mbtiCross, parseMbti, MBTI_PROFILE, type MbtiCross } from './mbti.ts';
 import { plainStatement, wealthCapacity } from './metrics.ts';
 import { DECADE_THEME } from './storyKb.ts';
+import { ttiOf, type ThemeKey, type TtiInfo } from './tti.ts';
 
-export type SystemId = 'saju' | 'luck' | 'mbti' | 'job';
-export const SYSTEM_LABEL: Record<SystemId, string> = { saju: '사주 원국', luck: '대운·세운', mbti: 'MBTI', job: '직업' };
+export type SystemId = 'saju' | 'luck' | 'tti' | 'mbti' | 'job';
+export const SYSTEM_LABEL: Record<SystemId, string> = { saju: '사주 원국', luck: '대운·세운', tti: '띠', mbti: 'MBTI', job: '직업' };
 
 export interface Evidence {
   system: SystemId;
@@ -48,6 +49,7 @@ interface Ctx {
   dg: TenGodGroup | null;
   dTone: 'good' | 'neutral' | 'bad';
   yg: TenGodGroup | null;
+  tti: TtiInfo;
 }
 
 type Check = (c: Ctx) => Evidence | null;
@@ -305,6 +307,7 @@ export interface CrossReport {
   summary: string;
   mbti: MbtiCross | null;
   job: JobAnalysis | null;
+  tti: TtiInfo;
 }
 
 function hashIdx(n: number, len: number) {
@@ -332,11 +335,20 @@ export function crossReport(a: SajuAnalysis, report: Report): CrossReport {
     dg: d ? groupOf(d.stemTenGod) : null,
     dTone: d ? (d.score >= 58 ? 'good' : d.score < 42 ? 'bad' : 'neutral') : 'neutral',
     yg: year ? groupOf(year.stemTenGod) : null,
+    tti: ttiOf(a),
   };
-  const systems: SystemId[] = ['saju', 'luck', ...(type ? (['mbti'] as SystemId[]) : []), ...(job ? (['job'] as SystemId[]) : [])];
+  const tti = ctx.tti;
+  const systems: SystemId[] = ['saju', 'luck', 'tti', ...(type ? (['mbti'] as SystemId[]) : []), ...(job ? (['job'] as SystemId[]) : [])];
+  // 띠: 분명히 가리키는 특성(yes)·분명히 아닌 특성(no)만 판정하고 나머지는 빼고 계산한다
+  const ttiCheck = (id: string): Evidence | null => {
+    const k = id as ThemeKey;
+    if (tti.yes.includes(k)) return { system: 'tti', agree: true, text: `${tti.name}(${tti.nick}) — ${tti.keywords.join('·')}` };
+    if (tti.no.includes(k)) return { system: 'tti', agree: false, text: `${tti.name}(${tti.nick}) — 이 특성과는 거리가 먼 띠` };
+    return null;
+  };
 
   const all: ThemeResult[] = THEMES.map((t) => {
-    const evidence = (Object.keys(t.checks) as SystemId[]).map((s) => t.checks[s]!(ctx)).filter((e): e is Evidence => !!e);
+    const evidence = [...(Object.keys(t.checks) as SystemId[]).map((s) => t.checks[s]!(ctx)), ttiCheck(t.id)].filter((e): e is Evidence => !!e);
     const agree = evidence.filter((e) => e.agree).length;
     const sajuAgree = evidence.find((e) => e.system === 'saju')?.agree ?? false;
     return { id: t.id, title: t.title, agree, total: evidence.length, ratio: evidence.length ? agree / evidence.length : 0, sajuAgree, challenge: !!t.challenge, evidence, text: t.text(ctx) };
@@ -387,6 +399,7 @@ export function crossReport(a: SajuAnalysis, report: Report): CrossReport {
     { icon: '氣', system: '오행·용신', line: `${ELEMENT_KO[ys]} 기운을 채울수록 풀리는 사주` },
     { icon: '運', system: '지금의 대운', line: d ? `${Math.floor(d.startAge)}세부터 ${DECADE_THEME[groupOf(d.stemTenGod)].label}의 10년` : '첫 대운을 기다리는 시기' },
     { icon: '年', system: `${a.currentSajuYear}년`, line: yRead ? yRead.headline : '올해의 흐름' },
+    { icon: tti.hanja, system: '띠', line: `${tti.name} · ${tti.nick} · ${tti.thisYear.line}` },
   ];
   if (mbti) cards.push({ icon: '性', system: 'MBTI', line: `${mbti.type} ${MBTI_PROFILE[mbti.type].nick} · 사주와 ${mbti.agree}/4 일치` });
   if (job) cards.push({ icon: '業', system: '직업', line: job.fit ? `${job.category.id === 'other' ? job.input : job.category.label} · 적합도 ${job.fit.score}` : `${job.category.label} · ${job.now.title.replace(/^지금은 /, '')}` });
@@ -400,7 +413,7 @@ export function crossReport(a: SajuAnalysis, report: Report): CrossReport {
   const evid = (t: ThemeResult) =>
     t.evidence
       .filter((e) => e.agree)
-      .map((e) => (e.system === 'saju' ? `사주의 ${e.text.split(' — ')[0]}` : e.system === 'mbti' ? `MBTI ${type}` : e.system === 'job' ? `직업(${job?.category.label})` : '지금의 대운'))
+      .map((e) => (e.system === 'saju' ? `사주의 ${e.text.split(' — ')[0]}` : e.system === 'mbti' ? `MBTI ${type}` : e.system === 'job' ? `직업(${job?.category.label})` : e.system === 'tti' ? tti.name : '지금의 대운'))
       .join(', ');
   const parts: string[] = [];
   parts.push(`${who}은 ${t1.glance}입니다. ${evid(lead)}${lead.agree >= 2 ? '이 같은 방향을 가리킵니다' : '에서 이 특성이 드러납니다'}.`);
@@ -413,6 +426,7 @@ export function crossReport(a: SajuAnalysis, report: Report): CrossReport {
   if (d) parts.push(`만 ${Math.floor(ageNow)}세인 지금은 ${DECADE_THEME[groupOf(d.stemTenGod)].label}의 10년(${d.startYear}~${d.endYear})을 지나고 있습니다.`);
   if (job) parts.push(`직업 면에서는 ${job.headline}입니다.`);
   if (mbti) parts.push(`MBTI(${mbti.type})와 사주는 네 가지 축 중 ${mbti.agree}개가 같은 방향입니다.`);
+  parts.push(`띠로는 ${tti.name}(${tti.nick})이고, ${a.currentSajuYear}년은 ${tti.thisYear.line === '무난한 해' ? '띠로 보아 무난한 해' : `‘${tti.thisYear.line}’인 해`}입니다.`);
   parts.push('강점이 뚜렷한 만큼 약점도 분명한 구조이므로, 강점을 살리는 것만큼 약점을 보완하는 것이 실제 삶의 질을 가르는 분기점이 됩니다.');
 
   return {
@@ -423,6 +437,7 @@ export function crossReport(a: SajuAnalysis, report: Report): CrossReport {
     summary: parts.join(' '),
     mbti,
     job,
+    tti,
   };
 }
 

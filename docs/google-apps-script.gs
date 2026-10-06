@@ -43,7 +43,7 @@ var TABLES = {
   },
 };
 
-var SECTIONS = ['summary', 'personality', 'love', 'career', 'wealth', 'health', 'webtoon'];
+var SECTIONS = ['summary', 'personality', 'love', 'career', 'wealth', 'health', 'gaeun', 'webtoon'];
 var PRICES = ['free_only', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900'];
 var FEATURES = ['monthly', 'compat', 'daeun_detail', 'pdf', 'expert', 'career_deep', 'date_pick', 'name'];
 var COMPARES = ['much_better', 'better', 'same', 'worse', 'never'];

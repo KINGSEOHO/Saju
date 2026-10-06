@@ -99,7 +99,7 @@ function pct(n: number) {
   return `${n.toFixed(0)}%`;
 }
 
-export function buildStories(a: SajuAnalysis, sections: ReportSection[]): Record<SectionId, StoryPara[]> {
+export function buildStories(a: SajuAnalysis, sections: ReportSection[]): Partial<Record<SectionId, StoryPara[]>> {
   const who = a.input.name ? `${a.input.name}님` : '당신';
   const W = (t: string) => t.replaceAll('{who}', who);
   const ds = a.pillars.day.stem;

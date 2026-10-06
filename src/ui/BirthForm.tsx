@@ -2,8 +2,8 @@ import { useMemo, useState, type FormEvent } from 'react';
 import type { BirthInput } from '../engine/index.ts';
 import { leapMonthOf, lunarMonthDays } from '../engine/calendar.ts';
 import { CITIES } from '../engine/timezone.ts';
-import { JOB_SUGGEST } from '../report/job.ts';
 import { MBTI_LIST } from '../report/mbti.ts';
+import { JobPicker } from './JobPicker.tsx';
 
 const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 
@@ -235,15 +235,7 @@ export function BirthForm({ initial, onSubmit }: { initial?: BirthInput | null; 
               ))}
             </select>
           </label>
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-semibold">직업·하는 일</span>
-            <input className="field" list="job-suggest" value={job} onChange={(e) => setJob(e.target.value)} maxLength={30} placeholder="예: 개발자, 간호사, 대학생" autoComplete="off" />
-            <datalist id="job-suggest">
-              {JOB_SUGGEST.map((j) => (
-                <option key={j} value={j} />
-              ))}
-            </datalist>
-          </label>
+          <JobPicker value={job} onChange={setJob} />
         </div>
       </fieldset>
 

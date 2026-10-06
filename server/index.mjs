@@ -62,7 +62,7 @@ db.exec(`
 // ---------------------------------------------------------------------------
 // 유틸
 // ---------------------------------------------------------------------------
-const SECTIONS = new Set(['summary', 'personality', 'love', 'career', 'wealth', 'health', 'webtoon']);
+const SECTIONS = new Set(['summary', 'personality', 'love', 'career', 'wealth', 'health', 'gaeun', 'webtoon']);
 const PRICES = new Set(['free_only', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900']);
 const PRICE_ORDER = ['free_only', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900'];
 const FEATURES = new Set(['monthly', 'compat', 'daeun_detail', 'pdf', 'expert', 'career_deep', 'date_pick', 'name']);

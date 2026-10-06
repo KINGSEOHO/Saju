@@ -29,7 +29,7 @@ describe('분석·리포트 생성 안정성', () => {
       expect(a.strength.score).toBeLessThanOrEqual(100);
       expect(a.daeun.list).toHaveLength(10);
       const r = generateReport(a);
-      expect(r.sections.map((s) => s.id)).toEqual(['summary', 'personality', 'love', 'career', 'wealth', 'health']);
+      expect(r.sections.map((s) => s.id)).toEqual(['summary', 'gaeun', 'personality', 'love', 'career', 'wealth', 'health']);
       const text = JSON.stringify(r);
       expect(text).not.toMatch(/undefined|NaN|\[object Object\]/);
       for (const s of r.sections) {

@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { BETA_FREE, PREMIUM_SECTIONS } from '../config/plans.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
+import type { GaeunData, GaeunItem } from '../report/gaeun.ts';
 import { generateReport, type ReportSection, type SectionId, type Statement } from '../report/generate.ts';
 import type { StoryPara } from '../report/story.ts';
 import { DivergingBars } from './Charts.tsx';
 import { TONE_STYLE } from './common.tsx';
 import { SectionRating } from './Feedback.tsx';
 
-const TAB_ORDER: SectionId[] = ['summary', 'personality', 'love', 'career', 'wealth', 'health'];
+const TAB_ORDER: SectionId[] = ['summary', 'gaeun', 'personality', 'love', 'career', 'wealth', 'health'];
 
 function StatementItem({ s, showEvidence }: { s: Statement; showEvidence: boolean }) {
   const t = TONE_STYLE[s.tone];
@@ -75,6 +76,102 @@ function StoryView({ story, showEvidence }: { story: StoryPara[]; showEvidence: 
   );
 }
 
+function GaeunColumn({ title, mark, tone, items, showEvidence }: { title: string; mark: string; tone: 'good' | 'bad'; items: GaeunItem[]; showEvidence: boolean }) {
+  const good = tone === 'good';
+  return (
+    <div className={`rounded-2xl border p-4 ${good ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20' : 'border-rose-200 bg-rose-50/50 dark:border-rose-900 dark:bg-rose-950/20'}`}>
+      <h3 className={`flex items-center gap-2 text-lg font-extrabold ${good ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
+        <span aria-hidden className={`flex size-7 items-center justify-center rounded-full text-sm text-white ${good ? 'bg-emerald-600' : 'bg-rose-500'}`}>
+          {mark}
+        </span>
+        {title}
+      </h3>
+      <ul className="mt-3 space-y-3">
+        {items.map((it) => (
+          <li key={it.key} className="flex gap-3">
+            <span aria-hidden className={`hanja flex size-9 shrink-0 items-center justify-center rounded-xl text-lg ${good ? 'bg-white text-emerald-700 dark:bg-stone-900 dark:text-emerald-300' : 'bg-white text-rose-600 dark:bg-stone-900 dark:text-rose-300'}`}>
+              {it.icon}
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-stone-500 dark:text-stone-400">{it.label}</div>
+              <p className="text-[15px] leading-relaxed text-stone-800 dark:text-stone-200">{it.value}</p>
+              {it.swatch && (
+                <div className="mt-1.5 flex gap-1.5" aria-hidden>
+                  {it.swatch.map((c) => (
+                    <span key={c} className="size-5 rounded-full border border-black/10 dark:border-white/20" style={{ background: c }} />
+                  ))}
+                </div>
+              )}
+              {showEvidence && <p className="mt-0.5 text-xs text-stone-500">근거 · {it.basis}</p>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const routineKey = () => `gaeun-routine-${new Date().toISOString().slice(0, 10)}`;
+function loadRoutine(): number[] {
+  try {
+    return JSON.parse(localStorage.getItem(routineKey()) ?? '[]') as number[];
+  } catch {
+    return [];
+  }
+}
+
+function GaeunBoard({ g, showEvidence }: { g: GaeunData; showEvidence: boolean }) {
+  const [done, setDone] = useState<number[]>(loadRoutine);
+  const toggle = (i: number) => {
+    const next = done.includes(i) ? done.filter((x) => x !== i) : [...done, i];
+    setDone(next);
+    try {
+      localStorage.setItem(routineKey(), JSON.stringify(next));
+    } catch {
+      /* 저장이 안 되는 브라우저에서도 화면은 그대로 */
+    }
+  };
+  const YEAR_CLS = { good: 'border-emerald-300 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/20', neutral: 'border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800/40', bad: 'border-amber-300 bg-amber-50/60 dark:border-amber-800 dark:bg-amber-950/20' };
+  return (
+    <div className="mb-8 space-y-5">
+      <p className="text-[15px] leading-relaxed text-stone-700 dark:text-stone-300">{g.why}</p>
+      <div className="grid gap-3 md:grid-cols-2">
+        <GaeunColumn title="가까이할 것" mark="○" tone="good" items={g.close} showEvidence={showEvidence} />
+        <GaeunColumn title="멀리할 것" mark="✕" tone="bad" items={g.away} showEvidence={showEvidence} />
+      </div>
+      {g.year && (
+        <div className={`rounded-2xl border p-4 ${YEAR_CLS[g.year.tone]}`}>
+          <div className="font-bold">{g.year.title}</div>
+          <p className="mt-1 text-[15px] leading-relaxed">{g.year.text}</p>
+          {showEvidence && <p className="mt-1 text-xs text-stone-500">근거 · {g.year.basis}</p>}
+        </div>
+      )}
+      <div className="rounded-2xl border border-brand-200 p-4 dark:border-brand-800">
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="font-bold">오늘부터 하는 개운 루틴</div>
+          <span className="text-xs text-stone-500">
+            오늘 {done.length}/{g.routine.length}
+          </span>
+        </div>
+        <ul className="mt-2 space-y-1.5">
+          {g.routine.map((r, i) => (
+            <li key={r.text}>
+              <label className="flex cursor-pointer items-start gap-2.5 text-[15px] leading-relaxed">
+                <input type="checkbox" className="mt-1 size-4 accent-emerald-600" checked={done.includes(i)} onChange={() => toggle(i)} />
+                <span className={done.includes(i) ? 'text-stone-400 line-through' : ''}>
+                  {r.text}
+                  {showEvidence && <span className="ml-1 text-xs text-stone-500">({r.basis})</span>}
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-stone-500">체크는 이 기기에만 저장돼요. 3주만 이어 가 보세요.</p>
+      </div>
+    </div>
+  );
+}
+
 function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSection; showEvidence: boolean }) {
   const locked = !BETA_FREE && PREMIUM_SECTIONS.includes(sec.id);
   const [mode, setMode] = useState<'story' | 'cards'>('story');
@@ -84,6 +181,7 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
         <div className="text-xs font-semibold text-brand-700 dark:text-brand-300">{sec.title} 한 줄 요약</div>
         <div className="mt-1 text-lg leading-snug font-bold text-brand-900 dark:text-brand-50">{sec.headline}</div>
       </div>
+      {!locked && sec.gaeun && <GaeunBoard g={sec.gaeun} showEvidence={showEvidence} />}
       {!locked && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
           <div className="inline-flex rounded-xl border border-stone-200 p-1 dark:border-stone-700" role="tablist" aria-label="보기 방식">
@@ -208,6 +306,7 @@ export function ReportView({ a }: { a: SajuAnalysis }) {
                 }`}
               >
                 {s.title}
+                {id === 'gaeun' && <span className="ml-1 align-middle text-[9px] font-bold text-amber-600 dark:text-amber-400">NEW</span>}
                 {BETA_FREE && PREMIUM_SECTIONS.includes(id) && <span className="ml-1 align-middle text-[9px] font-bold text-emerald-600 dark:text-emerald-400">β무료</span>}
               </button>
             );

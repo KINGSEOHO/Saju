@@ -12,6 +12,7 @@ import { josa } from '../engine/josa.ts';
 import { twelveSinsal } from '../engine/sinsal.ts';
 import { elementOfGroup, groupOf, groupOfElement } from '../engine/tenGods.ts';
 import { incomeRoute, investmentRisk, orgRatio as computeOrgRatio, wealthCapacity } from './metrics.ts';
+import { buildGaeun, gaeunBlocks, type GaeunData } from './gaeun.ts';
 import { buildStories, readMinutes, type StoryPara } from './story.ts';
 import {
   DAY_MASTER, ELEMENT_JOBS, ELEMENT_ORGAN, GROUP_JOBS, GROUP_MISSING, SPOUSE_PALACE, STAGE_ON_DAY, TEN_GOD_TRAIT,
@@ -39,7 +40,7 @@ export interface YearSignal {
   tone: Tone;
   notes: string[];
 }
-export type SectionId = 'summary' | 'personality' | 'love' | 'career' | 'wealth' | 'health';
+export type SectionId = 'summary' | 'personality' | 'love' | 'career' | 'wealth' | 'health' | 'gaeun';
 export interface ReportSection {
   id: SectionId;
   title: string;
@@ -50,6 +51,8 @@ export interface ReportSection {
   story?: StoryPara[];
   /** 이야기를 읽는 데 걸리는 대략적인 시간(분) */
   readMinutes?: number;
+  /** 개운법 보드 (가까이할 것 · 멀리할 것) */
+  gaeun?: GaeunData;
 }
 export interface Report {
   sections: ReportSection[];
@@ -741,31 +744,20 @@ export function generateReport(a: SajuAnalysis): Report {
     }
     summary.blocks.push({ heading: '인생의 흐름', items });
   }
-  {
-    const ys = a.yongsin.yongsin;
-    const advice: Record<Element, string> = {
-      wood: '새로운 것을 배우고 계획을 세우는 일, 아침 시간 활용, 동쪽 방향, 초록색·식물',
-      fire: '사람을 만나고 표현하는 일, 햇빛·운동, 남쪽 방향, 붉은색 계열',
-      earth: '꾸준한 루틴과 신용 관리, 중재 역할, 안정된 거주지, 황토·베이지 계열',
-      metal: '정리·결단·규칙 만들기, 불필요한 관계 정리, 서쪽 방향, 흰색·금속',
-      water: '충분한 휴식과 사색, 공부·정보 수집, 북쪽 방향, 검정·남색, 물가',
-    };
-    summary.blocks.push({
-      heading: '운을 보강하는 생활 습관 (용신 활용)',
-      items: [
-        S(`용신 ${elKo(ys)} 보강: ${advice[ys]}.`, 'positive', `용신 ${elKo(ys)}`),
-        S(`기신 ${elKo(a.yongsin.gisin)}의 과잉 피하기: ${advice[a.yongsin.gisin].split(',')[0]} 같은 활동은 과하지 않게.`, 'caution', `기신 ${elKo(a.yongsin.gisin)}`),
-        S('이 습관은 “개운법”이라기보다 성향의 균형을 맞추는 행동 지침입니다. 효과는 꾸준함에 비례합니다.', 'neutral'),
-      ],
-    });
-  }
+  // 개운법은 전용 섹션으로 (종합에는 한 줄만)
+  const gaeun = buildGaeun(a);
+  summary.blocks.push({
+    heading: '운을 보강하는 생활 습관 (용신 활용)',
+    items: [S(`${gaeun.headline}. 색·장소·음식·사람·습관별로 가까이할 것과 멀리할 것은 ‘개운법’ 탭에 정리했습니다.`, 'positive', `용신 ${elKo(a.yongsin.yongsin)} · 기신 ${elKo(a.yongsin.gisin)}`)],
+  });
   summary.headline = `${pillarHanja(a.pillars.day)}일주 · ${a.gyeokguk.name} · ${a.strength.level} · 용신 ${josa(elKo(a.yongsin.yongsin), '이/가')} 핵심`;
 
-  const sections = [summary, personality, love, career, wealth, health];
+  const gaeunSec: ReportSection = { id: 'gaeun', title: '개운법', headline: gaeun.headline, blocks: gaeunBlocks(gaeun.data), gaeun: gaeun.data, story: gaeun.story };
+  const sections = [summary, gaeunSec, personality, love, career, wealth, health];
   const stories = buildStories(a, sections);
   for (const sec of sections) {
-    sec.story = stories[sec.id];
-    sec.readMinutes = readMinutes(sec.story);
+    sec.story = stories[sec.id] ?? sec.story;
+    sec.readMinutes = sec.story ? readMinutes(sec.story) : undefined;
   }
   return { sections, confidenceNotes };
 }

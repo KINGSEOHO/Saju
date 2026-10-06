@@ -6,7 +6,7 @@ import { SHEET_URL } from '../config/backend.ts';
 import { fetchStats } from '../lib/api.ts';
 import type { Stats } from '../lib/stats.ts';
 
-const SECTION_KO: Record<string, string> = { summary: '종합', personality: '성향', love: '연애·결혼', career: '직업·이직', wealth: '재물', health: '건강', webtoon: '인생 웹툰' };
+const SECTION_KO: Record<string, string> = { summary: '종합', personality: '성향', love: '연애·결혼', career: '직업·이직', wealth: '재물', health: '건강', gaeun: '개운법', webtoon: '인생 웹툰' };
 const PRICE_KO = Object.fromEntries(PRICE_OPTIONS.map((p) => [p.id, p.label]));
 const FEATURE_KO = Object.fromEntries(FEATURE_OPTIONS.map((p) => [p.id, p.label]));
 const COMPARE_KO: Record<string, string> = { much_better: '훨씬 낫다', better: '조금 낫다', same: '비슷하다', worse: '못하다', never: '비교 경험 없음' };
