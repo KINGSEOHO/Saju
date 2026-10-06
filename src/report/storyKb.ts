@@ -284,6 +284,36 @@ export function lifeStage(startAge: number): LifeStage {
   return 'senior';
 }
 
+export type DecadeTone = 'good' | 'neutral' | 'bad';
+
+const YOUNG_TONE: Record<DecadeTone, string> = {
+  good: '전체적으로 순풍이 부는 때라, 하고 싶은 것을 마음껏 시도해 볼 수 있는 환경이 만들어지기 쉽습니다.',
+  neutral: '큰 굴곡 없이 지나가기 쉬운 때입니다. 이 시기에 생긴 습관이 다음 10년의 바탕이 됩니다.',
+  bad: '마음고생이 많을 수 있는 때입니다. 혼자 끙끙 앓기보다 어른들의 관심과 도움을 받는 것이 중요합니다.',
+};
+const SENIOR_TONE: Record<DecadeTone, string> = {
+  good: '몸과 마음이 편안하고, 가족과 주변의 도움이 따르는 시기입니다.',
+  neutral: '큰 변화 없이 일상을 지켜 가는 시기입니다. 규칙적인 생활이 가장 좋은 보약입니다.',
+  bad: '건강과 마음 관리에 특히 신경 써야 하는 시기입니다. 무리한 결정과 큰돈이 오가는 일은 피하세요.',
+};
+
+/** 대운 10년의 길흉 문장 — 어린 시절·노년에는 그 나이에 맞는 표현으로 */
+export function toneText(g: TenGodGroup, tone: DecadeTone, stage: LifeStage): string {
+  if (stage === 'child' || stage === 'teen') return YOUNG_TONE[tone];
+  if (stage === 'senior') return SENIOR_TONE[tone];
+  return DECADE_THEME[g][tone];
+}
+
+/** 대운 신호(충·합·형)를 그 나이에 맞는 문장으로 */
+export function flagText(flag: string, stage: LifeStage): string {
+  const young = stage === 'child' || stage === 'teen';
+  if (flag.startsWith('일지충')) return young ? '집이나 학교 환경에 변동이 생기기 쉽습니다.' : '배우자·주거·건강에 변동이 생기기 쉽습니다.';
+  if (flag.startsWith('월지충')) return young ? '학교나 생활 환경이 크게 바뀌기 쉽습니다.' : '직장과 사회적 환경이 크게 바뀌기 쉽습니다.';
+  if (flag.startsWith('일지합')) return young ? '마음이 잘 맞는 단짝이나 소중한 인연이 생기기 쉽습니다.' : '결혼이나 동업처럼 누군가와 “묶이는 일”이 생기기 쉽습니다.';
+  if (flag.includes('삼형')) return young ? '다치거나 크게 아프지 않도록 조심해야 합니다.' : '법적 문제나 수술처럼 큰 일에 대비해야 합니다.';
+  return '';
+}
+
 /** 인생 단계별로 그 기운이 실제 삶에서 나타나기 쉬운 장면 */
 export const STAGE_SCENE: Record<TenGodGroup, Record<LifeStage, string>> = {
   비겁: {

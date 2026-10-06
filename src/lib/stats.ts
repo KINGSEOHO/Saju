@@ -34,7 +34,7 @@ export interface Stats {
   decision: { ready: boolean; notes: string[]; wtpPaidShare: number | null; medianPrice: string | null };
 }
 
-const SECTIONS = ['summary', 'personality', 'love', 'career', 'wealth', 'health'];
+const SECTIONS = ['summary', 'personality', 'love', 'career', 'wealth', 'health', 'webtoon'];
 const PRICE_ORDER = ['free_only', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900'];
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);

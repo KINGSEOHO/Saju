@@ -9,10 +9,10 @@ import { josa } from '../engine/josa.ts';
 import { groupOf } from '../engine/tenGods.ts';
 import { DAY_MASTER, ELEMENT_JOBS, ELEMENT_ORGAN, GROUP_JOBS } from './kb.ts';
 import { readLuck } from './luckReading.ts';
-import { incomeRoute, investmentRisk, isStrong, orgRatio, wealthCapacity } from './metrics.ts';
+import { incomeRoute, investmentRisk, isStrong, lifeShape, orgRatio, wealthCapacity, type LifeShape } from './metrics.ts';
 import {
   CHILDHOOD_STORY, DECADE_THEME, DM_STORY, DOMINANT_STORY, GENDER_NOTE, INSIDE, MISSING_STORY, OUTSIDE, SPENDING_STORY, SPOUSE_STORY, SPOUSE_TIP,
-  STAGE_SCENE, STRENGTH_STORY, lifeStage,
+  STAGE_SCENE, STRENGTH_STORY, flagText, lifeStage, toneText,
 } from './storyKb.ts';
 import type { ReportSection, SectionId, Statement } from './generate.ts';
 
@@ -483,15 +483,14 @@ export function buildStories(a: SajuAnalysis, sections: ReportSection[]): Record
   }
   {
     const list = a.daeun.list;
-    const avg = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / Math.max(1, xs.length);
-    const early = avg(list.slice(0, 3).map((d) => d.score));
-    const mid = avg(list.slice(3, 6).map((d) => d.score));
-    const late = avg(list.slice(6, 9).map((d) => d.score));
-    let shape: string;
-    if (late - early >= 8) shape = '초년보다 중년 이후로 갈수록 운이 좋아지는 “대기만성형” 흐름입니다. 젊을 때 고생스럽게 느껴졌던 일들이 나중에 밑거름이 되는 구조입니다.';
-    else if (early - late >= 8) shape = '일찍 기회가 찾아오는 “초년 강세형” 흐름입니다. 젊을 때 쌓아 둔 것이 후반을 받쳐 주므로, 좋은 시기에 기반을 단단히 다져 두는 것이 중요합니다.';
-    else if (mid - Math.max(early, late) >= 6) shape = '인생의 한가운데에 큰 기회가 몰리는 “중년 절정형” 흐름입니다. 그 시기를 위해 준비하는 것이 인생 전체의 결과를 좌우합니다.';
-    else shape = '큰 기복 없이 고르게 흘러가는 흐름입니다. 극적인 대박도, 큰 추락도 적은 대신 선택과 꾸준함이 결과를 좌우합니다.';
+    const { shape: kind, early, mid, late } = lifeShape(a);
+    const SHAPE_TEXT: Record<LifeShape, string> = {
+      대기만성형: '초년보다 중년 이후로 갈수록 운이 좋아지는 “대기만성형” 흐름입니다. 젊을 때 고생스럽게 느껴졌던 일들이 나중에 밑거름이 되는 구조입니다.',
+      '초년 강세형': '일찍 기회가 찾아오는 “초년 강세형” 흐름입니다. 젊을 때 쌓아 둔 것이 후반을 받쳐 주므로, 좋은 시기에 기반을 단단히 다져 두는 것이 중요합니다.',
+      '중년 절정형': '인생의 한가운데에 큰 기회가 몰리는 “중년 절정형” 흐름입니다. 그 시기를 위해 준비하는 것이 인생 전체의 결과를 좌우합니다.',
+      '고른 흐름형': '큰 기복 없이 고르게 흘러가는 흐름입니다. 극적인 대박도, 큰 추락도 적은 대신 선택과 꾸준함이 결과를 좌우합니다.',
+    };
+    const shape = SHAPE_TEXT[kind];
     const best = [...list].sort((x, y) => y.score - x.score)[0];
     const worst = [...list].sort((x, y) => x.score - y.score)[0];
     summary.push({
@@ -528,24 +527,14 @@ export function buildStories(a: SajuAnalysis, sections: ReportSection[]): Record
             .filter((n): n is string => !!n && !usedNotes.has(n) && (usedNotes.add(n), true))
             .join(' ')
         : '';
-    const flagText = d.flags
-      .map((f) =>
-        f.startsWith('일지충')
-          ? '배우자·주거·건강에 변동이 생기기 쉽습니다.'
-          : f.startsWith('월지충')
-            ? '직장과 사회적 환경이 크게 바뀌기 쉽습니다.'
-            : f.startsWith('일지합')
-              ? '결혼이나 동업처럼 누군가와 “묶이는 일”이 생기기 쉽습니다.'
-              : f.includes('삼형')
-                ? '법적 문제나 수술처럼 큰 일에 대비해야 합니다.'
-                : '',
-      )
+    const flagNote = d.flags
+      .map((f) => flagText(f, stage))
       .filter(Boolean)
       .join(' ');
     const ask = when === 'past' ? ' 그 무렵의 기억과 비교해 보세요.' : '';
     summary.push({
       title: `만 ${a0}~${a0 + 9}세 · ${pillarHanja(d.pillar)} 대운 (${d.startYear}~${d.endYear})`,
-      text: W(`${head}${DECADE_THEME[g1].label}의 10년입니다. ${scene} ${DECADE_THEME[g1][tone]}${halves}${gnote ? ' ' + gnote : ''}${flagText ? ' ' + flagText : ''}${ask}`),
+      text: W(`${head}${DECADE_THEME[g1].label}의 10년입니다. ${scene} ${toneText(g1, tone, stage)}${halves}${gnote ? ' ' + gnote : ''}${flagNote ? ' ' + flagNote : ''}${ask}`),
       basis: `천간 ${d.stemTenGod}(${d.stemRole}) · 지지 ${d.branchTenGod}(${d.branchRole}) · ${d.score}점`,
       when,
     });

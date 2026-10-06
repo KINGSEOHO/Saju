@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { analyze, ELEMENT_KO, pillarHanja, type BirthInput, type SajuAnalysis } from './engine/index.ts';
 import { flushQueue, send, sessionId } from './lib/api.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
@@ -13,6 +13,28 @@ import { LuckPanel, monthLabel, SwitchNote, upcomingMonths } from './ui/Luck.tsx
 import { Manseryeok, PillarHeader } from './ui/Manseryeok.tsx';
 import { Faq } from './ui/Faq.tsx';
 import { ReportView } from './ui/ReportView.tsx';
+
+// 웹툰 그림·대본은 크기가 커서 필요할 때 따로 불러온다.
+// 페이지를 열어 둔 사이 새 버전이 배포되면 예전 파일을 못 찾을 수 있어, 그때는 새로고침을 안내한다.
+function ChunkError() {
+  return (
+    <div className="card text-center text-sm text-stone-600 dark:text-stone-400">
+      사이트가 업데이트되어 이 화면을 불러오지 못했어요.{' '}
+      <button type="button" className="font-semibold text-brand-700 underline dark:text-brand-300" onClick={() => window.location.reload()}>
+        새로고침
+      </button>
+    </div>
+  );
+}
+const WebtoonPanel = lazy(() =>
+  import('./ui/Webtoon.tsx').then(
+    (m) => ({ default: m.WebtoonPanel }),
+    () => ({ default: ChunkError }),
+  ),
+);
+const WebtoonTeaser = lazy(
+  (): Promise<{ default: ComponentType<{ a: SajuAnalysis; onOpen: () => void }> }> => import('./ui/WebtoonTeaser.tsx').catch(() => ({ default: () => null })),
+);
 
 type Route = { name: 'home' } | { name: 'result'; input: BirthInput } | { name: 'admin' };
 
@@ -83,6 +105,10 @@ function Home() {
         <p className="mt-5 text-base text-stone-600 dark:text-stone-400">
           좋은 말만 늘어놓지 않습니다. 성향·연애·이직·재물·건강을 <b className="text-stone-900 dark:text-stone-100">강점과 약점 모두</b>, 왜 그렇게 보는지 근거와 함께 알려 드립니다.
         </p>
+        <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-bold text-white">NEW</span>
+          내 사주로 그린 <b>인생 웹툰</b> — 성격 4컷 · 인생 6컷
+        </p>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           {[
             ['🔭', '천문 계산 만세력', '절기·합삭을 천문학 공식으로 직접 계산해요.'],
@@ -105,12 +131,13 @@ function Home() {
   );
 }
 
-type MainTab = 'report' | 'luck' | 'chart' | 'detail';
-const MAIN_TABS: { id: MainTab; label: string; desc: string }[] = [
-  { id: 'report', label: '풀이 리포트', desc: '성향·연애·직업·재물·건강' },
-  { id: 'luck', label: '운의 흐름', desc: '이번 달·올해·대운' },
-  { id: 'chart', label: '만세력', desc: '사주 원국과 계산 근거' },
-  { id: 'detail', label: '전문 분석', desc: '오행·용신·신살' },
+type MainTab = 'report' | 'webtoon' | 'luck' | 'chart' | 'detail';
+const MAIN_TABS: { id: MainTab; label: string; short: string; desc: string }[] = [
+  { id: 'report', label: '풀이 리포트', short: '풀이', desc: '성향·연애·직업·재물·건강' },
+  { id: 'webtoon', label: '인생 웹툰', short: '웹툰', desc: '사주로 그린 4컷·6컷 만화' },
+  { id: 'luck', label: '운의 흐름', short: '운세', desc: '이번 달·올해·대운' },
+  { id: 'chart', label: '만세력', short: '만세력', desc: '사주 원국과 계산 근거' },
+  { id: 'detail', label: '전문 분석', short: '분석', desc: '오행·용신·신살' },
 ];
 
 function Result({ input }: { input: BirthInput }) {
@@ -225,6 +252,10 @@ function Result({ input }: { input: BirthInput }) {
           ))}
         </div>
 
+        <Suspense fallback={<div className="no-print mt-4 h-[118px] rounded-2xl border border-amber-200 bg-amber-50/70 sm:h-[134px] dark:border-amber-900 dark:bg-amber-950/30" />}>
+          <WebtoonTeaser a={a} onOpen={() => selectTab('webtoon')} />
+        </Suspense>
+
         {(strengths.length > 0 || weaknesses.length > 0) && (
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-4 dark:border-sky-900 dark:bg-sky-950/30">
@@ -297,7 +328,7 @@ function Result({ input }: { input: BirthInput }) {
       </section>
 
       <div ref={tabsRef} className="no-print sticky top-14 z-20 -mx-4 bg-paper/95 px-4 py-2 backdrop-blur dark:bg-stone-950/95">
-        <div className="grid grid-cols-4 gap-1 rounded-2xl border border-stone-200 bg-white p-1 dark:border-stone-800 dark:bg-stone-900" role="tablist">
+        <div className="grid grid-cols-5 gap-1 rounded-2xl border border-stone-200 bg-white p-1 dark:border-stone-800 dark:bg-stone-900" role="tablist">
           {MAIN_TABS.map((t) => (
             <button
               key={t.id}
@@ -305,10 +336,14 @@ function Result({ input }: { input: BirthInput }) {
               role="tab"
               aria-selected={tab === t.id}
               onClick={() => selectTab(t.id)}
-              className={`rounded-xl px-1 py-2 text-center transition ${tab === t.id ? 'tab-on' : 'tab-off'}`}
+              className={`relative rounded-xl px-1 py-2 text-center transition ${tab === t.id ? 'tab-on' : 'tab-off'}`}
             >
-              <div className="text-sm font-bold sm:text-base">{t.label}</div>
-              <div className={`hidden text-[11px] sm:block ${tab === t.id ? 'opacity-80' : 'text-stone-500'}`}>{t.desc}</div>
+              {t.id === 'webtoon' && tab !== 'webtoon' && <span aria-hidden className="absolute top-1.5 right-1.5 size-2 rounded-full bg-amber-500" />}
+              <div className="text-sm font-bold sm:text-base">
+                <span className="sm:hidden">{t.short}</span>
+                <span className="hidden sm:inline">{t.label}</span>
+              </div>
+              <div className={`hidden text-[11px] lg:block ${tab === t.id ? 'opacity-80' : 'text-stone-500'}`}>{t.desc}</div>
             </button>
           ))}
         </div>
@@ -319,6 +354,11 @@ function Result({ input }: { input: BirthInput }) {
           <ReportView a={a} />
           <ReviewForm a={a} />
         </>
+      )}
+      {tab === 'webtoon' && (
+        <Suspense fallback={<div className="card text-center text-sm text-stone-500">웹툰을 그리는 중…</div>}>
+          <WebtoonPanel a={a} />
+        </Suspense>
       )}
       {tab === 'luck' && <LuckPanel a={a} />}
       {tab === 'chart' && (

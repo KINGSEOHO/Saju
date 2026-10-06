@@ -7,10 +7,10 @@ import type { SectionId } from '../report/generate.ts';
 const ACC_LABELS = ['전혀 안 맞음', '별로', '반반', '대체로 맞음', '소름 돋게 맞음'];
 
 /** 섹션별 정확도 평가 — 어떤 해석이 맞는지가 유료화 설계의 핵심 데이터 */
-export function SectionRating({ a, section }: { a: SajuAnalysis; section: SectionId }) {
+export function SectionRating({ a, section, question = '이 섹션, 실제 당신과 얼마나 맞나요?' }: { a: SajuAnalysis; section: SectionId | 'webtoon'; question?: string }) {
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState('');
-  const [state, setState] = useState<'idle' | 'sent' | 'queued'>('idle');
+  const [state, setState] = useState<'idle' | 'sent' | 'queued' | 'rejected'>('idle');
 
   async function submit(r: number, c?: string) {
     setRating(r);
@@ -20,7 +20,7 @@ export function SectionRating({ a, section }: { a: SajuAnalysis; section: Sectio
 
   return (
     <div className="no-print mt-6 rounded-xl border border-dashed border-stone-300 p-4 dark:border-stone-700">
-      <div className="text-sm font-semibold">이 섹션, 실제 당신과 얼마나 맞나요?</div>
+      <div className="text-sm font-semibold">{question}</div>
       <p className="mt-0.5 text-xs text-stone-500">평가는 해석 엔진을 개선하는 데 쓰입니다. 생년월일은 전송되지 않습니다.</p>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {ACC_LABELS.map((l, i) => (
@@ -54,7 +54,13 @@ export function SectionRating({ a, section }: { a: SajuAnalysis; section: Sectio
         </div>
       )}
       {state !== 'idle' && (
-        <p className="mt-2 text-xs text-stone-500">{state === 'sent' ? '고맙습니다. 평가가 반영되었습니다.' : '서버에 연결되지 않아 이 브라우저에 임시 저장했습니다. 다음 방문 때 자동 전송됩니다.'}</p>
+        <p className="mt-2 text-xs text-stone-500">
+          {state === 'sent'
+            ? '고맙습니다. 평가가 반영되었습니다.'
+            : state === 'queued'
+              ? '서버에 연결되지 않아 이 브라우저에 임시 저장했습니다. 다음 방문 때 자동 전송됩니다.'
+              : '지금은 이 평가를 저장할 수 없어요. 잠시 후 다시 시도해 주세요.'}
+        </p>
       )}
     </div>
   );
@@ -114,6 +120,10 @@ export function ReviewForm({ a }: { a: SajuAnalysis }) {
       public: publicOk,
       meta: chartMeta(a),
     });
+    if (r === 'rejected') {
+      setState('idle');
+      return setErr('리뷰를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
     setState(r);
   }
 

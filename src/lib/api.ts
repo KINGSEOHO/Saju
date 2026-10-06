@@ -43,7 +43,10 @@ export function chartMeta(a: SajuAnalysis) {
 
 type Kind = 'feedback' | 'reviews' | 'events';
 
-async function post(kind: Kind, body: unknown): Promise<boolean> {
+/** ok: 저장됨 · retry: 네트워크 문제(나중에 재전송) · rejected: 서버가 형식을 거부(재전송해도 소용없음) */
+type PostResult = 'ok' | 'retry' | 'rejected';
+
+async function post(kind: Kind, body: unknown): Promise<PostResult> {
   try {
     if (SHEET_URL) {
       // text/plain 으로 보내야 CORS 사전요청 없이 Apps Script 가 받는다
@@ -52,18 +55,19 @@ async function post(kind: Kind, body: unknown): Promise<boolean> {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ kind, ...(body as object) }),
       });
-      if (!r.ok) return false;
+      if (!r.ok) return 'retry';
       const out = await r.json().catch(() => ({}));
-      return !out.error;
+      return out.error ? 'rejected' : 'ok';
     }
     const r = await fetch(`/api/${kind}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    return r.ok;
+    if (r.ok) return 'ok';
+    return r.status === 400 ? 'rejected' : 'retry';
   } catch {
-    return false;
+    return 'retry';
   }
 }
 
@@ -86,7 +90,7 @@ export async function flushQueue() {
   }
   if (!q.length) return;
   const rest: typeof q = [];
-  for (const item of q) if (!(await post(item.kind, item.body))) rest.push(item);
+  for (const item of q) if ((await post(item.kind, item.body)) === 'retry') rest.push(item);
   try {
     localStorage.setItem(QUEUE_KEY, JSON.stringify(rest));
   } catch {
@@ -94,13 +98,13 @@ export async function flushQueue() {
   }
 }
 
-export async function send(kind: Kind, body: unknown): Promise<'sent' | 'queued'> {
-  const ok = await post(kind, body);
-  if (!ok) {
+export async function send(kind: Kind, body: unknown): Promise<'sent' | 'queued' | 'rejected'> {
+  const res = await post(kind, body);
+  if (res === 'retry') {
     enqueue(kind, body);
     return 'queued';
   }
-  return 'sent';
+  return res === 'ok' ? 'sent' : 'rejected';
 }
 
 export async function fetchStats(token: string): Promise<Stats> {
