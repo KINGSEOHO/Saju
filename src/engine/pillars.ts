@@ -35,6 +35,10 @@ export interface BirthInput {
   timeCorrection?: TimeCorrection;
   /** 자시 처리 (기본: 23시 일진 변경) */
   ziHourRule?: ZiHourRule;
+  /** (선택) MBTI 4글자 — 사주 계산에는 쓰지 않고 교차 분석에만 쓴다 */
+  mbti?: string;
+  /** (선택) 직업·직무 — 사주 계산에는 쓰지 않고 직업 분석에만 쓴다 */
+  job?: string;
 }
 
 export interface Pillar {

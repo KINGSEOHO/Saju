@@ -21,6 +21,8 @@ var META = [
   ['confidence', '확실성'],
   ['timeKnown', '시간앎'],
   ['calendar', '달력'],
+  ['mbti', 'MBTI'],
+  ['jobCat', '직업분야'],
 ];
 
 var TABLES = {
@@ -65,11 +67,14 @@ function sheetFor(kind) {
   var t = TABLES[kind];
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(t.title);
+  var header = t.cols.map(function (c) { return c[1]; }).concat(META.map(function (m) { return m[1]; }));
   if (!sh) {
     sh = ss.insertSheet(t.title);
-    var header = t.cols.map(function (c) { return c[1]; }).concat(META.map(function (m) { return m[1]; }));
     sh.appendRow(header);
     sh.setFrozenRows(1);
+  } else if (sh.getLastColumn() < header.length) {
+    // 스크립트 업데이트로 열이 늘어난 경우 머리글만 보충 (기존 데이터 위치는 그대로)
+    sh.getRange(1, 1, 1, header.length).setValues([header]);
   }
   return sh;
 }

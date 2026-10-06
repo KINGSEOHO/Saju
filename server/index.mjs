@@ -68,7 +68,7 @@ const PRICE_ORDER = ['free_only', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900']
 const FEATURES = new Set(['monthly', 'compat', 'daeun_detail', 'pdf', 'expert', 'career_deep', 'date_pick', 'name']);
 const COMPARES = new Set(['much_better', 'better', 'same', 'worse', 'never']);
 const EVENT_TYPES = new Set(['analyze', 'share', 'print', 'premium_interest']);
-const META_KEYS = ['dayPillar', 'dayStem', 'gender', 'ageGroup', 'strength', 'gyeokguk', 'yongsin', 'yongsinMethod', 'confidence', 'timeKnown', 'calendar'];
+const META_KEYS = ['dayPillar', 'dayStem', 'gender', 'ageGroup', 'strength', 'gyeokguk', 'yongsin', 'yongsinMethod', 'confidence', 'timeKnown', 'calendar', 'mbti', 'jobCat'];
 
 const int15 = (v) => (Number.isInteger(v) && v >= 1 && v <= 5 ? v : null);
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) || null : null);

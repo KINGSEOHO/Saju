@@ -19,6 +19,8 @@ export function encodeInput(i: BirthInput): string {
   if (i.placeName) q.set('p', i.placeName);
   if (i.timeCorrection && i.timeCorrection !== 'mean') q.set('tc', i.timeCorrection);
   if (i.ziHourRule && i.ziHourRule !== 'traditional') q.set('zr', i.ziHourRule);
+  if (i.mbti) q.set('mb', i.mbti);
+  if (i.job) q.set('job', i.job);
   return q.toString();
 }
 
@@ -45,5 +47,7 @@ export function decodeInput(qs: string): BirthInput | null {
     placeName: q.get('p') ?? undefined,
     timeCorrection: tc === 'true' || tc === 'none' ? tc : 'mean',
     ziHourRule: q.get('zr') === 'split' ? 'split' : 'traditional',
+    mbti: /^[EI][SN][TF][JP]$/.test((q.get('mb') ?? '').toUpperCase()) ? (q.get('mb') ?? '').toUpperCase() : undefined,
+    job: q.get('job')?.trim().slice(0, 30) || undefined,
   };
 }

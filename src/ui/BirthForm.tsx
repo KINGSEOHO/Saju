@@ -2,6 +2,8 @@ import { useMemo, useState, type FormEvent } from 'react';
 import type { BirthInput } from '../engine/index.ts';
 import { leapMonthOf, lunarMonthDays } from '../engine/calendar.ts';
 import { CITIES } from '../engine/timezone.ts';
+import { JOB_SUGGEST } from '../report/job.ts';
+import { MBTI_LIST } from '../report/mbti.ts';
 
 const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 
@@ -26,6 +28,8 @@ export function BirthForm({ initial, onSubmit }: { initial?: BirthInput | null; 
   const [tz, setTz] = useState<string>(initial?.timeZone ?? 'Asia/Seoul');
   const [tc, setTc] = useState<'mean' | 'true' | 'none'>(initial?.timeCorrection ?? 'mean');
   const [zr, setZr] = useState<'traditional' | 'split'>(initial?.ziHourRule ?? 'traditional');
+  const [mbti, setMbti] = useState<string>(initial?.mbti ?? '');
+  const [job, setJob] = useState<string>(initial?.job ?? '');
   const [showAdv, setShowAdv] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +70,8 @@ export function BirthForm({ initial, onSubmit }: { initial?: BirthInput | null; 
       placeName: c ? c.name : `경도 ${longitude}`,
       timeCorrection: tc,
       ziHourRule: zr,
+      mbti: mbti || undefined,
+      job: job.trim().slice(0, 30) || undefined,
     });
   }
 
@@ -208,6 +214,37 @@ export function BirthForm({ initial, onSubmit }: { initial?: BirthInput | null; 
             </label>
           </div>
         )}
+      </fieldset>
+
+      <fieldset className="rounded-2xl border border-dashed border-stone-300 p-4 dark:border-stone-700">
+        <legend className="px-1 text-sm font-semibold">
+          교차 분석 정보 <span className="font-normal text-stone-500">(선택)</span>
+        </legend>
+        <p className="text-xs leading-relaxed text-stone-500">
+          넣으면 MBTI·직업을 사주와 비교해 살릴 강점, 보완할 점, 지금 준비할 것을 더 구체적으로 알려 드려요. 결과 화면에서도 넣을 수 있어요.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold">MBTI</span>
+            <select className="field" value={mbti} onChange={(e) => setMbti(e.target.value)}>
+              <option value="">모름 / 입력 안 함</option>
+              {MBTI_LIST.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold">직업·하는 일</span>
+            <input className="field" list="job-suggest" value={job} onChange={(e) => setJob(e.target.value)} maxLength={30} placeholder="예: 개발자, 간호사, 대학생" autoComplete="off" />
+            <datalist id="job-suggest">
+              {JOB_SUGGEST.map((j) => (
+                <option key={j} value={j} />
+              ))}
+            </datalist>
+          </label>
+        </div>
       </fieldset>
 
       <div>

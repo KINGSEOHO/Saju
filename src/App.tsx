@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ComponentTyp
 import { analyze, ELEMENT_KO, pillarHanja, type BirthInput, type SajuAnalysis } from './engine/index.ts';
 import { flushQueue, send, sessionId } from './lib/api.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
-import { generateReport } from './report/generate.ts';
+import { generateReport, type Report } from './report/generate.ts';
 import { readLuck } from './report/luckReading.ts';
 import { Admin } from './ui/Admin.tsx';
 import { ElementsPanel, InteractionsPanel, StrengthPanel } from './ui/Analysis.tsx';
@@ -31,6 +31,15 @@ const WebtoonPanel = lazy(() =>
     (m) => ({ default: m.WebtoonPanel }),
     () => ({ default: ChunkError }),
   ),
+);
+const CrossTabs = lazy(() =>
+  import('./ui/CrossTabs.tsx').then(
+    (m) => ({ default: m.CrossTabs }),
+    () => ({ default: ChunkError }),
+  ),
+);
+const CrossBanner = lazy(
+  (): Promise<{ default: ComponentType<{ a: SajuAnalysis; report: Report; onOpen: () => void }> }> => import('./ui/CrossBanner.tsx').catch(() => ({ default: () => null })),
 );
 const WebtoonTeaser = lazy(
   (): Promise<{ default: ComponentType<{ a: SajuAnalysis; onOpen: () => void }> }> => import('./ui/WebtoonTeaser.tsx').catch(() => ({ default: () => null })),
@@ -131,13 +140,16 @@ function Home() {
   );
 }
 
-type MainTab = 'report' | 'webtoon' | 'luck' | 'chart' | 'detail';
-const MAIN_TABS: { id: MainTab; label: string; short: string; desc: string }[] = [
-  { id: 'report', label: '풀이 리포트', short: '풀이', desc: '성향·연애·직업·재물·건강' },
-  { id: 'webtoon', label: '인생 웹툰', short: '웹툰', desc: '사주로 그린 4컷·6컷 만화' },
-  { id: 'luck', label: '운의 흐름', short: '운세', desc: '이번 달·올해·대운' },
-  { id: 'chart', label: '만세력', short: '만세력', desc: '사주 원국과 계산 근거' },
-  { id: 'detail', label: '전문 분석', short: '분석', desc: '오행·용신·신살' },
+type MainTab = 'report' | 'cross' | 'mbti' | 'job' | 'webtoon' | 'luck' | 'chart' | 'detail';
+const MAIN_TABS: { id: MainTab; label: string; icon: string; isNew?: boolean }[] = [
+  { id: 'report', label: '풀이 리포트', icon: '書' },
+  { id: 'cross', label: '교차 검증', icon: '⬡', isNew: true },
+  { id: 'mbti', label: 'MBTI×사주', icon: '性', isNew: true },
+  { id: 'job', label: '직업×운', icon: '業', isNew: true },
+  { id: 'webtoon', label: '인생 웹툰', icon: '畵' },
+  { id: 'luck', label: '운의 흐름', icon: '運' },
+  { id: 'chart', label: '만세력', icon: '曆' },
+  { id: 'detail', label: '전문 분석', icon: '析' },
 ];
 
 function Result({ input }: { input: BirthInput }) {
@@ -160,7 +172,8 @@ function Result({ input }: { input: BirthInput }) {
     }
   }, [result, input.gender]);
 
-  const summary = useMemo(() => ('a' in result ? generateReport(result.a).sections.find((s) => s.id === 'summary') : undefined), [result]);
+  const report = useMemo(() => ('a' in result ? generateReport(result.a) : null), [result]);
+  const summary = report?.sections.find((s) => s.id === 'summary');
   const month = useMemo(() => {
     if (!('a' in result)) return null;
     const w = upcomingMonths(result.a, 1)[0];
@@ -252,6 +265,12 @@ function Result({ input }: { input: BirthInput }) {
           ))}
         </div>
 
+        {report && (
+          <Suspense fallback={<div className="no-print mt-6 h-[150px] rounded-2xl bg-gradient-to-br from-[#10172e] to-[#1c2546]" />}>
+            <CrossBanner a={a} report={report} onOpen={() => selectTab('cross')} />
+          </Suspense>
+        )}
+
         <Suspense fallback={<div className="no-print mt-4 h-[118px] rounded-2xl border border-amber-200 bg-amber-50/70 sm:h-[134px] dark:border-amber-900 dark:bg-amber-950/30" />}>
           <WebtoonTeaser a={a} onOpen={() => selectTab('webtoon')} />
         </Suspense>
@@ -327,25 +346,32 @@ function Result({ input }: { input: BirthInput }) {
         )}
       </section>
 
-      <div ref={tabsRef} className="no-print sticky top-14 z-20 -mx-4 bg-paper/95 px-4 py-2 backdrop-blur dark:bg-stone-950/95">
-        <div className="grid grid-cols-5 gap-1 rounded-2xl border border-stone-200 bg-white p-1 dark:border-stone-800 dark:bg-stone-900" role="tablist">
-          {MAIN_TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              onClick={() => selectTab(t.id)}
-              className={`relative rounded-xl px-1 py-2 text-center transition ${tab === t.id ? 'tab-on' : 'tab-off'}`}
-            >
-              {t.id === 'webtoon' && tab !== 'webtoon' && <span aria-hidden className="absolute top-1.5 right-1.5 size-2 rounded-full bg-amber-500" />}
-              <div className="text-sm font-bold sm:text-base">
-                <span className="sm:hidden">{t.short}</span>
-                <span className="hidden sm:inline">{t.label}</span>
-              </div>
-              <div className={`hidden text-[11px] lg:block ${tab === t.id ? 'opacity-80' : 'text-stone-500'}`}>{t.desc}</div>
-            </button>
-          ))}
+      <div ref={tabsRef} className="no-print sticky top-14 z-20 -mx-4 bg-paper/95 py-2 backdrop-blur dark:bg-stone-950/95">
+        <div className="relative">
+          <div className="overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max min-w-full gap-1 rounded-2xl border border-stone-200 bg-white p-1 dark:border-stone-800 dark:bg-stone-900" role="tablist">
+              {MAIN_TABS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t.id}
+                  onClick={(e) => {
+                    selectTab(t.id);
+                    e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+                  }}
+                  className={`relative flex flex-1 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold whitespace-nowrap transition ${tab === t.id ? 'tab-on' : 'tab-off'}`}
+                >
+                  <span aria-hidden className="hanja text-[13px] opacity-75">
+                    {t.icon}
+                  </span>
+                  {t.label}
+                  {t.isNew && tab !== t.id && <span className="rounded bg-amber-400 px-1 text-[9px] leading-4 font-extrabold text-amber-950">NEW</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-paper to-transparent sm:hidden dark:from-stone-950" />
         </div>
       </div>
 
@@ -354,6 +380,11 @@ function Result({ input }: { input: BirthInput }) {
           <ReportView a={a} />
           <ReviewForm a={a} />
         </>
+      )}
+      {(tab === 'cross' || tab === 'mbti' || tab === 'job') && report && (
+        <Suspense fallback={<div className="card text-center text-sm text-stone-500">교차 분석을 계산하는 중…</div>}>
+          <CrossTabs a={a} report={report} tab={tab} />
+        </Suspense>
       )}
       {tab === 'webtoon' && (
         <Suspense fallback={<div className="card text-center text-sm text-stone-500">웹툰을 그리는 중…</div>}>

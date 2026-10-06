@@ -54,3 +54,8 @@ export function lifeShape(a: SajuAnalysis): { shape: LifeShape; early: number; m
   else if (mid - Math.max(early, late) >= 6) shape = '중년 절정형';
   return { shape, early, mid, late };
 }
+
+/** 리포트 문장에서 화면용 머리말("[신살] ", "그러나 과하면: ")을 떼어 낸다 */
+export function plainStatement(t: string): string {
+  return t.replace(/^\[[^\]]+\]\s*/, '').replace(/^그러나 과하면:\s*/, '');
+}
