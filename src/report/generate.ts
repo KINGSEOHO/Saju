@@ -124,7 +124,8 @@ export function generateReport(a: SajuAnalysis): Report {
       dayHap: s.flags.some((f) => f.startsWith('일지합')) || s.flags.some((f) => f.startsWith('일간합')),
       dayChung: s.flags.some((f) => f.startsWith('일지충')),
       monthChung: s.flags.some((f) => f.startsWith('월지충')),
-      hyeong: s.flags.some((f) => f.includes('형')),
+      samhyeong: s.flags.some((f) => f.includes('삼형')),
+      hyeong: s.flags.some((f) => f.includes(' 형:')),
       sanggwan: s.stemTenGod === '상관' || s.branchTenGod === '상관',
       gwan: groups.includes('관성'),
       siksang: groups.includes('식상'),
@@ -661,9 +662,12 @@ export function generateReport(a: SajuAnalysis): Report {
         notes.push('월지충: 생활 리듬 변화');
         sc -= 3;
       }
-      if (t.hyeong) {
-        notes.push('형: 수술·시술·부상 주의');
+      if (t.samhyeong) {
+        notes.push('삼형: 수술·시술·부상 주의');
         sc -= 6;
+      } else if (t.hyeong) {
+        notes.push('형: 마찰·피로 누적 주의');
+        sc -= 2;
       }
       const yEl = STEMS[mainStemOf(s.pillar.branch)].element;
       if (a.elements.percent[yEl] >= 30) notes.push(`${elKo(yEl)} 과다 강화: ${ELEMENT_ORGAN[yEl].organs.split(',')[0]} 관리`);

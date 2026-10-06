@@ -77,7 +77,8 @@ export function evaluateLuck(
       raw -= 0.15;
     }
     if (it.kind === '육합' && it.positions.includes('day')) flags.push('일지합: 인연·결속(연애·결혼 신호)');
-    if ((it.kind === '삼형' || it.kind === '형') && it.positions.length >= 2) flags.push(`${it.chars} 형: 마찰·법적 문제·수술 주의`);
+    if (it.kind === '삼형') flags.push(`${it.chars} 삼형: 수술·사고·법적 문제 주의`);
+    if (it.kind === '형') flags.push(`${it.chars} 형: 마찰·서류 문제 주의`);
     if (it.kind === '천간합' && it.positions.includes('day')) flags.push('일간합: 묶임·새로운 관계 또는 계약');
   }
   // raw ∈ [-2, 2] → 15~85 (원국과의 충·형으로 추가 하락 가능). 극단적 단정(0점·100점)을 피한다.

@@ -1,0 +1,120 @@
+/** 첫 화면 하단 — 자주 묻는 질문 (명경사주의 차별점을 솔직하게) */
+import type { ReactNode } from 'react';
+
+const FAQ: { q: string; a: ReactNode }[] = [
+  {
+    q: 'AI 채팅으로 사주 보는 것과 뭐가 다른가요?',
+    a: (
+      <>
+        AI 채팅은 계산을 직접 하기보다 그럴듯한 문장을 만들어 내기 때문에, 절기가 바뀌는 날이나 음력·서머타임처럼 까다로운 경우에 사주 자체를 틀리게 세우기 쉽고 물을 때마다 답이 달라지기도 합니다.
+        명경사주는 천문 계산으로 사주를 먼저 정확히 세운 뒤 정해진 명리 규칙으로 풀이합니다. 같은 생년월일시라면 계산과 해석 기준이 늘 같아 결과가 흔들리지 않고, 해석마다 “왜 그렇게 보는지”
+        근거(예: 관성 40%, 일지 충)가 함께 표시됩니다.
+      </>
+    ),
+  },
+  {
+    q: '왜 좋은 말만 해 주지 않나요?',
+    a: (
+      <>
+        듣기 좋은 말은 기분은 좋아도 결정에는 도움이 되지 않기 때문입니다. 명경사주는 모든 해석을 <b>강점</b>, <b>약점·리스크</b>, <b>주의</b>로 나눠 보여 드립니다. 예를 들어 돈을 모으는 힘이 약한
+        사주라면 “자동 저축처럼 새지 않게 하는 구조가 필요하다”고 분명히 말씀드립니다. 약점을 정확히 아는 것이 대비의 시작이라고 생각합니다.
+      </>
+    ),
+  },
+  {
+    q: '다른 사이트와 결과가 다르게 나와요. 어느 쪽이 맞나요?',
+    a: (
+      <>
+        대부분 출생 시각 보정 차이입니다. 서울은 표준시보다 해가 약 32분 늦게 뜨고, 1948~1988년 사이에는 서머타임을 시행한 해가 있습니다. 이 보정을 생략하는 곳이 많아 시주나 일주가 달라지곤 합니다.
+        명경사주는 보정을 자동으로 적용하고, 출생 시각이 경계에 걸려 학파·보정 방식에 따라 결과가 갈리면 <b>다른 경우의 사주까지 함께</b> 보여 드립니다. 고급 설정에서 보정 방식을 바꿔 직접 비교해 볼 수도
+        있습니다.
+      </>
+    ),
+  },
+  {
+    q: '계산이 정확한지 어떻게 믿을 수 있나요?',
+    a: (
+      <>
+        검증 결과를 공개합니다. 음력 변환은 한국천문연구원 기준 자료와 1900~2050년 <b>55,152일 전체</b>를 대조해 모두 일치했고, 절기 시각은 1900~2100년 전 구간에서 독립된 천문 계산과 1분 이내로
+        일치합니다. 사주 네 기둥은 무작위로 뽑은 15,000건을 다른 만세력 계산과 비교해 모두 같았습니다.
+      </>
+    ),
+  },
+  {
+    q: '태어난 시간을 모르면 볼 수 없나요?',
+    a: (
+      <>
+        볼 수 있습니다. ‘시간을 모릅니다’를 선택하면 시주를 뺀 여섯 글자로 풀이합니다. 대신 자녀·말년운과 성향 일부는 정확도가 낮아지며, 결과 화면에 그 점을 분명히 표시합니다. 태어난 날 절기가 바뀌는
+        경우처럼 시간에 따라 월주까지 달라질 수 있으면 그 사실도 함께 알려 드립니다.
+      </>
+    ),
+  },
+  {
+    q: '월운·세운 풀이는 어떻게 만들어지나요?',
+    a: (
+      <>
+        그달(그해)에 들어오는 기운이 <b>내 사주에 도움이 되는지, 부담이 되는지</b>를 먼저 따지고, 내 사주의 글자와 부딪히는지(충)·합하는지까지 보고 “이렇게 하면 좋다 / 이건 조심하라”를 정리합니다.
+        그래서 같은 달이라도 사람마다 풀이가 다릅니다.
+      </>
+    ),
+  },
+  {
+    q: '무료로는 어디까지 볼 수 있나요?',
+    a: (
+      <>
+        지금은 베타 기간이라 만세력, 오행·용신 분석, 대운·세운·월운 풀이, 성향·연애·직업·재물·건강 리포트까지 <b>전부 무료</b>입니다. 앞으로 일부 상세 기능이 유료로 바뀔 수 있으며, 이용자 리뷰와
+        정확도 평가를 바탕으로 결정합니다.
+      </>
+    ),
+  },
+  {
+    q: '입력한 생년월일시는 어떻게 쓰이나요?',
+    a: (
+      <>
+        사주 계산은 모두 지금 쓰시는 브라우저 안에서 이루어지며, 이름·생년월일·출생 시각은 서버로 전송되지 않습니다. 리뷰나 정확도 평가를 남기실 때만 개인을 알아볼 수 없는 요약(일간·성별·연령대 등)이
+        함께 저장됩니다.
+      </>
+    ),
+  },
+  {
+    q: '결과를 나중에 다시 볼 수 있나요?',
+    a: (
+      <>
+        결과 화면의 ‘링크 복사’를 누르면 입력값이 담긴 주소가 복사됩니다. 이 주소를 저장해 두면 언제든 같은 결과를 다시 볼 수 있고, 이번 달·올해 풀이는 여는 날짜에 맞춰 바뀝니다. 링크에는 생년월일시가 들어
+        있으니 다른 사람과 공유할 때는 주의해 주세요.
+      </>
+    ),
+  },
+];
+
+export function Faq() {
+  return (
+    <section className="no-print bg-stars bg-brand-900 text-white dark:bg-[#121c33]" aria-labelledby="faq-title">
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:py-20">
+        <p className="text-center text-xs font-semibold tracking-[0.3em] text-brand-200">자주 묻는 질문</p>
+        <h2 id="faq-title" className="mt-3 text-center text-2xl font-extrabold sm:text-3xl">
+          듣기 좋은 말보다, 정확한 사실을
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-sm text-brand-100/80">명경사주가 다른 사주 서비스와 어떻게 다른지 솔직하게 답해 드립니다.</p>
+        <div className="mt-10 border-t border-white/10">
+          {FAQ.map((f) => (
+            <details key={f.q} className="group border-b border-white/10">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-base font-semibold sm:text-lg [&::-webkit-details-marker]:hidden">
+                <span>{f.q}</span>
+                <span aria-hidden className="shrink-0 text-2xl leading-none font-light text-brand-200 transition-transform duration-200 group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <div className="pr-8 pb-6 text-[15px] leading-relaxed text-brand-50/85 [&_b]:font-semibold [&_b]:text-white">{f.a}</div>
+            </details>
+          ))}
+        </div>
+        <div className="mt-10 text-center">
+          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="btn rounded-full bg-white px-6 py-3 text-base text-brand-900 hover:bg-brand-50">
+            내 사주 정확하게 보기
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}

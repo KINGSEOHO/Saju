@@ -106,6 +106,19 @@ body {
   @apply text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800;
 }
 
+/* 밤하늘 점 배경 (FAQ) */
+@utility bg-stars {
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgb(255 255 255 / 0.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 12%, rgb(255 255 255 / 0.45), transparent 60%),
+    radial-gradient(1.5px 1.5px at 88% 46%, rgb(255 255 255 / 0.4), transparent 60%),
+    radial-gradient(1px 1px at 35% 62%, rgb(255 255 255 / 0.35), transparent 60%),
+    radial-gradient(1px 1px at 60% 85%, rgb(255 255 255 / 0.4), transparent 60%),
+    radial-gradient(1.5px 1.5px at 6% 78%, rgb(255 255 255 / 0.35), transparent 60%),
+    radial-gradient(1px 1px at 48% 30%, rgb(255 255 255 / 0.3), transparent 60%),
+    radial-gradient(1px 1px at 94% 90%, rgb(255 255 255 / 0.35), transparent 60%);
+}
+
 @media print {
   .no-print {
     display: none !important;

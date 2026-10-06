@@ -3,13 +3,15 @@ import { analyze, ELEMENT_KO, pillarHanja, type BirthInput, type SajuAnalysis } 
 import { flushQueue, send, sessionId } from './lib/api.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
 import { generateReport } from './report/generate.ts';
+import { readLuck } from './report/luckReading.ts';
 import { Admin } from './ui/Admin.tsx';
 import { ElementsPanel, InteractionsPanel, StrengthPanel } from './ui/Analysis.tsx';
 import { BirthForm } from './ui/BirthForm.tsx';
 import { GLOSSARY, Term } from './ui/common.tsx';
 import { ReviewForm } from './ui/Feedback.tsx';
-import { LuckPanel } from './ui/Luck.tsx';
+import { LuckPanel, monthLabel, SwitchNote, upcomingMonths } from './ui/Luck.tsx';
 import { Manseryeok, PillarHeader } from './ui/Manseryeok.tsx';
+import { Faq } from './ui/Faq.tsx';
 import { ReportView } from './ui/ReportView.tsx';
 
 type Route = { name: 'home' } | { name: 'result'; input: BirthInput } | { name: 'admin' };
@@ -54,6 +56,7 @@ export default function App() {
         {route.name === 'result' && <Result input={route.input} />}
         {route.name === 'admin' && <Admin />}
       </main>
+      {route.name === 'home' && <Faq />}
       <footer className="no-print border-t border-stone-200 py-8 text-center text-xs leading-relaxed text-stone-500 dark:border-stone-800">
         명경사주(明鏡四柱) — 맑은 거울처럼 있는 그대로.
         <br />
@@ -105,7 +108,7 @@ function Home() {
 type MainTab = 'report' | 'luck' | 'chart' | 'detail';
 const MAIN_TABS: { id: MainTab; label: string; desc: string }[] = [
   { id: 'report', label: '풀이 리포트', desc: '성향·연애·직업·재물·건강' },
-  { id: 'luck', label: '운의 흐름', desc: '대운·올해·이번 달' },
+  { id: 'luck', label: '운의 흐름', desc: '이번 달·올해·대운' },
   { id: 'chart', label: '만세력', desc: '사주 원국과 계산 근거' },
   { id: 'detail', label: '전문 분석', desc: '오행·용신·신살' },
 ];
@@ -131,6 +134,11 @@ function Result({ input }: { input: BirthInput }) {
   }, [result, input.gender]);
 
   const summary = useMemo(() => ('a' in result ? generateReport(result.a).sections.find((s) => s.id === 'summary') : undefined), [result]);
+  const month = useMemo(() => {
+    if (!('a' in result)) return null;
+    const w = upcomingMonths(result.a, 1)[0];
+    return w ? { w, r: readLuck(result.a, w, '달'), label: monthLabel(result.a, w) } : null;
+  }, [result]);
 
   if ('error' in result) {
     return (
@@ -245,6 +253,35 @@ function Result({ input }: { input: BirthInput }) {
                 ))}
               </ul>
             </div>
+          </div>
+        )}
+
+        {month && (
+          <div className="mt-4 rounded-2xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-800 dark:bg-brand-900/30">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-bold text-brand-700 dark:text-brand-300">
+                이번 달 운세 <span className="font-normal text-stone-500">· {month.label.title} ({month.label.since})</span>
+              </div>
+              <button type="button" onClick={() => selectTab('luck')} className="no-print text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
+                월별 풀이 전체 보기 →
+              </button>
+            </div>
+            <div className="mt-1.5 text-lg font-extrabold">{month.r.headline}</div>
+            <div className="mt-2 grid gap-1.5 text-sm text-stone-800 sm:grid-cols-2 dark:text-stone-200">
+              <div className="flex gap-2">
+                <span aria-hidden className="font-bold text-sky-600">
+                  ✓
+                </span>
+                <span>{month.r.good[0]}</span>
+              </div>
+              <div className="flex gap-2">
+                <span aria-hidden className="font-bold text-rose-600">
+                  !
+                </span>
+                <span>{month.r.caution[0]}</span>
+              </div>
+            </div>
+            <SwitchNote a={a} w={month.w} />
           </div>
         )}
 
