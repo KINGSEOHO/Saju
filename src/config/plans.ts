@@ -12,15 +12,26 @@ export const BETA_FREE = true;
 /** 유료 전환 시 잠글 후보 (지금은 '베타 무료' 배지로만 표시) */
 export const PREMIUM_SECTIONS: SectionId[] = ['love', 'career', 'wealth', 'health'];
 
-/** 리뷰에서 지불 의향을 물을 가격 구간 (원) — A/B 테스트 가능하도록 설정값으로 둔다 */
+/** 리뷰에서 지불 의향을 물을 가격 (원) — A/B 테스트 가능하도록 설정값으로 둔다 */
 export const PRICE_OPTIONS = [
-  { id: 'free_only', label: '무료가 아니면 안 쓴다' },
-  { id: 'p2900', label: '2,900원' },
-  { id: 'p4900', label: '4,900원' },
-  { id: 'p9900', label: '9,900원' },
-  { id: 'p19900', label: '19,900원' },
-  { id: 'p29900', label: '29,900원 이상' },
+  { id: 'free_only', label: '무료' },
+  { id: 'p990', label: '990원' },
+  { id: 'p1990', label: '1,990원' },
 ] as const;
+
+/** 가격 표시 이름 — 예전에 받은 응답(2,900원~29,900원)도 통계에서 읽을 수 있게 남겨 둔다 */
+export const PRICE_LABEL: Record<string, string> = {
+  free_only: '무료',
+  p990: '990원',
+  p1990: '1,990원',
+  p2900: '2,900원',
+  p4900: '4,900원',
+  p9900: '9,900원',
+  p19900: '19,900원',
+  p29900: '29,900원 이상',
+};
+/** 통계에서 가격 순서 */
+export const PRICE_ORDER = ['free_only', 'p990', 'p1990', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900'];
 
 /** 유료화 후보 기능 — 리뷰에서 수요 조사 */
 export const FEATURE_OPTIONS = [

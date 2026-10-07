@@ -44,7 +44,8 @@ var TABLES = {
 };
 
 var SECTIONS = ['summary', 'personality', 'love', 'career', 'wealth', 'health', 'gaeun', 'webtoon'];
-var PRICES = ['free_only', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900'];
+// 지금 묻는 가격: 무료 / 990원 / 1,990원 (예전 응답 값도 계속 받는다)
+var PRICES = ['free_only', 'p990', 'p1990', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900'];
 var FEATURES = ['monthly', 'compat', 'daeun_detail', 'pdf', 'expert', 'career_deep', 'date_pick', 'name'];
 var COMPARES = ['much_better', 'better', 'same', 'worse', 'never'];
 var EVENTS = ['analyze', 'share', 'print', 'premium_interest'];

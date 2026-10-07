@@ -2,6 +2,8 @@
  * 관리자 통계 계산 (스프레드시트 원본 → 통계)
  * server/index.mjs 의 stats() 와 같은 지표·같은 유료 전환 게이트를 쓴다.
  */
+import { PRICE_ORDER } from '../config/plans.ts';
+
 type Meta = Record<string, string | number | boolean>;
 export interface RawData {
   feedback: { created_at: string; section: string; rating: number; comment: string; meta: Meta }[];
@@ -35,7 +37,6 @@ export interface Stats {
 }
 
 const SECTIONS = ['summary', 'personality', 'love', 'career', 'wealth', 'health', 'gaeun', 'webtoon'];
-const PRICE_ORDER = ['free_only', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900'];
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 const count = (keys: string[]): Bucket[] => {
