@@ -11,9 +11,9 @@
 
 - 흰 바탕 + 포인트 색 하나(송연록 `#33574D`). 그라데이션·그림자·유리 효과·이모지 없이 여백과 옅은 면, 1px 선으로 구분한다.
 - 색·글자 크기는 모두 `src/index.css`의 토큰으로만 쓴다(기본 색 팔레트는 비워 둠). 다크 모드도 같은 토큰을 바꿔 끼운다.
-- 글꼴: 제목·사주 원국·풀이 본문은 **함초롱바탕**, 버튼·입력·안내는 **Pretendard**.
-  - 함초롱바탕 파일을 `public/fonts/HCRBatang.ttf`, `public/fonts/HCRBatang-Bold.ttf`에 넣으면 바로 쓰인다(같은 이름의 `.woff2`가 있으면 그것을 먼저 쓴다).
-  - 파일이 없는 동안은 Noto Serif KR이 대신 보인다.
+- 글꼴: 제목·사주 원국·풀이 본문은 **함초롬바탕**, 버튼·입력·안내는 **Pretendard**.
+  - 함초롬바탕은 `public/fonts/HCRBatang.woff2`, `HCRBatang-Bold.woff2`로 넣어 두었다. 원본 TTF(약 30MB)에서 사이트에 쓰는 글자만 남긴 것(각 200KB 안팎)이며, 다시 만들 때는 `scripts/subset-font.py`.
+  - 이 파일에 없는 글자는 Noto Serif KR로 보인다.
 - 입력은 한 화면에 질문 하나(#/start/1~5), 결과는 결론 → 원국 표 → 다섯 기운 → 세부 풀이(펼치기) 순서.
 
 ## 로컬 실행
