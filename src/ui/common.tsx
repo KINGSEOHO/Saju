@@ -1,58 +1,42 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { BRANCHES, ELEMENT_HANJA, ELEMENT_KO, STEMS, type Element } from '../engine/index.ts';
 import { glossOf, glossSplit } from '../report/glossary.ts';
 
 export { GLOSSARY } from '../report/glossary.ts';
 
-export const EL_VAR: Record<Element, string> = {
-  wood: 'var(--el-wood)',
-  fire: 'var(--el-fire)',
-  earth: 'var(--el-earth)',
-  metal: 'var(--el-metal)',
-  water: 'var(--el-water)',
-};
-
-/** 오행 색 점 + 글자 라벨 (색에만 의존하지 않도록 항상 라벨 동반) */
-export function ElementTag({ el, showHanja = false }: { el: Element; showHanja?: boolean }) {
+/** 펼치기 표시 (아래 꺾쇠, 열리면 위로) */
+export function Chevron({ open = false, className = '' }: { open?: boolean; className?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-600 dark:text-stone-300">
-      <span aria-hidden className="inline-block size-2 rounded-full" style={{ background: EL_VAR[el] }} />
-      {ELEMENT_KO[el]}
-      {showHanja && <span className="hanja">({ELEMENT_HANJA[el]})</span>}
-    </span>
+    <svg aria-hidden viewBox="0 0 24 24" className={`size-5 shrink-0 text-sub transition-transform ${open ? 'rotate-180' : ''} ${className}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
   );
 }
 
-/** 천간/지지 글자 타일 */
-export function CharTile({ kind, idx, size = 'lg' }: { kind: 'stem' | 'branch'; idx: number; size?: 'lg' | 'md' | 'sm' }) {
-  const d = kind === 'stem' ? STEMS[idx] : BRANCHES[idx];
-  const el = d.element;
-  const dims = size === 'lg' ? 'size-16 sm:size-20 text-4xl sm:text-5xl' : size === 'md' ? 'size-12 text-2xl' : 'size-9 text-lg';
+/** 뒤로 가기 표시 */
+export function BackIcon() {
   return (
-    <div
-      className={`relative flex ${dims} flex-col items-center justify-center rounded-xl border-2 bg-white dark:bg-stone-900`}
-      style={{ borderColor: EL_VAR[el] }}
-      title={`${d.ko} (${ELEMENT_KO[el]}·${d.polarity === 'yang' ? '양' : '음'})`}
-    >
-      <span className="hanja leading-none font-bold text-stone-900 dark:text-stone-50">{d.hanja}</span>
-      {size !== 'sm' && (
-        <span className="mt-0.5 text-[10px] leading-none text-stone-500 dark:text-stone-400">
-          {d.ko}·{ELEMENT_KO[el]}
-          {d.polarity === 'yang' ? '+' : '−'}
-        </span>
-      )}
-      <span aria-hidden className="absolute top-1 right-1 size-1.5 rounded-full" style={{ background: EL_VAR[el] }} />
+    <svg aria-hidden viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  );
+}
+
+/** 화면 아래에 고정되는 큰 버튼 자리 (아이폰 아래쪽 안전 영역까지 고려) */
+export function BottomBar({ children }: { children: ReactNode }) {
+  return (
+    <div className="no-print fixed inset-x-0 bottom-0 z-30 bg-bg">
+      <div className="wrap pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">{children}</div>
     </div>
   );
 }
 
 export function SectionTitle({ id, kicker, title, desc }: { id?: string; kicker?: string; title: string; desc?: ReactNode }) {
   return (
-    <div id={id} className="mb-4 scroll-mt-24">
-      {kicker && <div className="text-xs font-semibold tracking-wider text-stone-500 uppercase dark:text-stone-400">{kicker}</div>}
-      <h2 className="mt-1 text-xl font-bold text-stone-900 sm:text-2xl dark:text-stone-50">{title}</h2>
-      {desc && <p className="mt-1.5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">{desc}</p>}
+    <div id={id} className="mb-6 scroll-mt-20">
+      {kicker && <div className="kicker">{kicker}</div>}
+      <h2 className="mt-1 text-title2 text-ink">{title}</h2>
+      {desc && <p className="mt-2 text-label text-sub">{desc}</p>}
     </div>
   );
 }
@@ -60,19 +44,12 @@ export function SectionTitle({ id, kicker, title, desc }: { id?: string; kicker?
 export function Disclosure({ summary, children, defaultOpen = false }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-xl border border-stone-200 dark:border-stone-800">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-stone-800 dark:text-stone-200"
-      >
+    <div className="border-y border-line">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center justify-between gap-3 py-4 text-left text-ui font-semibold text-ink">
         <span>{summary}</span>
-        <span aria-hidden className={`transition ${open ? 'rotate-180' : ''}`}>
-          ▾
-        </span>
+        <Chevron open={open} />
       </button>
-      {open && <div className="border-t border-stone-200 px-4 py-3 dark:border-stone-800">{children}</div>}
+      {open && <div className="pb-5">{children}</div>}
     </div>
   );
 }
@@ -91,11 +68,12 @@ export function scrollToStart(el: HTMLElement | null | undefined, gap = 12) {
   window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }
 
+/** 해석 문장의 성격 — 강점은 포인트 색, 약점은 먹색, 나머지는 회색 꼬리표 */
 export const TONE_STYLE = {
-  positive: { label: '강점', icon: '＋', bar: 'bg-sky-500', pill: 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200' },
-  negative: { label: '약점·리스크', icon: '－', bar: 'bg-rose-500', pill: 'bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200' },
-  caution: { label: '주의', icon: '！', bar: 'bg-amber-500', pill: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200' },
-  neutral: { label: '해설', icon: '·', bar: 'bg-stone-300 dark:bg-stone-600', pill: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300' },
+  positive: { label: '강점', tag: 'tag-pos' },
+  negative: { label: '약점·리스크', tag: 'tag-neg' },
+  caution: { label: '주의', tag: 'tag-mute' },
+  neutral: { label: '해설', tag: 'tag-mute' },
 } as const;
 
 /** 한 번에 하나의 풀이만 열어 둔다 */
@@ -165,7 +143,7 @@ export function Term({ t, children }: { t: string; children?: ReactNode }) {
       }}
       onPointerEnter={(e) => e.pointerType === 'mouse' && !box && open(false)}
       onPointerLeave={(e) => e.pointerType === 'mouse' && box && !box.pinned && close()}
-      className="cursor-help underline decoration-stone-400 decoration-dotted underline-offset-[5px] outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-brand-300 dark:decoration-stone-500"
+      className="cursor-help underline decoration-faint decoration-dotted underline-offset-[5px] outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-accent"
     >
       {children ?? t}
       {box &&
@@ -174,9 +152,9 @@ export function Term({ t, children }: { t: string; children?: ReactNode }) {
             id={id}
             role="tooltip"
             style={{ left: box.left, top: box.top, width: box.w, transform: box.up ? 'translateY(-100%)' : undefined }}
-            className="pointer-events-none fixed z-50 block rounded-xl bg-stone-900 px-3.5 py-2.5 text-left text-[13px] leading-relaxed font-normal text-white shadow-xl dark:bg-stone-100 dark:text-stone-900"
+            className="pointer-events-none fixed z-50 block rounded-xl bg-ink px-4 py-3 text-left font-sans text-cap font-normal text-bg"
           >
-            <b className="mr-1 text-amber-300 dark:text-amber-700">{hit.key}</b>
+            <b className="mr-1.5 text-accent-tint">{hit.key}</b>
             {hit.desc}
           </span>,
           document.body,

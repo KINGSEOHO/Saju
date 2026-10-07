@@ -21,13 +21,13 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
   };
   return (
     <div className="relative">
-      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold">
+      <label htmlFor={id} className="mb-2 block text-label font-semibold text-ink">
         직업·하는 일
       </label>
       <div className="relative">
         <input
           id={id}
-          className="field pr-10"
+          className="field pr-11"
           value={value}
           onChange={(e) => {
             onChange(e.target.value);
@@ -49,7 +49,7 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
             if (e.key === 'Escape') setOpen(false);
           }}
           maxLength={30}
-          placeholder="예: 개발자, 간호사, 대학생"
+          placeholder="예) 개발자, 간호사, 대학생"
           autoComplete="off"
           autoFocus={autoFocus}
           role="combobox"
@@ -60,7 +60,7 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
           <button
             type="button"
             aria-label="직업 지우기"
-            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-lg leading-none text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800"
+            className="absolute top-1/2 right-2.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-sub active:bg-fill"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => {
               onChange('');
@@ -68,12 +68,14 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
               setOpen(true);
             }}
           >
-            ×
+            <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
           </button>
         )}
       </div>
       {open && list.length > 0 && (
-        <div id={`${id}-list`} role="listbox" className="absolute z-30 mt-1 max-h-60 w-full overflow-auto rounded-2xl border border-stone-200 bg-white p-2 shadow-lg dark:border-stone-700 dark:bg-stone-900">
+        <div id={`${id}-list`} role="listbox" className="absolute z-30 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-line bg-bg p-2">
           <div className="flex flex-wrap gap-1.5">
             {list.map((j) => (
               <button
@@ -81,7 +83,7 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
                 type="button"
                 role="option"
                 aria-selected={j === value}
-                className={`chip ${j === value ? 'border-brand-600 bg-brand-50 font-bold dark:bg-brand-900/40' : 'hover:border-brand-500'}`}
+                className={`rounded-lg px-3 py-2 text-label ${j === value ? 'bg-accent-tint font-semibold text-accent-strong' : 'bg-fill text-ink active:bg-line'}`}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(j)}
               >
@@ -89,7 +91,7 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
               </button>
             ))}
           </div>
-          {typed && q && !JOB_SUGGEST.includes(q) && <p className="mt-2 px-1 text-xs text-stone-500">목록에 없으면 그대로 입력해도 돼요.</p>}
+          {typed && q && !JOB_SUGGEST.includes(q) && <p className="mt-2 px-1 text-cap text-sub">목록에 없으면 그대로 입력해도 돼요.</p>}
         </div>
       )}
     </div>

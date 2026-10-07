@@ -3,6 +3,9 @@
 export const SVG_FONT =
   "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', 'Noto Sans CJK KR', sans-serif";
 
+/** 명조 — 기기에 설치된 바탕체를 쓴다 (함초롱바탕 → 본명조 → 애플명조 → 바탕) */
+export const SVG_SERIF = "'HCR Batang', 'Noto Serif KR', 'Noto Serif CJK KR', 'Source Han Serif K', AppleMyungjo, Batang, serif";
+
 export const escXml = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** SVG 문자열을 캔버스에 그려 PNG로 만든다 (웹폰트 대신 기기 글꼴로 그려진다) */

@@ -61,8 +61,11 @@ async function post(kind: Kind, body: unknown): Promise<PostResult> {
         body: JSON.stringify({ kind, ...(body as object) }),
       });
       if (!r.ok) return 'retry';
-      const out = await r.json().catch(() => ({}));
-      return out.error ? 'rejected' : 'ok';
+      // 스크립트가 { ok: true }로 확인해 줄 때만 저장된 것으로 본다.
+      // 형식 오류(invalid…)는 다시 보내도 소용없고, 그 밖의 오류나 엉뚱한 응답은 나중에 다시 보낸다.
+      const out = (await r.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+      if (out?.ok) return 'ok';
+      return out?.error && /^(invalid|unknown kind)/.test(out.error) ? 'rejected' : 'retry';
     }
     const r = await fetch(`/api/${kind}`, {
       method: 'POST',
@@ -86,20 +89,65 @@ function enqueue(kind: Kind, body: unknown) {
   }
 }
 
-export async function flushQueue() {
+let flushing: Promise<number> | null = null;
+
+/** 보내지 못하고 이 기기에 남아 있는 리뷰·평가를 다시 보낸다. 남은 개수를 돌려준다. (동시에 두 번 보내지 않는다) */
+export function flushQueue(): Promise<number> {
+  flushing ??= doFlush().finally(() => {
+    flushing = null;
+  });
+  return flushing;
+}
+
+async function doFlush(): Promise<number> {
   let q: { kind: Kind; body: unknown }[] = [];
   try {
     q = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]');
   } catch {
-    return;
+    return 0;
   }
-  if (!q.length) return;
+  if (!q.length) return 0;
   const rest: typeof q = [];
   for (const item of q) if ((await post(item.kind, item.body)) === 'retry') rest.push(item);
   try {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(rest));
+    // 보내는 사이 새로 쌓인 것은 지우지 않는다
+    const now = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') as typeof q;
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([...rest, ...now.slice(q.length)]));
   } catch {
     /* noop */
+  }
+  return rest.length;
+}
+
+/** 이 기기에 보내지 못하고 남아 있는 개수 */
+export function pendingCount(): number {
+  try {
+    return (JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') as unknown[]).length;
+  } catch {
+    return 0;
+  }
+}
+
+/** 시트 연결 확인 — 토큰 없이 열어 보면 정상 배포는 {"error":"unauthorized"}를 돌려준다 */
+export async function checkConnection(): Promise<{ ok: boolean; target: string; message: string }> {
+  const target = SHEET_URL || '/api';
+  try {
+    if (SHEET_URL) {
+      const r = await fetch(SHEET_URL);
+      const out = (await r.json().catch(() => null)) as { error?: string } | null;
+      if (out?.error === 'unauthorized') return { ok: true, target, message: '연결돼 있어요. 리뷰와 평가가 이 주소로 저장돼요.' };
+      return { ok: false, target, message: `주소는 열리지만 예상과 다른 응답이에요(${r.status}). 최신 코드로 다시 배포했는지 확인해 주세요.` };
+    }
+    const r = await fetch('/api/health');
+    return r.ok ? { ok: true, target, message: '자체 서버에 연결돼 있어요.' } : { ok: false, target, message: `자체 서버가 응답하지 않아요(${r.status}).` };
+  } catch {
+    return {
+      ok: false,
+      target,
+      message: SHEET_URL
+        ? '연결할 수 없어요. 주소가 바뀌었거나, 배포가 보관됐거나, 액세스 권한이 ‘모든 사용자’가 아니에요.'
+        : '자체 서버에 연결할 수 없어요.',
+    };
   }
 }
 

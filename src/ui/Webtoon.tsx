@@ -5,12 +5,12 @@ import { episodes } from '../comic/episodes.ts';
 import { isText, type Comic, type EpisodeId, type Panel } from '../comic/types.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { send, sessionId } from '../lib/api.ts';
-import { downloadBlob, escXml, shareOrDownload, svgStringToPng } from '../lib/svgImage.ts';
+import { downloadBlob, escXml, shareOrDownload, SVG_SERIF, svgStringToPng } from '../lib/svgImage.ts';
 import { crossReport } from '../report/cross.ts';
 import type { Report } from '../report/generate.ts';
 import { ExtrasForm } from './Cross.tsx';
 import { SectionRating } from './Feedback.tsx';
-import { scrollToStart, SectionTitle } from './common.tsx';
+import { Chevron, scrollToStart, SectionTitle } from './common.tsx';
 
 const TABS: { id: EpisodeId; no: number; label: string }[] = [
   { id: 'persona', no: 1, label: '나라는 사람' },
@@ -41,13 +41,13 @@ export async function comicToPng(comic: Comic, els: SVGSVGElement[], site: strin
     })
     .join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="${escXml(FONT)}">
-<rect width="${W}" height="${H}" fill="#fffdf8"/>
-<text x="${M}" y="38" font-size="15" font-weight="700" fill="#34518c">명경사주 · 내 사주로 그린 개그 웹툰</text>
-<text x="${M}" y="78" font-size="29" font-weight="800" fill="#1c1917">${escXml(`${comic.no}화 · ${comic.title}`)}</text>
-<text x="${M}" y="106" font-size="16" fill="#57534e">${escXml(comic.subtitle)}</text>
+<rect width="${W}" height="${H}" fill="#ffffff"/>
+<text x="${M}" y="38" font-size="14" font-weight="600" fill="#33574d">명경사주 · 내 사주로 그린 개그 웹툰</text>
+<text x="${M}" y="78" font-size="29" font-weight="700" fill="#1e1d1b" font-family="${escXml(SVG_SERIF)}">${escXml(`${comic.no}화 · ${comic.title}`)}</text>
+<text x="${M}" y="106" font-size="16" fill="#6a6966">${escXml(comic.subtitle)}</text>
 ${body}
-<text x="${W / 2}" y="${H - 54}" font-size="14" fill="#78716c" text-anchor="middle">사주에 나타난 경향을 그린 만화이며, 실제 사건을 예언하지 않습니다.</text>
-<text x="${W / 2}" y="${H - 28}" font-size="16" font-weight="700" fill="#22355d" text-anchor="middle">${escXml(site)}</text>
+<text x="${W / 2}" y="${H - 54}" font-size="14" fill="#6a6966" text-anchor="middle">사주에 나타난 경향을 그린 만화이며, 실제 사건을 예언하지 않습니다.</text>
+<text x="${W / 2}" y="${H - 28}" font-size="16" font-weight="600" fill="#33574d" text-anchor="middle">${escXml(site)}</text>
 </svg>`;
   // 아이폰 캔버스 한도(약 1,670만 화소) 안에서 가장 선명하게
   const scale = Math.min(2, Math.sqrt(15_000_000 / (W * H)));
@@ -137,66 +137,56 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
   const hasJob = !!a.input.job || a.age < 20;
 
   return (
-    <section className="card">
+    <section>
       <div ref={topRef} />
       <SectionTitle
-        kicker="명경사주에만 있는 기능"
+        kicker="내 사주로 그린 웹툰"
         title="인생 웹툰"
-        desc="내 사주로 그린 개그 웹툰이에요. 웃기게 그렸지만 장면의 뼈대는 모두 사주 구조에서 나왔고, 컷마다 왼쪽 아래에 근거를 적어 두었어요. 거울 요정 명경이는 좋은 말만 하지 않습니다."
+        desc="웃기게 그렸지만 장면의 뼈대는 모두 사주 구조에서 나왔고, 컷마다 왼쪽 아래에 근거를 적어 두었어요. 거울 요정 명경이는 좋은 말만 하지 않아요."
       />
-      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-stone-200 bg-stone-50 p-1 sm:grid-cols-4 dark:border-stone-800 dark:bg-stone-900" role="tablist" aria-label="웹툰 회차">
+      <div className="seg" role="tablist" aria-label="웹툰 회차">
         {TABS.map((t) => {
           const locked = t.id === 'mbti' && !list.some((c) => c.id === 'mbti');
           return (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={id === t.id}
-              onClick={() => choose(t.id)}
-              className={`rounded-xl px-2 py-2.5 text-center transition ${id === t.id ? 'tab-on' : 'tab-off'}`}
-            >
-              <div className={`text-xs font-semibold ${id === t.id ? 'opacity-80' : 'text-stone-500'}`}>
-                {t.no}화{locked ? ' · 🔒' : ''}
-              </div>
-              <div className="text-sm font-bold sm:text-base">{t.label}</div>
+            <button key={t.id} type="button" role="tab" aria-selected={id === t.id} onClick={() => choose(t.id)} className={`seg-item px-1 py-2 ${id === t.id ? 'seg-on' : ''}`}>
+              <span className="block text-micro font-semibold">{t.no}화</span>
+              <span className="block text-[13px] leading-tight">{t.label}</span>
+              {locked && <span className="mt-0.5 block text-[10px] font-normal text-faint">MBTI 필요</span>}
             </button>
           );
         })}
       </div>
 
       {id === 'work' && !hasJob && (
-        <div className="no-print mt-4 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
-          <p className="mb-3 text-sm font-semibold text-amber-900 dark:text-amber-200">직업을 알려 주면, 내 일터와 내 직업 이야기로 2화를 다시 그려 드려요.</p>
+        <div className="no-print panel mt-6">
+          <p className="mb-4 text-ui font-semibold text-ink">직업을 알려 주면, 내 일터와 내 직업 이야기로 2화를 다시 그려 드려요.</p>
           <ExtrasForm input={a.input} focus="job" />
         </div>
       )}
 
       {!comic ? (
-        <div className="mt-6 rounded-2xl border border-stone-200 p-5 text-center dark:border-stone-800">
-          <p className="text-base font-bold">4화는 MBTI를 알려 주면 열려요</p>
-          <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">MBTI(겉)와 사주(속)가 같은 축과 다른 축을 장면으로 비교하고, 강점·약점·개운법을 그려 드려요.</p>
-          <div className="mx-auto mt-4 max-w-xl text-left">
+        <div className="panel mt-6">
+          <p className="text-title3 font-serif font-bold text-ink">4화는 MBTI를 알려 주면 열려요</p>
+          <p className="mt-1 text-label text-sub">MBTI(겉)와 사주(속)가 같은 축과 다른 축을 장면으로 비교하고, 강점·약점·개운법을 그려 드려요.</p>
+          <div className="mt-5">
             <ExtrasForm input={a.input} focus="mbti" />
           </div>
         </div>
       ) : (
         <>
-          <div ref={stripRef} className="-mx-5 mt-6 sm:mx-auto sm:max-w-[600px]">
-            <div className="px-5 text-center sm:px-0">
-              <div className="text-sm font-bold text-amber-700 dark:text-amber-300">{comic.no}화</div>
-              <h3 className="text-xl font-extrabold sm:text-2xl">{comic.title}</h3>
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{comic.subtitle}</p>
+          <div ref={stripRef} className="-mx-5 mt-8 sm:mx-0">
+            <div className="px-5 sm:px-0">
+              <p className="kicker">{comic.no}화</p>
+              <h3 className="mt-1 text-title2 text-ink">{comic.title}</h3>
+              <p className="mt-1 text-label text-sub">{comic.subtitle}</p>
             </div>
-            <div className="mt-4 space-y-3 sm:space-y-4">
+            <div className="mt-5 space-y-3">
               {comic.beats.map((b, i) => (
                 <figure key={`${comic.id}-${i}`} className="m-0">
-                  <div className="overflow-hidden shadow-sm sm:rounded-[3px]">
-                    {isText(b) ? <TextBeatArt b={b} /> : <PanelArt p={b} label={panelLabel(b)} />}
-                  </div>
+                  <div className="overflow-hidden sm:rounded-md">{isText(b) ? <TextBeatArt b={b} /> : <PanelArt p={b} label={panelLabel(b)} />}</div>
                   {notes && b.note && (
-                    <figcaption className="mx-5 mt-2 rounded-xl bg-stone-50 px-4 py-3 text-sm leading-relaxed text-stone-700 sm:mx-0 dark:bg-stone-800/60 dark:text-stone-300">
-                      <b className="text-stone-900 dark:text-stone-100">{b.title}</b> {b.note}
+                    <figcaption className="mx-5 mt-2 rounded-xl bg-subtle px-4 py-3 text-label text-ink-2 sm:mx-0">
+                      <b className="text-ink">{b.title}</b> {b.note}
                     </figcaption>
                   )}
                 </figure>
@@ -204,31 +194,35 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
             </div>
           </div>
 
-          <div className="no-print mt-6 flex flex-wrap justify-center gap-2">
-            <button type="button" className="btn-primary" onClick={() => exportPng('save')}>
+          <div className="no-print mt-8 space-y-2">
+            <button type="button" className="btn-primary w-full" onClick={() => exportPng('save')}>
               이미지로 저장
             </button>
-            <button type="button" className="btn-ghost" onClick={() => exportPng('share')}>
-              공유하기
-            </button>
-            <button type="button" className="btn-ghost" aria-pressed={notes} onClick={() => setNotes((v) => !v)}>
-              {notes ? '해설 숨기기' : '컷별 해설 보기'}
-            </button>
-          </div>
-          {msg && <p className="mt-3 text-center text-sm text-stone-600 dark:text-stone-400">{msg}</p>}
-          {nextTab && (
-            <div className="no-print mt-5 text-center">
-              <button type="button" onClick={goNext} className="btn rounded-full border border-amber-600/50 bg-amber-50 px-5 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-950/70">
-                다음 화 · {nextTab.no}화 {nextTab.label} →
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" className="btn-secondary" onClick={() => exportPng('share')}>
+                공유하기
+              </button>
+              <button type="button" className="btn-secondary" aria-pressed={notes} onClick={() => setNotes((v) => !v)}>
+                {notes ? '해설 숨기기' : '컷별 해설 보기'}
               </button>
             </div>
+          </div>
+          {msg && <p className="mt-3 text-center text-cap text-sub">{msg}</p>}
+          {nextTab && (
+            <button type="button" onClick={goNext} className="no-print mt-8 flex w-full items-center justify-between border-y border-line py-4 text-left">
+              <span>
+                <span className="block text-cap text-sub">다음 화</span>
+                <span className="block font-serif text-title3 font-bold text-ink">
+                  {nextTab.no}화 · {nextTab.label}
+                </span>
+              </span>
+              <Chevron className="-rotate-90" />
+            </button>
           )}
         </>
       )}
-      <p className="mt-4 text-center text-xs leading-relaxed text-stone-500">
-        웹툰은 사주에 나타난 경향을 장면으로 옮긴 것이며, 실제 사건을 예언하지 않습니다.
-        <br />
-        인생 연대기의 시기 구분은 대운(10년 단위의 큰 운)을 따릅니다.
+      <p className="mt-6 text-cap text-sub">
+        웹툰은 사주에 나타난 경향을 장면으로 옮긴 것이며, 실제 사건을 예언하지 않아요. 인생 연대기의 시기 구분은 대운(10년 단위의 큰 운)을 따라요.
       </p>
       <SectionRating a={a} section="webtoon" question="이 웹툰, 실제 내 삶과 얼마나 닮았나요?" />
     </section>

@@ -1,5 +1,6 @@
 /** 첫 화면 하단 — 자주 묻는 질문 (명경사주의 차별점을 솔직하게) */
 import type { ReactNode } from 'react';
+import { Chevron } from './common.tsx';
 
 const FAQ: { q: string; a: ReactNode }[] = [
   {
@@ -26,8 +27,8 @@ const FAQ: { q: string; a: ReactNode }[] = [
     a: (
       <>
         대부분 출생 시각 보정 차이입니다. 서울은 표준시보다 해가 약 32분 늦게 뜨고, 1948~1988년 사이에는 서머타임을 시행한 해가 있습니다. 이 보정을 생략하는 곳이 많아 시주나 일주가 달라지곤 합니다.
-        명경사주는 보정을 자동으로 적용하고, 출생 시각이 경계에 걸려 학파·보정 방식에 따라 결과가 갈리면 <b>다른 경우의 사주까지 함께</b> 보여 드립니다. 고급 설정에서 보정 방식을 바꿔 직접 비교해 볼 수도
-        있습니다.
+        명경사주는 보정을 자동으로 적용하고, 출생 시각이 경계에 걸려 학파·보정 방식에 따라 결과가 갈리면 <b>다른 경우의 사주까지 함께</b> 보여 드립니다. 태어난 곳을 고르는 단계의 ‘계산 기준 바꾸기’에서 보정 방식을 바꿔 직접
+        비교해 볼 수도 있습니다.
       </>
     ),
   },
@@ -36,7 +37,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
     a: (
       <>
         아닙니다. 명경사주가 직접 만든 캐릭터·배경 그림을 <b>사주 풀이 결과에 따라 조합</b>해 그립니다. 그래서 같은 사주라면 언제나 같은 웹툰이 나오고, 컷마다 어떤 사주 구조(예: 관성 40%, 대운 십성)에서
-        나온 장면인지 근거가 적혀 있습니다. 성격 4컷의 세 번째 컷은 언제나 <b>약점을 솔직하게</b> 보여 주고, 인생 6컷은 10년 단위의 큰 운(대운)을 따라 그려집니다.
+        나온 장면인지 근거가 적혀 있습니다. 1화는 성향과 함께 <b>약점도 솔직하게</b> 보여 주고, 3화는 10년 단위의 큰 운(대운)을 따라 그려집니다.
       </>
     ),
   },
@@ -53,7 +54,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
     q: '태어난 시간을 모르면 볼 수 없나요?',
     a: (
       <>
-        볼 수 있습니다. ‘시간을 모릅니다’를 선택하면 시주를 뺀 여섯 글자로 풀이합니다. 대신 자녀·말년운과 성향 일부는 정확도가 낮아지며, 결과 화면에 그 점을 분명히 표시합니다. 태어난 날 절기가 바뀌는
+        볼 수 있습니다. ‘태어난 시간을 몰라요’를 누르면 시주를 뺀 여섯 글자로 풀이합니다. 대신 자녀·말년운과 성향 일부는 정확도가 낮아지며, 결과 화면에 그 점을 분명히 표시합니다. 태어난 날 절기가 바뀌는
         경우처럼 시간에 따라 월주까지 달라질 수 있으면 그 사실도 함께 알려 드립니다.
       </>
     ),
@@ -98,31 +99,24 @@ const FAQ: { q: string; a: ReactNode }[] = [
 
 export function Faq() {
   return (
-    <section className="no-print bg-stars bg-brand-900 text-white dark:bg-[#121c33]" aria-labelledby="faq-title">
-      <div className="mx-auto max-w-3xl px-4 py-16 sm:py-20">
-        <p className="text-center text-xs font-semibold tracking-[0.3em] text-brand-200">자주 묻는 질문</p>
-        <h2 id="faq-title" className="mt-3 text-center text-2xl font-extrabold sm:text-3xl">
-          듣기 좋은 말보다, 정확한 사실을
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-center text-sm text-brand-100/80">명경사주가 다른 사주 서비스와 어떻게 다른지 솔직하게 답해 드립니다.</p>
-        <div className="mt-10 border-t border-white/10">
-          {FAQ.map((f) => (
-            <details key={f.q} className="group border-b border-white/10">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-base font-semibold sm:text-lg [&::-webkit-details-marker]:hidden">
-                <span>{f.q}</span>
-                <span aria-hidden className="shrink-0 text-2xl leading-none font-light text-brand-200 transition-transform duration-200 group-open:rotate-45">
-                  +
-                </span>
-              </summary>
-              <div className="pr-8 pb-6 text-[15px] leading-relaxed text-brand-50/85 [&_b]:font-semibold [&_b]:text-white">{f.a}</div>
-            </details>
-          ))}
-        </div>
-        <div className="mt-10 text-center">
-          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="btn rounded-full bg-white px-6 py-3 text-base text-brand-900 hover:bg-brand-50">
-            내 사주 정확하게 보기
-          </button>
-        </div>
+    <section className="no-print wrap pt-16 pb-8" aria-labelledby="faq-title">
+      <p className="kicker">자주 묻는 질문</p>
+      <h2 id="faq-title" className="mt-2 text-title1 text-ink">
+        듣기 좋은 말보다,
+        <br />
+        정확한 사실을
+      </h2>
+      <p className="mt-3 text-label text-sub">명경사주가 다른 사주 서비스와 어떻게 다른지 솔직하게 답해 드려요.</p>
+      <div className="mt-8 border-t border-line">
+        {FAQ.map((f) => (
+          <details key={f.q} className="group border-b border-line">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-ui font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              <span>{f.q}</span>
+              <Chevron className="group-open:rotate-180" />
+            </summary>
+            <div className="read pb-6 [&_b]:font-bold [&_b]:text-ink">{f.a}</div>
+          </details>
+        ))}
       </div>
     </section>
   );
