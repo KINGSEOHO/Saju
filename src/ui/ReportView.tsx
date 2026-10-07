@@ -5,7 +5,7 @@ import type { GaeunData, GaeunItem } from '../report/gaeun.ts';
 import { generateReport, type ReportSection, type SectionId, type Statement } from '../report/generate.ts';
 import type { StoryPara } from '../report/story.ts';
 import { DivergingBars } from './Charts.tsx';
-import { Gloss, SectionTitle, TONE_STYLE } from './common.tsx';
+import { Gloss, Lead, SectionTitle, TONE_STYLE } from './common.tsx';
 import { SectionRating } from './Feedback.tsx';
 
 const TAB_ORDER: SectionId[] = ['summary', 'gaeun', 'personality', 'love', 'career', 'wealth', 'health'];
@@ -25,7 +25,7 @@ function StatementItem({ s, showEvidence }: { s: Statement; showEvidence: boolea
     <li className="border-b border-line py-5">
       {s.tone !== 'neutral' && <span className={t.tag}>{t.label}</span>}
       <p className={`read ${s.tone !== 'neutral' ? 'mt-2' : ''}`}>
-        <Gloss text={s.text} />
+        <Lead text={s.text} />
       </p>
       <Evidence text={s.evidence} show={showEvidence} />
     </li>
@@ -52,7 +52,7 @@ function StoryView({ story, showEvidence }: { story: StoryPara[]; showEvidence: 
             <section key={i} className="mb-10">
               <h3 className="text-title3 text-ink">{p.title}</h3>
               <p className="read mt-3">
-                <Gloss text={p.text} />
+                <Lead text={p.text} />
               </p>
               <Evidence text={p.basis} show={showEvidence} />
             </section>
@@ -70,7 +70,7 @@ function StoryView({ story, showEvidence }: { story: StoryPara[]; showEvidence: 
                 <span className={w.tag}>{w.label}</span>
               </div>
               <p className={`read mt-2 ${p.when === 'past' ? 'text-sub' : ''}`}>
-                <Gloss text={p.text} />
+                <Lead text={p.text} />
               </p>
               <Evidence text={p.basis} show={showEvidence} />
             </div>
@@ -126,7 +126,7 @@ function GaeunBoard({ g, showEvidence }: { g: GaeunData; showEvidence: boolean }
   return (
     <div className="mb-12 space-y-12">
       <p className="read">
-        <Gloss text={g.why} />
+        <Lead text={g.why} />
       </p>
       <GaeunList title="가까이할 것" note="부족한 기운을 채워 주는 것들" items={g.close} showEvidence={showEvidence} />
       <GaeunList title="멀리할 것" note="이미 넘치는 기운을 더 키우는 것들" items={g.away} showEvidence={showEvidence} />

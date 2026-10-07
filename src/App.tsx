@@ -13,7 +13,7 @@ import { Admin } from './ui/Admin.tsx';
 import { ElementsPanel, InteractionsPanel, StrengthPanel } from './ui/Analysis.tsx';
 import { BirthFlow, FLOW_STEPS, goToStep } from './ui/BirthForm.tsx';
 import { ElementStrip } from './ui/Charts.tsx';
-import { BottomBar, Chevron, Disclosure, Gloss, GLOSSARY, Term } from './ui/common.tsx';
+import { BottomBar, Chevron, Disclosure, Gloss, GLOSSARY, Lead, Term } from './ui/common.tsx';
 import { Faq } from './ui/Faq.tsx';
 import { ReviewForm } from './ui/Feedback.tsx';
 import { HitsCard } from './ui/Hits.tsx';
@@ -383,7 +383,7 @@ function Result({ input }: { input: BirthInput }) {
                 <li key={i} className="flex gap-4">
                   <span className="w-4 shrink-0 font-serif text-title3 font-bold text-accent tabular-nums">{i + 1}</span>
                   <p className="read">
-                    <Gloss text={clean(s.text)} />
+                    <Lead text={clean(s.text)} />
                   </p>
                 </li>
               ))}
@@ -396,7 +396,7 @@ function Result({ input }: { input: BirthInput }) {
                 <li key={i} className="flex gap-4">
                   <span className="w-4 shrink-0 font-serif text-title3 font-bold text-ink tabular-nums">{i + 1}</span>
                   <p className="read">
-                    <Gloss text={clean(s.text)} />
+                    <Lead text={clean(s.text)} />
                   </p>
                 </li>
               ))}
@@ -432,7 +432,7 @@ function Result({ input }: { input: BirthInput }) {
         </section>
       )}
 
-      <ShareSection a={a} d={{ name: input.name, headline: cross.card.headline, subline: cross.card.subline, facts: facts.map((f) => ({ label: f.label, value: f.value })) }} />
+      <ShareSection a={a} d={{ name: input.name, headline: cross.card.headline, subline: cross.card.subline, tags: cross.card.tags }} />
 
       <section className="mt-16" aria-labelledby="details">
         <h2 id="details" className="text-title2 text-ink">

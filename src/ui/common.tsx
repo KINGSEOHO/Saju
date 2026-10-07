@@ -180,3 +180,21 @@ export function Gloss({ text, max }: { text: string; max?: number }) {
     </>
   );
 }
+
+/**
+ * 풀이 문단 — 첫 문장(요점)만 굵게, 나머지는 보통으로. 굵은 문장만 훑어 읽어도 뜻이 잡히게 한다.
+ * 첫 문장이 너무 짧거나 문장이 하나뿐이면 그대로 둔다.
+ */
+export function Lead({ text }: { text: string }) {
+  const m = text.match(/^([\s\S]+?[.!?。][”"’)]?)(\s+)([\s\S]+)$/);
+  if (!m || m[1].length < 10) return <Gloss text={text} />;
+  return (
+    <>
+      <b className="font-bold text-ink">
+        <Gloss text={m[1]} />
+      </b>
+      {m[2]}
+      <Gloss text={m[3]} />
+    </>
+  );
+}

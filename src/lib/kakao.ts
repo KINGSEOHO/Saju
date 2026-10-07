@@ -10,7 +10,7 @@ const SDK = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js';
 interface KakaoSDK {
   isInitialized(): boolean;
   init(key: string): void;
-  Share: { sendDefault(o: unknown): void };
+  Share: { sendDefault(o: unknown): void; uploadImage(o: { file: File[] }): Promise<{ infos: { original: { url: string; width: number; height: number } } }> };
 }
 declare global {
   interface Window {
@@ -49,15 +49,25 @@ export function siteUrl(): string {
 
 export type ShareResult = 'kakao' | 'sheet' | 'copied' | 'cancelled' | 'failed';
 
-export async function shareKakao(o: { title: string; description: string }): Promise<ShareResult> {
+/** image: 이 사람만의 카드 사진 — 카카오에 올려 메시지 사진으로 쓰고, 실패하면 사이트 기본 미리보기 사진 */
+export async function shareKakao(o: { title: string; description: string; image?: File }): Promise<ShareResult> {
   const url = siteUrl();
   const k = await loadKakao();
   if (k) {
+    let img = { imageUrl: `${url}og.png`, imageWidth: 1200, imageHeight: 630 };
+    if (o.image) {
+      try {
+        const up = (await k.Share.uploadImage({ file: [o.image] })).infos.original;
+        img = { imageUrl: up.url, imageWidth: up.width, imageHeight: up.height };
+      } catch {
+        /* 기본 사진으로 */
+      }
+    }
     try {
       k.Share.sendDefault({
         objectType: 'feed',
-        content: { title: o.title, description: o.description, imageUrl: `${url}og.png`, link: { mobileWebUrl: url, webUrl: url } },
-        buttons: [{ title: '나도 사주 보기', link: { mobileWebUrl: url, webUrl: url } }],
+        content: { title: o.title, description: o.description, ...img, link: { mobileWebUrl: url, webUrl: url } },
+        buttons: [{ title: '나도 명경이한테 사주 보기', link: { mobileWebUrl: url, webUrl: url } }],
       });
       return 'kakao';
     } catch {

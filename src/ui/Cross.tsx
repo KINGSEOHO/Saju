@@ -6,7 +6,7 @@ import { SYSTEM_LABEL, type CrossReport, type ThemeResult } from '../report/cros
 import { JOB_SUGGEST } from '../report/job.ts';
 import { AXES, AXIS_INFO, MBTI_LIST, MBTI_PROFILE, sajuAxes } from '../report/mbti.ts';
 import { elWord } from '../report/plain.ts';
-import { Chevron, Gloss, SectionTitle } from './common.tsx';
+import { Chevron, Gloss, Lead, SectionTitle } from './common.tsx';
 import { IdentityCardView } from './IdentityCard.tsx';
 import { JobPicker } from './JobPicker.tsx';
 
@@ -92,7 +92,7 @@ function ThemeItem({ t }: { t: ThemeResult }) {
         <span className="shrink-0 text-cap text-sub tabular-nums">{pct}% 일치</span>
       </div>
       <p className="read mt-4">
-        <Gloss text={t.text} />
+        <Lead text={t.text} />
       </p>
       <MoreToggle label={`${t.total}개 체계별 근거 보기`}>
         <ul className="space-y-2.5 text-label">
@@ -221,7 +221,7 @@ export function CrossPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
       <div>
         <h3 className="text-title3 text-ink">종합 요약</h3>
         <p className="read mt-3">
-          <Gloss text={x.summary} />
+          <Lead text={x.summary} />
         </p>
       </div>
 
@@ -282,7 +282,7 @@ function NumberedList({ title, items, tone }: { title: string; tone: 'good' | 'b
             <div className="min-w-0">
               <p className="text-ui font-semibold text-ink">{it.title}</p>
               <p className="read mt-1">
-                <Gloss text={it.text} />
+                <Lead text={it.text} />
               </p>
               <Basis text={`근거 · ${it.basis}`} />
             </div>
@@ -341,7 +341,7 @@ export function MbtiPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
             <span className="text-cap text-sub">사주로 본 경향 {m.sajuType.replaceAll('x', '·')}</span>
           </div>
           <p className="read mt-3">
-            <Gloss text={m.summary} />
+            <Lead text={m.summary} />
           </p>
         </div>
       </div>
@@ -361,7 +361,7 @@ export function MbtiPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
                 <AxisScale axis={ax.axis} score={ax.saju.score} user={ax.user} />
               </div>
               <p className="read mt-4">
-                <Gloss text={ax.text} />
+                <Lead text={ax.text} />
               </p>
               {ax.saju.basis.length > 0 && <Basis text={`사주 근거 · ${ax.saju.basis.join(' · ')}`} />}
             </article>
@@ -372,7 +372,7 @@ export function MbtiPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
       <div>
         <h3 className="text-title3 text-ink">핵심 엔진 비교</h3>
         <p className="read mt-3">
-          <Gloss text={m.engine.text} />
+          <Lead text={m.engine.text} />
         </p>
       </div>
 
@@ -487,7 +487,7 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
             <Bar value={j.fit.score} />
           </div>
           <p className="read mt-4">
-            <Gloss text={j.fit.text} />
+            <Lead text={j.fit.text} />
           </p>
           {j.fit.env.length > 0 && (
             <div className="mt-8">
@@ -535,7 +535,7 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
       <Block title="지금의 운">
         <p className="font-serif text-[17px] font-bold text-ink">{j.now.title}</p>
         <p className="read mt-2">
-          <Gloss text={j.now.text} />
+          <Lead text={j.now.text} />
         </p>
         <Basis text={`근거 · ${j.now.basis}`} />
       </Block>
@@ -551,7 +551,7 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
           <YearRow label="버티며 준비" years={j.timing.caution.slice(0, 5)} tag="tag-neg" />
         </dl>
         <p className="read mt-4">
-          <Gloss text={j.timing.text} />
+          <Lead text={j.timing.text} />
         </p>
       </Block>
 

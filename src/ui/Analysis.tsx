@@ -8,7 +8,7 @@ import {
   elWord, strengthChecks, yongsinWhy,
 } from '../report/plain.ts';
 import { ElementBars, GroupBars, TugBar } from './Charts.tsx';
-import { Disclosure, Gloss, SectionTitle, Term } from './common.tsx';
+import { Disclosure, Gloss, Lead, SectionTitle, Term } from './common.tsx';
 
 const GROUPS: TenGodGroup[] = ['비겁', '식상', '재성', '관성', '인성'];
 
@@ -169,7 +169,9 @@ export function StrengthPanel({ a }: { a: SajuAnalysis }) {
           <div className="mt-6">
             <TugBar mine={st.score} />
           </div>
-          <p className="read mt-6">{lv.desc}</p>
+          <p className="read mt-6">
+            <Lead text={lv.desc} />
+          </p>
           {st.score < 48 && <p className="mt-2 text-label text-sub">‘약하다’는 건 나쁘다는 뜻이 아니에요. 내 엔진과 짊어진 짐의 비율일 뿐이에요.</p>}
           <h4 className="mt-8 font-sans text-ui font-semibold text-ink">이렇게 판단했어요</h4>
           <ul className="mt-2 border-t border-line">
@@ -244,7 +246,7 @@ export function StrengthPanel({ a }: { a: SajuAnalysis }) {
               {gk.title}
             </Answer>
             <p className="read mt-5">
-              {gk.text}
+              <Lead text={gk.text} />
               {!a.gyeokguk.transparent && ' 다만 이 구조가 겉으로 뚜렷하게 드러난 편은 아니라, 성향이 은근하게 나타나요.'}
             </p>
             <Expert lines={[`${a.gyeokguk.name}: ${a.gyeokguk.description}`]} />

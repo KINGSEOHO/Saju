@@ -25,6 +25,15 @@ function load(key: string): Record<string, Ans> {
   }
 }
 
+/** 이 기기에서 답한 적중 결과 (자랑하기 이미지용). 하나도 안 했으면 null */
+export function hitScore(a: SajuAnalysis): { done: number; hit: number } | null {
+  const ans = load(storeKey(a));
+  const ids = new Set(buildHits(a).map((h) => h.id));
+  const vals = Object.entries(ans).filter(([k]) => ids.has(k)).map(([, v]) => v);
+  if (vals.length < 3) return null;
+  return { done: vals.length, hit: vals.filter((v) => v !== 'no').length };
+}
+
 export function HitsCard({ a }: { a: SajuAnalysis }) {
   const hits = useMemo(() => buildHits(a), [a]);
   const key = storeKey(a);
