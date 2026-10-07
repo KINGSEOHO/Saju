@@ -5,7 +5,7 @@ import { episodes } from '../comic/episodes.ts';
 import { isText, type Comic, type EpisodeId, type Panel } from '../comic/types.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { send, sessionId } from '../lib/api.ts';
-import { downloadBlob, escXml, shareOrDownload, SVG_SERIF, svgStringToPng } from '../lib/svgImage.ts';
+import { escXml, saveImage, shareOrDownload, SVG_SERIF, svgStringToPng } from '../lib/svgImage.ts';
 import { crossReport } from '../report/cross.ts';
 import type { Report } from '../report/generate.ts';
 import { ExtrasForm } from './Cross.tsx';
@@ -191,7 +191,7 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
         const r = await shareOrDownload(blob, filename, `${comic.no}화 · ${comic.title}`, '명경사주에서 내 사주로 그린 인생 웹툰');
         if (r === 'cancelled') return;
         if (r === 'downloaded') setMsg('이 브라우저는 바로 공유를 지원하지 않아 이미지로 저장했어요. 저장된 이미지를 메신저나 SNS에 올려 주세요.');
-      } else downloadBlob(blob, filename);
+      } else if ((await saveImage(blob, filename, `${comic.no}화 · ${comic.title}`)) === 'cancelled') return;
       track();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : '이미지를 만들지 못했어요.');

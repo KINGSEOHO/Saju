@@ -14,9 +14,11 @@ import { ElementsPanel, InteractionsPanel, StrengthPanel } from './ui/Analysis.t
 import { BirthFlow, FLOW_STEPS, goToStep } from './ui/BirthForm.tsx';
 import { ElementStrip } from './ui/Charts.tsx';
 import { BottomBar, Chevron, Disclosure, Gloss, GLOSSARY, Lead, Term } from './ui/common.tsx';
+import { ErrorBoundary } from './ui/ErrorBoundary.tsx';
 import { Faq } from './ui/Faq.tsx';
 import { ReviewForm } from './ui/Feedback.tsx';
 import { HitsCard } from './ui/Hits.tsx';
+import { ImageSheet } from './ui/ImageSheet.tsx';
 import { LuckPanel, monthLabel, SwitchNote, upcomingMonths } from './ui/Luck.tsx';
 import { Manseryeok, PillarTable } from './ui/Manseryeok.tsx';
 import { ReportView } from './ui/ReportView.tsx';
@@ -72,7 +74,12 @@ export default function App() {
     return () => window.removeEventListener('hashchange', on);
   }, []);
 
-  if (route.name === 'start') return <BirthFlow step={route.step} />;
+  if (route.name === 'start')
+    return (
+      <ErrorBoundary resetKey={route}>
+        <BirthFlow step={route.step} />
+      </ErrorBoundary>
+    );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -97,14 +104,17 @@ export default function App() {
         </div>
       </header>
       <main className="flex-1">
-        {route.name === 'home' && <Home />}
-        {route.name === 'result' && <Result input={route.input} />}
-        {route.name === 'admin' && (
-          <div className="wrap py-8">
-            <Admin />
-          </div>
-        )}
+        <ErrorBoundary resetKey={route}>
+          {route.name === 'home' && <Home />}
+          {route.name === 'result' && <Result input={route.input} />}
+          {route.name === 'admin' && (
+            <div className="wrap py-8">
+              <Admin />
+            </div>
+          )}
+        </ErrorBoundary>
       </main>
+      <ImageSheet />
       <footer className={`no-print border-t border-line ${route.name === 'home' ? 'pb-28' : ''}`}>
         <p className="wrap py-8 text-cap text-sub">
           명경사주(明鏡四柱) — 맑은 거울처럼 있는 그대로.
@@ -460,7 +470,9 @@ function Result({ input }: { input: BirthInput }) {
                 </button>
                 {isOpen && (
                   <div className="pt-6 pb-12">
-                    <DetailContent id={d.id} a={a} report={report} />
+                    <ErrorBoundary inline resetKey={d.id}>
+                      <DetailContent id={d.id} a={a} report={report} />
+                    </ErrorBoundary>
                   </div>
                 )}
               </li>

@@ -1,4 +1,5 @@
 /** SVG → PNG 저장·공유 (웹툰·정체성 카드 공용) */
+import { inApp, isIOS } from './inapp.ts';
 
 export const SVG_FONT =
   "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', 'Noto Sans CJK KR', sans-serif";
@@ -49,8 +50,43 @@ export function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-/** 모바일은 공유 시트, 아니면 다운로드. 반환값: 'shared' | 'downloaded' | 'cancelled' */
-export async function shareOrDownload(blob: Blob, filename: string, title: string, text: string): Promise<'shared' | 'downloaded' | 'cancelled'> {
+export type SaveResult = 'shared' | 'downloaded' | 'shown' | 'cancelled';
+
+/** 사진을 화면에 크게 띄운다(길게 눌러 저장). 앱 안 브라우저처럼 내려받기가 막히는 곳에서 쓴다 — ImageSheet가 받아서 보여 준다 */
+export function showImage(blob: Blob, title: string, hint?: string) {
+  window.dispatchEvent(new CustomEvent('mg-show-image', { detail: { blob, title, hint } }));
+}
+
+/**
+ * 사진으로 저장
+ * - 앱 안 브라우저: 화면에 띄워 길게 눌러 저장
+ * - 아이폰: 공유 창의 '이미지 저장'으로 사진첩에 (내려받기는 '파일' 앱으로 가서 찾기 어렵다)
+ * - 그 밖: 내려받기
+ */
+export async function saveImage(blob: Blob, filename: string, title: string): Promise<SaveResult> {
+  if (inApp()) {
+    showImage(blob, title);
+    return 'shown';
+  }
+  const file = new File([blob], filename, { type: 'image/png' });
+  if (isIOS() && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return 'shared';
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
+    }
+  }
+  downloadBlob(blob, filename);
+  return 'downloaded';
+}
+
+/** 공유 창으로 보내기. 공유 창이 없으면 내려받고, 앱 안 브라우저면 화면에 띄운다 */
+export async function shareOrDownload(blob: Blob, filename: string, title: string, text: string): Promise<SaveResult> {
+  if (inApp()) {
+    showImage(blob, title);
+    return 'shown';
+  }
   const file = new File([blob], filename, { type: 'image/png' });
   if (navigator.canShare?.({ files: [file] })) {
     try {

@@ -13,7 +13,8 @@ import type { Actor } from '../comic/types.ts';
 import { BRANCHES, STEMS, type SajuAnalysis } from '../engine/index.ts';
 import { send, sessionId } from '../lib/api.ts';
 import { shareKakao, siteUrl } from '../lib/kakao.ts';
-import { downloadBlob, escXml, SVG_FONT, SVG_SERIF, svgStringToPng } from '../lib/svgImage.ts';
+import { externalHint, IN_APP_NAME, inApp, openExternal } from '../lib/inapp.ts';
+import { downloadBlob, escXml, saveImage, showImage, SVG_FONT, SVG_SERIF, svgStringToPng } from '../lib/svgImage.ts';
 import { hitScore } from './Hits.tsx';
 
 const C = { bg: '#ffffff', soft: '#f3f6f5', line: '#e4e3e0', strong: '#343331', ink: '#1e1d1b', sub: '#6a6966', faint: '#a9a7a5', accent: '#33574d', paper: '#fbf6ea' };
@@ -237,6 +238,7 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
   const [busy, setBusy] = useState<'' | 'save' | 'insta' | 'kakao'>('');
   const [msg, setMsg] = useState('');
   const castRef = useRef<SVGSVGElement>(null);
+  const app = inApp();
   const track = () => send('events', { sessionId: sessionId(), type: 'share' });
   const file = 'myeonggyeong-story.png';
 
@@ -275,14 +277,17 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
     }
   };
 
+  const linkTip = (copied: boolean) =>
+    copied ? '사이트 주소를 복사해 뒀어요. 스토리의 ‘링크’ 스티커에 붙여 넣으면 친구가 바로 들어올 수 있어요.' : '스토리의 ‘링크’ 스티커로 사이트 주소를 달면 친구가 바로 들어올 수 있어요.';
   const save = async () => {
     setBusy('save');
     setMsg('');
     try {
-      downloadBlob(await storyPng(), file);
+      const r = await saveImage(await storyPng(), file, '명경이가 털어 본 내 사주');
       const copied = await copySite();
-      setMsg(`사진을 저장했어요. 인스타그램 스토리에 올리고${copied ? ' ‘링크’ 스티커에 붙여 넣으면(주소는 복사해 뒀어요)' : ' ‘링크’ 스티커로 사이트 주소를 달면'} 친구가 바로 들어올 수 있어요.`);
-      track();
+      if (r === 'downloaded' || r === 'shared') setMsg(`사진을 저장했어요. ${linkTip(copied)}`);
+      if (r === 'shown') setMsg(linkTip(copied));
+      if (r !== 'cancelled') track();
     } catch {
       setMsg('이미지를 만들지 못했어요.');
     }
@@ -295,17 +300,22 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
       const blob = await storyPng();
       const f = new File([blob], file, { type: 'image/png' });
       const copied = await copySite();
-      if (navigator.canShare?.({ files: [f] })) {
+      if (app) {
+        // 앱 안 브라우저는 공유 창을 못 쓰니 사진을 띄워 저장하게 한다
+        showImage(blob, '명경이가 털어 본 내 사주', '저장한 뒤 인스타그램 앱 → 스토리에서 이 사진을 골라 주세요.');
+        setMsg(linkTip(copied));
+        track();
+      } else if (navigator.canShare?.({ files: [f] })) {
         try {
           await navigator.share({ files: [f] });
           track();
-          if (copied) setMsg('사이트 주소를 복사해 뒀어요. 스토리 편집 화면에서 ‘링크’ 스티커에 붙여 넣어 보세요.');
+          if (copied) setMsg(linkTip(true));
         } catch (e) {
           if (!(e instanceof DOMException && e.name === 'AbortError')) throw e;
         }
       } else {
         downloadBlob(blob, file);
-        setMsg('이 기기에서는 바로 넘길 수 없어 사진으로 저장했어요. 인스타그램 앱 → 스토리에서 저장한 사진을 골라 주세요.');
+        setMsg(`이 기기에서는 바로 넘길 수 없어 사진으로 저장했어요. 인스타그램 앱 → 스토리에서 저장한 사진을 골라 주세요. ${linkTip(copied)}`);
         track();
       }
     } catch {
@@ -349,7 +359,21 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
           </button>
         </div>
       </div>
-      <p className="mt-3 text-cap text-sub">‘인스타그램 스토리에 올리기’를 누르면 공유 창이 떠요. 거기서 Instagram → 스토리를 고르면 돼요.</p>
+      {app ? (
+        <div className="panel mt-4">
+          <p className="text-label font-semibold text-ink">{IN_APP_NAME[app]} 안에서 열려 있어요</p>
+          <p className="mt-1 text-label text-sub">
+            여기서는 사진을 화면에 띄워 드려요. 길게 눌러 저장한 뒤 올려 주세요. 휴대폰 기본 브라우저로 열면 인스타그램으로 바로 넘길 수 있어요. {externalHint(app)}
+          </p>
+          {app === 'kakao' && (
+            <button type="button" className="btn-small mt-3" onClick={() => openExternal()}>
+              다른 브라우저로 열기
+            </button>
+          )}
+        </div>
+      ) : (
+        <p className="mt-3 text-cap text-sub">‘인스타그램 스토리에 올리기’를 누르면 공유 창이 떠요. 거기서 Instagram → 스토리를 고르면 돼요.</p>
+      )}
       {msg && <p className="mt-2 text-label font-semibold text-accent">{msg}</p>}
     </section>
   );
