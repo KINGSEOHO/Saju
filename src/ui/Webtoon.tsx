@@ -1,5 +1,5 @@
 /** 인생 웹툰 탭 — 사주로 그린 회차별 웹툰, 컷별 해설, 이미지 저장·공유 */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Children, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FONT, PW, PanelArt, TextBeatArt } from '../comic/art.tsx';
 import { episodes } from '../comic/episodes.ts';
 import { isText, type Comic, type EpisodeId, type Panel } from '../comic/types.ts';
@@ -52,6 +52,72 @@ ${body}
   // 아이폰 캔버스 한도(약 1,670만 화소) 안에서 가장 선명하게
   const scale = Math.min(2, Math.sqrt(15_000_000 / (W * H)));
   return svgStringToPng(svg, W, H, scale);
+}
+
+/**
+ * 컷을 한 장씩 옆으로 넘겨 보는 카드 — 손가락으로 밀거나 화살표 버튼·키보드로 넘긴다.
+ * 모든 컷이 화면(DOM)에 그려져 있어 이미지 저장은 그대로 된다.
+ */
+function Carousel({ count, children, last, onLast }: { count: number; children: ReactNode; last: string | null; onLast: () => void }) {
+  const track = useRef<HTMLDivElement>(null);
+  const [cur, setCur] = useState(0);
+  const go = (i: number) => {
+    const el = track.current;
+    if (!el) return;
+    const n = Math.max(0, Math.min(count - 1, i));
+    el.scrollTo({ left: n * el.clientWidth, behavior: 'smooth' });
+  };
+  const onScroll = () => {
+    const el = track.current;
+    if (el) setCur(Math.round(el.scrollLeft / el.clientWidth));
+  };
+  const end = cur >= count - 1;
+  return (
+    <div className="mt-5">
+      <div
+        ref={track}
+        onScroll={onScroll}
+        tabIndex={0}
+        role="region"
+        aria-roledescription="carousel"
+        aria-label={`웹툰 컷 ${cur + 1} / ${count}`}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight') go(cur + 1);
+          if (e.key === 'ArrowLeft') go(cur - 1);
+        }}
+        className="flex snap-x snap-mandatory items-start overflow-x-auto overscroll-x-contain outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {Children.map(children, (c, i) => (
+          <div className="w-full shrink-0 snap-center snap-always px-5 sm:px-0" aria-hidden={i !== cur}>
+            {c}
+          </div>
+        ))}
+      </div>
+      <div className="no-print mt-4 px-5 sm:px-0">
+        <div className="h-0.5 bg-line" aria-hidden>
+          <div className="h-0.5 bg-accent transition-[width]" style={{ width: `${((cur + 1) / count) * 100}%` }} />
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <button type="button" onClick={() => go(cur - 1)} disabled={cur === 0} className="btn-small w-24 disabled:opacity-40" aria-label="이전 컷">
+            이전
+          </button>
+          <span className="text-label text-sub tabular-nums">
+            {cur + 1} / {count}
+          </span>
+          {end && last ? (
+            <button type="button" onClick={onLast} className="btn h-10 w-24 rounded-xl bg-accent px-3 text-label text-on-accent" aria-label={`다음 화 ${last}`}>
+              다음 화
+            </button>
+          ) : (
+            <button type="button" onClick={() => go(cur + 1)} disabled={end} className="btn h-10 w-24 rounded-xl bg-accent px-3 text-label text-on-accent disabled:bg-fill disabled:text-faint" aria-label="다음 컷">
+              다음
+            </button>
+          )}
+        </div>
+        {cur === 0 && <p className="mt-2 text-center text-cap text-sub">옆으로 밀어서 넘겨 보세요</p>}
+      </div>
+    </div>
+  );
 }
 
 /** 화면 낭독기용 컷 설명 */
@@ -180,18 +246,18 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
               <h3 className="mt-1 text-title2 text-ink">{comic.title}</h3>
               <p className="mt-1 text-label text-sub">{comic.subtitle}</p>
             </div>
-            <div className="mt-5 space-y-3">
+            <Carousel key={key} count={comic.beats.length} last={nextTab ? `${nextTab.no}화 · ${nextTab.label}` : null} onLast={goNext}>
               {comic.beats.map((b, i) => (
                 <figure key={`${comic.id}-${i}`} className="m-0">
                   <div className="overflow-hidden sm:rounded-md">{isText(b) ? <TextBeatArt b={b} /> : <PanelArt p={b} label={panelLabel(b)} />}</div>
                   {notes && b.note && (
-                    <figcaption className="mx-5 mt-2 rounded-xl bg-subtle px-4 py-3 text-label text-ink-2 sm:mx-0">
+                    <figcaption className="mt-2 rounded-xl bg-subtle px-4 py-3 text-label text-ink-2">
                       <b className="text-ink">{b.title}</b> {b.note}
                     </figcaption>
                   )}
                 </figure>
               ))}
-            </div>
+            </Carousel>
           </div>
 
           <div className="no-print mt-8 space-y-2">

@@ -20,6 +20,7 @@ import { HitsCard } from './ui/Hits.tsx';
 import { LuckPanel, monthLabel, SwitchNote, upcomingMonths } from './ui/Luck.tsx';
 import { Manseryeok, PillarTable } from './ui/Manseryeok.tsx';
 import { ReportView } from './ui/ReportView.tsx';
+import { ShareSection } from './ui/StoryShare.tsx';
 
 // 웹툰 그림·대본과 교차 분석 화면은 크기가 커서 펼칠 때 따로 불러온다.
 // 페이지를 열어 둔 사이 새 버전이 배포되면 예전 파일을 못 찾을 수 있어, 그때는 새로고침을 안내한다.
@@ -430,6 +431,8 @@ function Result({ input }: { input: BirthInput }) {
           </button>
         </section>
       )}
+
+      <ShareSection a={a} d={{ name: input.name, headline: cross.card.headline, subline: cross.card.subline, facts: facts.map((f) => ({ label: f.label, value: f.value })) }} />
 
       <section className="mt-16" aria-labelledby="details">
         <h2 id="details" className="text-title2 text-ink">

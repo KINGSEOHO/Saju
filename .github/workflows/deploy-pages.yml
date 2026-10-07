@@ -28,6 +28,8 @@ jobs:
         env:
           # 저장소 Settings > Secrets and variables > Actions > Variables 의 SHEET_URL
           VITE_SHEET_URL: ${{ vars.SHEET_URL }}
+          # 카카오 개발자 콘솔의 JavaScript 키 (없으면 휴대폰 공유 창으로 대신 보냄)
+          VITE_KAKAO_KEY: ${{ vars.KAKAO_KEY }}
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
