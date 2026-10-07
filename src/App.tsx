@@ -6,6 +6,7 @@ import { clearDraft, inputToDraft, saveDraft } from './lib/birthDraft.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
 import { crossReport } from './report/cross.ts';
 import { generateReport, type Report } from './report/generate.ts';
+import { AXES, sajuAxes } from './report/mbti.ts';
 import { readLuck } from './report/luckReading.ts';
 import { elWord, LEVEL_PLAIN } from './report/plain.ts';
 import { DECADE_THEME } from './report/storyKb.ts';
@@ -22,7 +23,7 @@ import { ImageSheet } from './ui/ImageSheet.tsx';
 import { LuckPanel, monthLabel, SwitchNote, upcomingMonths } from './ui/Luck.tsx';
 import { Manseryeok, PillarTable } from './ui/Manseryeok.tsx';
 import { ReportView } from './ui/ReportView.tsx';
-import { ShareSection } from './ui/StoryShare.tsx';
+import { ShareSection, type StoryData } from './ui/StoryShare.tsx';
 
 // 웹툰 그림·대본과 교차 분석 화면은 크기가 커서 펼칠 때 따로 불러온다.
 // 페이지를 열어 둔 사이 새 버전이 배포되면 예전 파일을 못 찾을 수 있어, 그때는 새로고침을 안내한다.
@@ -309,6 +310,17 @@ function Result({ input }: { input: BirthInput }) {
       term: '대운',
     },
   ];
+  const lean = sajuAxes(a);
+  const shareData: StoryData = {
+    name: input.name,
+    headline: cross.card.headline,
+    subline: cross.card.subline,
+    tags: cross.card.tags,
+    outer: cross.card.outer,
+    inner: cross.card.inner,
+    mbti: cross.mbti ? { type: cross.mbti.type, nick: cross.mbti.profile.nick, letters: cross.mbti.axes.map((v) => ({ user: v.user ?? '', saju: v.saju.lean, verdict: v.verdict })) } : null,
+    sajuLetters: AXES.map((k) => lean[k].lean),
+  };
   const born = `${input.calendar === 'lunar' ? `음력 ${p.lunarDate.year}년 ${p.lunarDate.leap ? '윤' : ''}${p.lunarDate.month}월 ${p.lunarDate.day}일` : `양력 ${p.solarDate.year}년 ${p.solarDate.month}월 ${p.solarDate.day}일`}${
     p.timeKnown ? ` ${String(input.hour).padStart(2, '0')}:${String(input.minute ?? 0).padStart(2, '0')}` : ' · 시간 모름'
   }`;
@@ -442,7 +454,7 @@ function Result({ input }: { input: BirthInput }) {
         </section>
       )}
 
-      <ShareSection a={a} d={{ name: input.name, headline: cross.card.headline, subline: cross.card.subline, tags: cross.card.tags }} />
+      <ShareSection a={a} d={shareData} />
 
       <section className="mt-16" aria-labelledby="details">
         <h2 id="details" className="text-title2 text-ink">

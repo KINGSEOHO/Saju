@@ -40,11 +40,47 @@ function embeddedFonts(): Promise<string> {
   return fontCss;
 }
 
+export interface MbtiLetter {
+  user: string;
+  /** 사주가 기우는 글자 (뚜렷하지 않으면 null) */
+  saju: string | null;
+  verdict: 'agree' | 'neutral' | 'differ';
+}
+
 export interface StoryData {
   name?: string;
   headline: string;
   subline: string;
   tags: string[];
+  /** 겉과 속 */
+  outer?: string;
+  inner?: string;
+  /** 입력한 MBTI와 사주의 글자별 비교 (MBTI를 넣은 경우) */
+  mbti?: { type: string; nick: string; letters: MbtiLetter[] } | null;
+  /** 사주로만 본 네 글자 (MBTI를 안 넣은 경우에 쓴다) */
+  sajuLetters?: (string | null)[];
+}
+
+/** MBTI × 사주 한 줄 — 결과에 따라 말투를 바꾼다 */
+export function mbtiLine(d: StoryData): string {
+  const m = d.mbti;
+  if (!m) return '사주로 본 내 MBTI — 너는 몇 글자 맞을까?';
+  const agree = m.letters.filter((v) => v.verdict === 'agree');
+  const differ = m.letters.filter((v) => v.verdict === 'differ');
+  if (differ.length) return `겉은 ${differ.map((v) => v.user).join('')}, 속은 ${differ.map((v) => v.saju).join('')} — 반전 있는 ${m.type}`;
+  if (agree.length >= 3) return `MBTI랑 사주가 짰나 봐요 — 4글자 중 ${agree.length}개 일치`;
+  if (agree.length) return `사주도 인정한 글자: ${agree.map((v) => v.user).join('·')}`;
+  return '사주는 판단 보류 — 어느 글자도 뚜렷하지 않대요';
+}
+
+/** 카카오 카드용 짧은 한 줄 */
+export function mbtiShort(d: StoryData): string | null {
+  const m = d.mbti;
+  if (!m) return null;
+  const agree = m.letters.filter((v) => v.verdict === 'agree').map((v) => v.user);
+  const differ = m.letters.filter((v) => v.verdict === 'differ');
+  if (differ.length) return `${m.type} × 사주 · 속은 ${differ.map((v) => v.saju).join('')}인 반전형`;
+  return agree.length ? `${m.type} × 사주 · ${agree.join('·')} 일치` : `${m.type} × 사주 · 판단 보류`;
 }
 
 /** 화면에 그려 둔 캐릭터 그림(SVG 조각) */
@@ -112,31 +148,6 @@ function comicPanel(g: Draw, cast: Cast, x: number, y: number, w: number, h: num
   g.text(x + 24 * k, y + 52 * k, '뜨끔!', Math.round(30 * k), '#e0564a', { w: 900 });
 }
 
-/** 원국 네 기둥 (한자 두 줄 + 작은 독음) */
-function pillars(g: Draw, a: SajuAnalysis, x: number, y: number, w: number, big: number) {
-  const cols = (['hour', 'day', 'month', 'year'] as const).map((k) => ({ k, p: a.positions.find((q) => q.pos === k) ?? null }));
-  const LABEL = { hour: '시', day: '일', month: '월', year: '년' };
-  const cw = w / 4;
-  const h = big * 2 + 130;
-  g.raw(`<rect x="${x + cw}" y="${y}" width="${cw}" height="${h}" fill="${C.soft}"/>`);
-  g.raw(`<line x1="${x}" y1="${y}" x2="${x + w}" y2="${y}" stroke="${C.strong}" stroke-width="3"/><line x1="${x}" y1="${y + h}" x2="${x + w}" y2="${y + h}" stroke="${C.strong}" stroke-width="3"/>`);
-  for (let i = 1; i < 4; i++) g.raw(`<line x1="${x + cw * i}" y1="${y}" x2="${x + cw * i}" y2="${y + h}" stroke="${C.line}" stroke-width="2"/>`);
-  cols.forEach(({ k, p }, i) => {
-    const cx = x + cw * i + cw / 2;
-    g.text(cx, y + 38, k === 'day' ? '일주 · 나' : `${LABEL[k]}주`, 24, k === 'day' ? C.accent : C.sub, { w: 700, anchor: 'middle' });
-    if (!p) {
-      g.text(cx, y + h / 2 + 20, '모름', 28, C.faint, { anchor: 'middle' });
-      return;
-    }
-    const s = STEMS[p.pillar.stem];
-    const b = BRANCHES[p.pillar.branch];
-    g.text(cx, y + 50 + big, s.hanja, big, C.ink, { w: 700, anchor: 'middle', serif: true });
-    g.text(cx, y + 62 + big * 2, b.hanja, big, C.ink, { w: 700, anchor: 'middle', serif: true });
-    g.text(cx, y + h - 16, `${s.ko}${b.ko}`, 22, C.sub, { anchor: 'middle' });
-  });
-  return h;
-}
-
 const svgOpen = (W: number, H: number, fonts: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="${escXml(SVG_FONT)}">${fonts ? `<style>${fonts}</style>` : ''}<rect width="${W}" height="${H}" fill="${C.bg}"/>`;
 
@@ -144,40 +155,112 @@ const svgOpen = (W: number, H: number, fonts: string) =>
 const BUBBLE = ['좋은 말만', '해 줄 줄 알았지?'];
 
 /** 인스타그램 스토리 한 장 (위 200px·아래 250px쯤은 인스타 화면 글자에 가려지므로 비워 둔다) */
+/** 원국 네 기둥을 한 줄로 (공유 사진에서 자리를 아끼려고) */
+function pillarStrip(g: Draw, a: SajuAnalysis, x: number, y: number, w: number) {
+  const cols = (['hour', 'day', 'month', 'year'] as const).map((k) => ({ k, p: a.positions.find((q) => q.pos === k) ?? null }));
+  const LABEL = { hour: '시주', day: '일주 · 나', month: '월주', year: '년주' };
+  const cw = w / 4;
+  const h = 128;
+  g.raw(`<rect x="${x + cw}" y="${y}" width="${cw}" height="${h}" fill="${C.soft}"/>`);
+  g.raw(`<line x1="${x}" y1="${y}" x2="${x + w}" y2="${y}" stroke="${C.strong}" stroke-width="3"/><line x1="${x}" y1="${y + h}" x2="${x + w}" y2="${y + h}" stroke="${C.strong}" stroke-width="3"/>`);
+  for (let i = 1; i < 4; i++) g.raw(`<line x1="${x + cw * i}" y1="${y}" x2="${x + cw * i}" y2="${y + h}" stroke="${C.line}" stroke-width="2"/>`);
+  cols.forEach(({ k, p }, i) => {
+    const cx = x + cw * i + cw / 2;
+    g.text(cx, y + 34, LABEL[k], 22, k === 'day' ? C.accent : C.sub, { w: 700, anchor: 'middle' });
+    if (!p) g.text(cx, y + 98, '모름', 28, C.faint, { anchor: 'middle' });
+    else g.text(cx, y + 104, STEMS[p.pillar.stem].hanja + BRANCHES[p.pillar.branch].hanja, 56, C.ink, { w: 700, anchor: 'middle', serif: true, ls: 4 });
+  });
+  return h;
+}
+
+/** MBTI × 사주 — 글자별 비교. 같으면 초록, 반대면 먹색(반전), 사주로 반반이면 ? */
+function mbtiBlock(g: Draw, d: StoryData, x: number, y: number, w: number): number {
+  const top = y;
+  g.text(x, y, 'MBTI × 사주', 26, C.accent, { w: 800 });
+  if (d.mbti) g.text(x + w, y, `${d.mbti.type} · ${d.mbti.nick}`, 24, C.sub, { anchor: 'end' });
+  y += 24;
+  const labelW = 190;
+  const cw = (w - labelW) / 4;
+  const bw = Math.min(150, cw - 16);
+  const bh = 80;
+  const box = (i: number, yy: number, letter: string, kind: 'user' | 'agree' | 'differ' | 'neutral' | 'lean') => {
+    const bx = x + labelW + cw * i + (cw - bw) / 2;
+    const fill = kind === 'user' ? C.soft : kind === 'agree' || kind === 'lean' ? C.accent : kind === 'differ' ? C.ink : '#ffffff';
+    const stroke = kind === 'neutral' ? ` stroke="${C.faint}" stroke-width="2.5" stroke-dasharray="8 7"` : '';
+    g.raw(`<rect x="${bx}" y="${yy}" width="${bw}" height="${bh}" rx="16" fill="${fill}"${stroke}/>`);
+    const color = kind === 'user' ? C.ink : kind === 'neutral' ? C.faint : '#ffffff';
+    g.text(bx + bw / 2, yy + 58, letter, 48, color, { w: 800, anchor: 'middle' });
+    if (kind === 'differ') g.text(bx + bw / 2, yy + bh + 26, '반전', 20, C.ink, { w: 700, anchor: 'middle' });
+  };
+  if (d.mbti) {
+    g.text(x, y + 52, '내 MBTI', 26, C.sub, { w: 600 });
+    d.mbti.letters.forEach((v, i) => box(i, y, v.user, 'user'));
+    y += bh + 16;
+    g.text(x, y + 52, '사주로 본 나', 26, C.sub, { w: 600 });
+    d.mbti.letters.forEach((v, i) => box(i, y, v.verdict === 'neutral' ? '?' : (v.saju ?? '?'), v.verdict));
+    y += bh + (d.mbti.letters.some((v) => v.verdict === 'differ') ? 34 : 8);
+  } else {
+    g.text(x, y + 52, '사주로 본 MBTI', 26, C.sub, { w: 600 });
+    (d.sajuLetters ?? [null, null, null, null]).forEach((l, i) => box(i, y, l ?? '?', l ? 'lean' : 'neutral'));
+    y += bh + 8;
+  }
+  y += 52;
+  g.text(x, y, mbtiLine(d), 34, C.ink, { w: 700, serif: true });
+  return y - top + 22;
+}
+
+/** 인스타그램 스토리 한 장 (위 200px·아래 250px쯤은 인스타 화면 글자에 가려지므로 비워 둔다) */
 export function storySvg(a: SajuAnalysis, d: StoryData, cast: Cast, site: string, hits: { done: number; hit: number } | null, fonts = ''): string {
   const W = 1080;
   const P = 80;
   const inner = W - P * 2;
+  const LIMIT = 1556;
   const g = new Draw();
   let y = 200;
   g.text(P, y, '명경사주', 34, C.accent, { w: 700, serif: true });
   g.text(W - P, y, '명경이가 털어 본 내 사주', 26, C.sub, { anchor: 'end' });
   y += 34;
-  comicPanel(g, cast, P, y, inner, 420, BUBBLE);
-  y += 420 + 76;
-  g.text(P, y, d.name ? `명경이가 본 ${d.name}님` : '명경이가 본 나', 30, C.accent, { w: 700 });
-  y += 80;
-  for (const l of wrapBalanced(d.headline, 60, inner, 2)) {
-    g.text(P, y, l, 60, C.ink, { w: 700, serif: true });
-    y += 80;
+  comicPanel(g, cast, P, y, inner, 340, BUBBLE);
+  y += 340 + 70;
+  g.text(P, y, d.name ? `명경이가 본 ${d.name}님` : '명경이가 본 나', 28, C.accent, { w: 700 });
+  y += 74;
+  for (const l of wrapBalanced(d.headline, 58, inner, 2)) {
+    g.text(P, y, l, 58, C.ink, { w: 700, serif: true });
+    y += 76;
   }
   // 명경이의 솔직한 한마디 — 좋은 말만 하지 않는 거울
-  y += 6;
-  const quote = wrap(d.subline, 32, inner - 40, 3);
-  g.raw(`<rect x="${P}" y="${y - 36}" width="6" height="${quote.length * 48 + 52}" fill="${C.accent}"/>`);
-  g.text(P + 34, y, '명경이의 솔직한 한마디', 24, C.accent, { w: 700 });
-  y += 48;
+  y += 4;
+  const quote = wrap(d.subline, 30, inner - 40, 2);
+  g.raw(`<rect x="${P}" y="${y - 32}" width="6" height="${quote.length * 44 + 46}" fill="${C.accent}"/>`);
+  g.text(P + 32, y, '명경이의 솔직한 한마디', 22, C.accent, { w: 700 });
+  y += 44;
   for (const l of quote) {
-    g.text(P + 34, y, l, 32, C.ink, { w: 700, serif: true });
-    y += 48;
+    g.text(P + 32, y, l, 30, C.ink, { w: 700, serif: true });
+    y += 44;
   }
-  y += 40;
-  y += pillars(g, a, P, y, inner, 64) + 56;
-  if (d.tags.length) {
-    for (const l of wrap(d.tags.slice(0, 3).join('  '), 30, inner, 1)) g.text(P, y, l, 30, C.accent, { w: 700 });
-    y += 58;
+  y += 26;
+  y += pillarStrip(g, a, P, y, inner) + 64;
+  y += mbtiBlock(g, d, P, y, inner) + 30;
+  // 남는 자리에만: 겉과 속 → 적중 결과 → 해시태그
+  const extras: { h: number; draw: (yy: number) => void }[] = [];
+  if (d.outer && d.inner) {
+    extras.push({
+      h: 84,
+      draw: (yy) => {
+        g.text(P, yy, '겉', 24, C.accent, { w: 800 });
+        g.text(P + 44, yy, d.outer!, 26, C.ink);
+        g.text(P, yy + 40, '속', 24, C.accent, { w: 800 });
+        g.text(P + 44, yy + 40, d.inner!, 26, C.ink);
+      },
+    });
   }
-  if (hits) g.text(P, y, `명경이가 평소 내 모습 ${hits.done}개 중 ${hits.hit}개를 맞혔어요`, 28, C.ink, { w: 600 });
+  if (hits) extras.push({ h: 46, draw: (yy) => g.text(P, yy, `명경이가 평소 내 모습 ${hits.done}개 중 ${hits.hit}개를 맞혔어요`, 26, C.ink, { w: 700 }) });
+  if (d.tags.length) extras.push({ h: 46, draw: (yy) => g.text(P, yy, d.tags.slice(0, 2).join('  '), 26, C.accent, { w: 700 }) });
+  for (const e of extras) {
+    if (y + e.h - 30 > LIMIT) continue;
+    e.draw(y);
+    y += e.h;
+  }
   // 아래 (인스타 화면 글자 영역 위)
   g.raw(`<line x1="${P}" y1="1590" x2="${W - P}" y2="1590" stroke="${C.line}" stroke-width="2"/>`);
   g.text(P, 1648, '나도 명경이한테 사주 털리기', 30, C.ink, { w: 700 });
@@ -199,6 +282,8 @@ export function squareSvg(d: StoryData, cast: Cast, site: string, fonts = ''): s
     g.text(P, y, l, 62, C.ink, { w: 700, serif: true });
     y += 82;
   }
+  const short = mbtiShort(d);
+  if (short) g.text(P, y + 6, short, 30, C.ink, { w: 700 });
   g.text(P, W - P, '명경사주', 32, C.accent, { w: 700, serif: true });
   g.text(W - P, W - P, site, 26, C.sub, { anchor: 'end' });
   return `${svgOpen(W, W, fonts)}\n${g.o.join('\n')}\n</svg>`;
