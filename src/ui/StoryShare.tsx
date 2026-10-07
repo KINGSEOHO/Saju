@@ -17,11 +17,11 @@ import { externalHint, IN_APP_NAME, inApp, openExternal } from '../lib/inapp.ts'
 import { downloadBlob, escXml, saveImage, showImage, SVG_FONT, SVG_SERIF, svgStringToPng } from '../lib/svgImage.ts';
 import { hitScore } from './Hits.tsx';
 
-const C = { bg: '#ffffff', soft: '#f3f6f5', line: '#e4e3e0', strong: '#343331', ink: '#1e1d1b', sub: '#6a6966', faint: '#a9a7a5', accent: '#33574d', paper: '#fbf6ea' };
+export const C = { bg: '#ffffff', soft: '#f3f6f5', line: '#e4e3e0', strong: '#343331', ink: '#1e1d1b', sub: '#6a6966', faint: '#a9a7a5', accent: '#33574d', paper: '#fbf6ea' };
 
 /** 저장 이미지 안에 함초롬바탕을 넣는다(이미지로 그릴 때는 웹 글꼴을 못 쓰므로). 실패하면 기기 명조로. */
 let fontCss: Promise<string> | null = null;
-function embeddedFonts(): Promise<string> {
+export function embeddedFonts(): Promise<string> {
   fontCss ??= (async () => {
     const one = async (file: string, weight: number) => {
       const r = await fetch(`fonts/${file}`);
@@ -89,9 +89,9 @@ interface Cast {
   mirror: string;
 }
 
-const SERIF = `'HCRB', ${SVG_SERIF}`;
+export const SERIF = `'HCRB', ${SVG_SERIF}`;
 
-class Draw {
+export class Draw {
   o: string[] = [];
   text(x: number, y: number, s: string, size: number, color: string, opt: { w?: number; anchor?: 'middle' | 'end'; serif?: boolean; ls?: number } = {}) {
     this.o.push(
@@ -148,7 +148,7 @@ function comicPanel(g: Draw, cast: Cast, x: number, y: number, w: number, h: num
   g.text(x + 24 * k, y + 52 * k, '뜨끔!', Math.round(30 * k), '#e0564a', { w: 900 });
 }
 
-const svgOpen = (W: number, H: number, fonts: string) =>
+export const svgOpen = (W: number, H: number, fonts: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="${escXml(SVG_FONT)}">${fonts ? `<style>${fonts}</style>` : ''}<rect width="${W}" height="${H}" fill="${C.bg}"/>`;
 
 /** 명경이의 말 — 좋은 말만 하지 않는 거울 */
@@ -317,21 +317,32 @@ function readCast(svg: SVGSVGElement | null): Cast {
   return { me: get('me'), mirror: get('mirror') };
 }
 
-const siteLabel = () => siteUrl().replace(/^https?:\/\//, '').replace(/\/$/, '');
+export const siteLabel = () => siteUrl().replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
+export interface ShareKit {
+  /** 스토리 사진(1080×1920) */
+  makeStory: () => Promise<Blob>;
+  /** 카카오 메시지 사진(1080×1080) */
+  makeSquare: () => Promise<File>;
+  /** 내용이 바뀌었는지 — 누를 때 다시 계산해 미리 만든 사진을 쓸지 정한다 */
+  keyNow: () => string;
+  file: string;
+  /** 사진을 띄울 때 제목 */
+  title: string;
+  kakao: { title: string; description: string };
+}
+
+/** 인스타그램 스토리 · 카카오톡 · 사진 저장 버튼 묶음 */
+export function ShareButtons({ kit }: { kit: ShareKit }) {
   const [busy, setBusy] = useState<'' | 'save' | 'insta' | 'kakao'>('');
   const [msg, setMsg] = useState('');
-  const castRef = useRef<SVGSVGElement>(null);
   const app = inApp();
   const track = () => send('events', { sessionId: sessionId(), type: 'share' });
-  const file = 'myeonggyeong-story.png';
+  const { makeStory, makeSquare, keyNow, file, title } = kit;
 
-  const makeStory = async () => svgStringToPng(storySvg(a, d, readCast(castRef.current), siteLabel(), hitScore(a), await embeddedFonts()), 1080, 1920, 1);
-  const makeSquare = async () => new File([await svgStringToPng(squareSvg(d, readCast(castRef.current), siteLabel(), await embeddedFonts()), 1080, 1080, 1)], 'myeonggyeong-card.png', { type: 'image/png' });
-  // 공유 창은 누른 직후에 열어야 해서(특히 아이폰) 사진을 미리 만들어 둔다. 퀴즈 답이 바뀌면 누를 때 새로 만든다.
+  // 공유 창은 누른 직후에 열어야 해서(특히 아이폰) 사진을 미리 만들어 둔다. 내용이 바뀌면 누를 때 새로 만든다.
   const ready = useRef<{ key: string; story: Blob; square: File } | null>(null);
-  const keyNow = () => JSON.stringify([d, hitScore(a)]);
+  const renderKey = keyNow();
   useEffect(() => {
     let alive = true;
     const t = window.setTimeout(async () => {
@@ -348,7 +359,7 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
       window.clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [a, d.headline, d.subline]);
+  }, [renderKey]);
   const fresh = () => (ready.current && ready.current.key === keyNow() ? ready.current : null);
   const storyPng = async () => fresh()?.story ?? makeStory();
   const squareFile = async () => fresh()?.square ?? makeSquare();
@@ -368,7 +379,7 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
     setBusy('save');
     setMsg('');
     try {
-      const r = await saveImage(await storyPng(), file, '명경이가 털어 본 내 사주');
+      const r = await saveImage(await storyPng(), file, title);
       const copied = await copySite();
       if (r === 'downloaded' || r === 'shared') setMsg(`사진을 저장했어요. ${linkTip(copied)}`);
       if (r === 'shown') setMsg(linkTip(copied));
@@ -387,7 +398,7 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
       const copied = await copySite();
       if (app) {
         // 앱 안 브라우저는 공유 창을 못 쓰니 사진을 띄워 저장하게 한다
-        showImage(blob, '명경이가 털어 본 내 사주', '저장한 뒤 인스타그램 앱 → 스토리에서 이 사진을 골라 주세요.');
+        showImage(blob, title, '저장한 뒤 인스타그램 앱 → 스토리에서 이 사진을 골라 주세요.');
         setMsg(linkTip(copied));
         track();
       } else if (navigator.canShare?.({ files: [f] })) {
@@ -417,7 +428,7 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
     } catch {
       /* 사진 없이 기본 미리보기로 */
     }
-    const r = await shareKakao({ title: `명경이가 본 나: ${d.headline}`, description: '좋은 말만 하지 않는 사주 — 너도 명경이한테 털려 볼래?', image });
+    const r = await shareKakao({ ...kit.kakao, image });
     if (r === 'copied') setMsg('공유할 문구와 링크를 복사했어요. 카카오톡 대화방에 붙여 넣어 주세요.');
     if (r === 'failed') setMsg('공유하지 못했어요. 주소창의 링크를 직접 보내 주세요.');
     if (r !== 'cancelled' && r !== 'failed') track();
@@ -425,12 +436,7 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
   };
 
   return (
-    <section className="no-print mt-14" aria-labelledby="share-title">
-      <CastArt a={a} refEl={castRef} />
-      <h2 id="share-title" className="text-title2 text-ink">
-        친구에게 자랑하기
-      </h2>
-      <p className="mt-1 text-label text-sub">명경이가 털어 본 내 사주를 한 장으로 만들어 드려요. 생년월일과 시간은 넣지 않아요.</p>
+    <>
       <div className="mt-5 space-y-2">
         <button type="button" className="btn-primary w-full" onClick={insta} disabled={!!busy}>
           {busy === 'insta' ? '만드는 중…' : '인스타그램 스토리에 올리기'}
@@ -460,6 +466,29 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
         <p className="mt-3 text-cap text-sub">‘인스타그램 스토리에 올리기’를 누르면 공유 창이 떠요. 거기서 Instagram → 스토리를 고르면 돼요.</p>
       )}
       {msg && <p className="mt-2 text-label font-semibold text-accent">{msg}</p>}
+    </>
+  );
+}
+
+export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
+  const castRef = useRef<SVGSVGElement>(null);
+  const kit: ShareKit = {
+    makeStory: async () => svgStringToPng(storySvg(a, d, readCast(castRef.current), siteLabel(), hitScore(a), await embeddedFonts()), 1080, 1920, 1),
+    makeSquare: async () => new File([await svgStringToPng(squareSvg(d, readCast(castRef.current), siteLabel(), await embeddedFonts()), 1080, 1080, 1)], 'myeonggyeong-card.png', { type: 'image/png' }),
+    // 퀴즈 답이 바뀌어도 화면은 다시 그려지지 않으므로 누를 때마다 다시 본다
+    keyNow: () => JSON.stringify([a.pillars.day.index, a.input, d, hitScore(a)]),
+    file: 'myeonggyeong-story.png',
+    title: '명경이가 털어 본 내 사주',
+    kakao: { title: `명경이가 본 나: ${d.headline}`, description: '좋은 말만 하지 않는 사주 — 너도 명경이한테 털려 볼래?' },
+  };
+  return (
+    <section className="no-print mt-14" aria-labelledby="share-title">
+      <CastArt a={a} refEl={castRef} />
+      <h2 id="share-title" className="text-title2 text-ink">
+        친구에게 자랑하기
+      </h2>
+      <p className="mt-1 text-label text-sub">명경이가 털어 본 내 사주를 한 장으로 만들어 드려요. 생년월일과 시간은 넣지 않아요.</p>
+      <ShareButtons kit={kit} />
     </section>
   );
 }

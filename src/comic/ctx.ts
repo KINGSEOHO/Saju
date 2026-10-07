@@ -69,11 +69,11 @@ export interface Ctx {
   name: string;
   /** 부를 때 쓰는 이름 (성 뺀 이름) */
   given: string;
-  /** 서호야 · 지원아 (없으면 '') */
+  /** 명경아 · 지원아 (없으면 '') */
   call: string;
-  /** 서호 씨 (없으면 '') */
+  /** 명경 씨 (없으면 '') */
   ssi: string;
-  /** 서호님 · 당신 */
+  /** 명경님 · 당신 */
   who: string;
   male: boolean;
   age: Age;
@@ -166,9 +166,9 @@ export function makeCtx(a: SajuAnalysis, x: CrossReport | null, episode: Ctx['ep
   };
 }
 
-/** 부르는 말을 붙인다: '서호야, 벌써?' (이름이 없으면 그대로) */
+/** 부르는 말을 붙인다: '명경아, 벌써?' (이름이 없으면 그대로) */
 export const hey = (c: Ctx, text: string) => (c.call ? `${c.call}, ${text}` : text);
-/** 직장에서 부르는 말: '서호 씨, …' */
+/** 직장에서 부르는 말: '명경 씨, …' */
 export const heySsi = (c: Ctx, text: string) => (c.ssi ? `${c.ssi}, ${text}` : text);
 
 export const say = (by: number, text: string, kind: Line['kind'] = 'say', alt?: Line['alt']): Line => ({ by, text, kind, alt });

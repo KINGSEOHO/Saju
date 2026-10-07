@@ -12,6 +12,13 @@ export const BETA_FREE = true;
 /** 유료 전환 시 잠글 후보 (지금은 '베타 무료' 배지로만 표시) */
 export const PREMIUM_SECTIONS: SectionId[] = ['love', 'career', 'wealth', 'health'];
 
+/**
+ * 궁합 · 재회의 상세 리포트(ui/Premium.tsx로 감싼 부분)도 BETA_FREE를 따른다.
+ *  - 궁합: 반복되는 다툼 · 서로에게 하는 말 · MBTI 대화 가이드 · 앞으로 10년 · 오래 가려면
+ *  - 재회: 연락하기 좋은 달 · 피할 달 · 지금 할 일 · 다시 만난다면 하는 말
+ * 점수·잘 맞는 점·부딪히는 점·띠/MBTI 한 줄은 무료로 둔다.
+ */
+
 /** 리뷰에서 지불 의향을 물을 가격 (원) — A/B 테스트 가능하도록 설정값으로 둔다 */
 export const PRICE_OPTIONS = [
   { id: 'free_only', label: '무료' },

@@ -43,6 +43,12 @@ const WebtoonPanel = lazy(() =>
     () => ({ default: ChunkError }),
   ),
 );
+const MatchPanel = lazy(() =>
+  import('./ui/Match.tsx').then(
+    (m) => ({ default: m.MatchPanel }),
+    () => ({ default: ChunkError }),
+  ),
+);
 const CrossTabs = lazy(() =>
   import('./ui/CrossTabs.tsx').then(
     (m) => ({ default: m.CrossTabs }),
@@ -167,9 +173,10 @@ function Home() {
   );
 }
 
-type Sec = 'report' | 'luck' | 'cross' | 'mbti' | 'job' | 'webtoon' | 'chart' | 'detail';
+type Sec = 'report' | 'match' | 'luck' | 'cross' | 'mbti' | 'job' | 'webtoon' | 'chart' | 'detail';
 const DETAILS: { id: Sec; title: string; desc: string }[] = [
   { id: 'report', title: '풀이 리포트', desc: '종합 · 개운법 · 성향 · 연애 · 직업 · 재물 · 건강' },
+  { id: 'match', title: '궁합 · 재회', desc: '상대 생년월일로 보는 사주 · 띠 · MBTI 궁합' },
   { id: 'luck', title: '운의 흐름', desc: '이번 달 · 올해 · 10년 대운' },
   { id: 'cross', title: '교차 검증', desc: '사주·운·띠·MBTI·직업이 함께 가리키는 것' },
   { id: 'mbti', title: 'MBTI × 사주', desc: '겉(MBTI)과 속(사주)이 같은 점과 다른 점' },
@@ -189,6 +196,12 @@ function DetailContent({ id, a, report }: { id: Sec; a: SajuAnalysis; report: Re
       return <ReportView a={a} />;
     case 'luck':
       return <LuckPanel a={a} />;
+    case 'match':
+      return (
+        <Suspense fallback={<Loading>궁합 화면을 불러오는 중…</Loading>}>
+          <MatchPanel a={a} />
+        </Suspense>
+      );
     case 'cross':
     case 'mbti':
     case 'job':
@@ -455,6 +468,17 @@ function Result({ input }: { input: BirthInput }) {
       )}
 
       <ShareSection a={a} d={shareData} />
+
+      <section className="no-print panel mt-12" aria-labelledby="match-teaser">
+        <p className="kicker">궁합 · 재회</p>
+        <h2 id="match-teaser" className="mt-2 text-title3 text-ink">
+          그 사람과는 얼마나 잘 맞을까요?
+        </h2>
+        <p className="mt-1 text-label text-sub">상대 생년월일만 있으면 사주·띠·MBTI로 함께 비교해요. 헤어진 사이라면 다시 연락하기 좋은 때를 알려 드려요.</p>
+        <button type="button" className="btn-secondary mt-4 w-full" onClick={() => openSection('match')}>
+          궁합 · 재회 보기
+        </button>
+      </section>
 
       <section className="mt-16" aria-labelledby="details">
         <h2 id="details" className="text-title2 text-ink">

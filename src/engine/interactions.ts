@@ -199,3 +199,31 @@ export function isYukhap(a: number, b: number): boolean {
 export function isWonjin(a: number, b: number): boolean {
   return !!pairMatch(WONJIN as [number, number][], a, b);
 }
+
+// ---------------------------------------------------------------------------
+// 두 사람(궁합)이나 바깥 글자와 한 쌍씩 비교할 때 쓰는 판별
+// ---------------------------------------------------------------------------
+export function isStemHap(a: number, b: number): boolean {
+  return !!pairMatch(STEM_HAP, a, b);
+}
+export function isStemChung(a: number, b: number): boolean {
+  return !!pairMatch(STEM_CHUNG as [number, number][], a, b);
+}
+export function isPa(a: number, b: number): boolean {
+  return !!pairMatch(PA as [number, number][], a, b);
+}
+export function isHae(a: number, b: number): boolean {
+  return !!pairMatch(HAE as [number, number][], a, b);
+}
+/** 형(刑) 짝 — 寅巳申·丑戌未 중 둘, 子卯 */
+export function isHyungPair(a: number, b: number): boolean {
+  if (a === b) return false;
+  if ((a === 0 && b === 3) || (a === 3 && b === 0)) return true;
+  return SAMHYEONG.some((g) => g.includes(a) && g.includes(b));
+}
+/** 같은 삼합 무리의 두 글자면 그 오행 */
+export function samhapPair(a: number, b: number): Element | null {
+  if (a === b) return null;
+  const g = SAMHAP.find(([grp]) => grp.includes(a) && grp.includes(b));
+  return g ? g[1] : null;
+}
