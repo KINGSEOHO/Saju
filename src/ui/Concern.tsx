@@ -1,15 +1,17 @@
 /**
- * 고민 리포트 (시안) — 고민을 고르면 그 고민에 맞춰 '한 줄 답'부터 보여 준다.
- * 지금은 이직·진로만 만들었고, 궁합·재회는 기존 칸으로 보낸다.
+ * 고민 리포트 — 고민을 고르면 그 고민에 맞춰 '한 줄 답'부터 보여 준다.
+ * 다섯 고민이 모두 같은 모양(report/concern.ts의 ConcernReport)이라 화면도 하나로 그린다.
+ * 궁합·재회는 상대 정보를 넣는 기존 칸으로 보낸다.
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { PAYWALL_DEMO } from '../config/plans.ts';
 import { resetDemo } from '../lib/account.ts';
+import { formatYm } from '../lib/partnerDraft.ts';
 import { concernOffers, isOpen, purchaseLabel, sajuKey } from '../lib/entitlements.ts';
-import { careerConcern, STANCE_LABEL, type CareerConcern, type Stance } from '../report/concern.ts';
+import { concernReport, examMonthOf, LOVE_STATUS_LABEL, type ConcernReport, type LoveStatus, type MonthRow, type MonthSign } from '../report/concern.ts';
 import { CONCERNS, type ConcernId } from '../report/concernList.ts';
-import type { Report, YearSignal } from '../report/generate.ts';
+import type { Report, Statement, YearSignal } from '../report/generate.ts';
 import { Gloss, Lead, TONE_STYLE } from './common.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
 import { Premium, useUnlock } from './Premium.tsx';
@@ -17,7 +19,29 @@ import { Premium, useUnlock } from './Premium.tsx';
 type Unlock = ReturnType<typeof useUnlock>;
 
 const SIG_TAG = { positive: 'tag-pos', negative: 'tag-neg', caution: 'tag-mute', neutral: 'tag-mute' } as const;
-const STANCES: Stance[] = ['move', 'prepare', 'stay', 'hold'];
+
+/** 이 탭 안에서만 기억하는 선택 (연애 상태 · 시험 달) */
+function useTabState<T>(key: string, initial: T): [T, (v: T) => void] {
+  const [v, setV] = useState<T>(() => {
+    try {
+      const raw = sessionStorage.getItem(key);
+      return raw ? (JSON.parse(raw) as T) : initial;
+    } catch {
+      return initial;
+    }
+  });
+  return [
+    v,
+    (next: T) => {
+      setV(next);
+      try {
+        sessionStorage.setItem(key, JSON.stringify(next));
+      } catch {
+        /* 이번 화면에서만 */
+      }
+    },
+  ];
+}
 
 function Block({ title, desc, children }: { title: string; desc?: string; children: ReactNode }) {
   return (
@@ -46,103 +70,171 @@ function YearRow({ label, y }: { label: string; y: YearSignal }) {
   );
 }
 
-function CareerDetail({ a, c }: { a: SajuAnalysis; c: CareerConcern }) {
-  const go = c.months.filter((m) => m.kind === 'go');
-  const avoid = c.months.filter((m) => m.kind === 'avoid');
+function StatementList({ items }: { items: Statement[] }) {
+  return (
+    <ul className="border-t border-line">
+      {items.map((s) => (
+        <li key={s.text} className="border-b border-line py-4">
+          {s.tone !== 'neutral' && <span className={TONE_STYLE[s.tone].tag}>{TONE_STYLE[s.tone].label}</span>}
+          <p className={`read ${s.tone !== 'neutral' ? 'mt-2' : ''}`}>
+            <Lead text={s.text} />
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function MonthList({ a, list, empty }: { a: SajuAnalysis; list: MonthSign[]; empty: string }) {
+  if (!list.length) return <p className="mt-2 text-ui text-sub">{empty}</p>;
+  return (
+    <ul className="mt-2 border-t border-line">
+      {list.map((m) => (
+        <li key={m.w.startMs} className="border-b border-line py-4">
+          <p className="font-serif text-[17px] font-bold text-ink">{monthTitle(a, m.w)}</p>
+          <p className="mt-1 text-ui text-ink-2">{m.why}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Calendar({ a, rows }: { a: SajuAnalysis; rows: MonthRow[] }) {
+  return (
+    <ul className="border-t border-line">
+      {rows.map((r) => (
+        <li key={r.w.startMs} className={`border-b border-line py-3.5 ${r.past ? 'opacity-45' : ''}`}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-label font-semibold text-ink">{monthTitle(a, r.w)}</span>
+            {r.now && <span className="text-micro font-bold text-accent">지금</span>}
+            <span className={`${SIG_TAG[r.tone]} ml-auto`}>{r.tag}</span>
+          </div>
+          <p className="mt-1 text-ui text-ink-2">{r.text}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** 시험이 있는 달 — 넣으면 그달의 기운을 본다 */
+function ExamMonth({ a }: { a: SajuAnalysis }) {
+  const [ym, setYm] = useTabState<string>('mg_exam_month', '');
+  const digits = ym.replace(/\D/g, '');
+  const parsed = digits.length === 6 ? { year: Number(digits.slice(0, 4)), month: Number(digits.slice(4)) } : null;
+  const valid = parsed && parsed.month >= 1 && parsed.month <= 12;
+  const r = valid ? examMonthOf(a, parsed) : null;
+  return (
+    <Block title="시험이 있는 달" desc="시험 연월을 넣으면 그달의 기운을 봐요.">
+      <input className="field" inputMode="numeric" placeholder="예) 202703" value={formatYm(ym)} onChange={(e) => setYm(e.target.value.replace(/\D/g, '').slice(0, 6))} autoComplete="off" />
+      {digits.length === 6 && !valid && <p className="mt-2 text-label font-semibold text-ink">월은 01부터 12 사이로 넣어 주세요.</p>}
+      {r && !r.ok && <p className="mt-3 text-ui text-sub">{r.text}</p>}
+      {r && r.ok && (
+        <div className="panel mt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-serif text-[17px] font-bold text-ink">{monthTitle(a, r.w)}</span>
+            <span className={SIG_TAG[r.tone]}>{r.tag}</span>
+          </div>
+          <p className="read mt-2">{r.text}</p>
+          <p className="mt-2 text-cap text-sub">
+            <Gloss text={`근거 · ${r.basis}`} />
+          </p>
+        </div>
+      )}
+    </Block>
+  );
+}
+
+function ConcernDetail({ a, c }: { a: SajuAnalysis; c: ConcernReport }) {
+  const d = c.detail;
   return (
     <>
-      <Block title="앞으로 12개월" desc="면접·제안·협상을 언제 하면 좋은지, 언제 미뤄야 하는지예요.">
-        <p className="text-label font-semibold text-accent">{c.stance === 'move' ? '움직이기 좋은 달' : '그래도 기회를 살펴볼 만한 달'}</p>
-        {go.length ? (
-          <ul className="mt-2 border-t border-line">
-            {go.map((m) => (
-              <li key={m.w.startMs} className="border-b border-line py-4">
-                <p className="font-serif text-[17px] font-bold text-ink">{monthTitle(a, m.w)}</p>
-                <p className="mt-1 text-ui text-ink-2">{m.why}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-ui text-sub">앞으로 12개월 안에는 뚜렷하게 좋은 달이 없어요. 지금은 준비에 쓰는 게 나아요.</p>
-        )}
-        <p className="mt-6 text-label font-semibold text-ink">피할 달</p>
-        {avoid.length ? (
-          <ul className="mt-2 border-t border-line">
-            {avoid.map((m) => (
-              <li key={m.w.startMs} className="border-b border-line py-4">
-                <p className="font-serif text-[17px] font-bold text-ink">{monthTitle(a, m.w)}</p>
-                <p className="mt-1 text-ui text-ink-2">{m.why}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-ui text-sub">앞으로 12개월 안에 특별히 피할 달은 없어요.</p>
-        )}
-      </Block>
-
-      <Block title="앞으로 10년 이직 신호" desc="해마다 들어오는 기운과 운의 힘을 함께 봤어요.">
-        <ul className="border-t border-line">
-          {c.timeline.map((y) => (
-            <li key={y.year} className="flex gap-4 border-b border-line py-4">
-              <span className="w-12 shrink-0 font-serif text-title3 font-bold text-ink tabular-nums">{y.year}</span>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={SIG_TAG[y.tone]}>{y.verdict}</span>
-                  <span className="text-micro text-sub tabular-nums">
-                    {y.pillar} · 운의 힘 {y.score}
-                  </span>
-                </div>
-                {y.notes.length > 0 && (
-                  <p className="mt-1.5 text-label text-ink-2">
-                    <Gloss text={y.notes.join(' · ')} />
+      {c.id === 'exam' && <ExamMonth a={a} />}
+      {d.months && (
+        <Block title={d.months.title} desc={d.months.desc}>
+          <p className="text-label font-semibold text-accent">{d.months.goLabel}</p>
+          <MonthList a={a} list={d.months.list.filter((m) => m.kind === 'go')} empty={d.months.noGo} />
+          <p className="mt-6 text-label font-semibold text-ink">{d.months.avoidLabel}</p>
+          <MonthList a={a} list={d.months.list.filter((m) => m.kind === 'avoid')} empty={d.months.noAvoid} />
+        </Block>
+      )}
+      {d.calendar && (
+        <Block title={d.calendar.title} desc={d.calendar.desc}>
+          <Calendar a={a} rows={d.calendar.rows} />
+        </Block>
+      )}
+      {d.fields && d.fields.rows.length > 0 && (
+        <Block title={d.fields.title} desc={d.fields.desc}>
+          <dl className="border-t border-line">
+            {d.fields.rows.map((r) => (
+              <div key={r.label}>
+                <YearRow label={r.label} y={r.y} />
+                {r.y.notes.length > 0 && (
+                  <p className="-mt-1 border-b border-line pb-3 text-label text-ink-2">
+                    <Gloss text={r.y.notes.join(' · ')} />
                   </p>
                 )}
               </div>
-            </li>
-          ))}
-        </ul>
-      </Block>
-
-      <Block title="지금 회사에 남는다면">
-        <ul className="space-y-3">
-          {c.stay.map((t) => (
-            <li key={t} className="flex gap-2.5 text-ui text-ink-2">
-              <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
-              {t}
-            </li>
-          ))}
-        </ul>
-      </Block>
-
-      <Block title="옮긴다면 이것부터">
-        <ol className="space-y-4">
-          {c.move.map((t, i) => (
-            <li key={t} className="flex gap-4">
-              <span className="w-4 shrink-0 font-serif text-title3 font-bold text-accent tabular-nums">{i + 1}</span>
-              <p className="read">{t}</p>
-            </li>
-          ))}
-        </ol>
-      </Block>
-
-      {c.risks.length > 0 && (
-        <Block title="직장에서 반복되기 쉬운 문제">
+            ))}
+          </dl>
+        </Block>
+      )}
+      {d.timeline && (
+        <Block title={d.timeline.title} desc={d.timeline.desc}>
           <ul className="border-t border-line">
-            {c.risks.map((s) => (
-              <li key={s.text} className="border-b border-line py-4">
-                {s.tone !== 'neutral' && <span className={TONE_STYLE[s.tone].tag}>{TONE_STYLE[s.tone].label}</span>}
-                <p className={`read ${s.tone !== 'neutral' ? 'mt-2' : ''}`}>
-                  <Lead text={s.text} />
-                </p>
+            {d.timeline.items.map((y) => (
+              <li key={y.year} className="flex gap-4 border-b border-line py-4">
+                <span className="w-12 shrink-0 font-serif text-title3 font-bold text-ink tabular-nums">{y.year}</span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={SIG_TAG[y.tone]}>{y.verdict}</span>
+                    <span className="text-micro text-sub tabular-nums">
+                      {y.pillar} · 운의 힘 {y.score}
+                    </span>
+                  </div>
+                  {y.notes.length > 0 && (
+                    <p className="mt-1.5 text-label text-ink-2">
+                      <Gloss text={y.notes.join(' · ')} />
+                    </p>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         </Block>
       )}
-
-      {c.story.length > 0 && (
-        <Block title="이야기로 읽기" desc="직업과 일에 대한 긴 풀이예요.">
-          {c.story.slice(0, 4).map((p) => (
+      {d.lists.map((l) =>
+        l.items.length ? (
+          <Block key={l.title} title={l.title}>
+            {l.numbered ? (
+              <ol className="space-y-4">
+                {l.items.map((t, i) => (
+                  <li key={t} className="flex gap-4">
+                    <span className="w-4 shrink-0 font-serif text-title3 font-bold text-accent tabular-nums">{i + 1}</span>
+                    <p className="read">{t}</p>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <ul className="space-y-3">
+                {l.items.map((t) => (
+                  <li key={t} className="flex gap-2.5 text-ui text-ink-2">
+                    <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Block>
+        ) : null,
+      )}
+      {d.statements.map((s) => (
+        <Block key={s.title} title={s.title}>
+          <StatementList items={s.items} />
+        </Block>
+      ))}
+      {d.story && (
+        <Block title={d.story.title} desc={d.story.desc}>
+          {d.story.paras.map((p) => (
             <section key={p.title} className="mb-8">
               <h5 className="font-serif text-[17px] font-bold text-ink">{p.title}</h5>
               <p className="read mt-2">
@@ -156,25 +248,45 @@ function CareerDetail({ a, c }: { a: SajuAnalysis; c: CareerConcern }) {
   );
 }
 
-function CareerView({ a, report, u }: { a: SajuAnalysis; report: Report; u: Unlock }) {
+function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id: ConcernId; u: Unlock }) {
   const months = useMemo(() => upcomingMonths(a, 12), [a]);
-  const c = useMemo(() => careerConcern(a, report, months), [a, report, months]);
-  if (!c) return <p className="text-ui text-sub">이직·진로 풀이를 만들지 못했어요.</p>;
+  const [love, setLove] = useTabState<LoveStatus>('mg_love_status', 'single');
+  const c = useMemo(() => concernReport(id, a, report, months, { love }), [id, a, report, months, love]);
+  if (!c) return <p className="text-ui text-sub">이 고민의 풀이를 만들지 못했어요.</p>;
+  const title = CONCERNS.find((x) => x.id === id)?.title ?? '';
   return (
     <>
-      <section aria-labelledby="career-answer">
-        <p className="kicker">이직·진로 · 지금 옮겨도 될까?</p>
-        <h3 id="career-answer" className="mt-2 text-title1 text-ink">
+      {id === 'love' && (
+        <div className="mb-6">
+          <p className="text-label font-semibold text-ink-2">지금은</p>
+          <div className="mt-2 grid grid-cols-3 gap-2" role="radiogroup" aria-label="지금 연애 상태">
+            {(Object.keys(LOVE_STATUS_LABEL) as LoveStatus[]).map((s) => (
+              <button
+                key={s}
+                type="button"
+                role="radio"
+                aria-checked={love === s}
+                onClick={() => setLove(s)}
+                className={`min-h-11 rounded-xl border px-2 py-2 text-label leading-snug transition-colors ${love === s ? 'border-accent bg-accent-soft font-bold text-accent' : 'border-line text-ink active:bg-fill'}`}
+              >
+                {LOVE_STATUS_LABEL[s]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <section aria-labelledby={`concern-${id}`}>
+        <p className="kicker">
+          {title} · {c.ask}
+        </p>
+        <h3 id={`concern-${id}`} className="mt-2 text-title1 text-ink">
           {c.answer}
         </h3>
-        <div className="mt-4 grid grid-cols-4 gap-1" aria-label={`지금은 ${STANCE_LABEL[c.stance]}`}>
-          {STANCES.map((s) => (
-            <span
-              key={s}
-              className={`rounded-lg py-1.5 text-center text-cap ${s === c.stance ? 'bg-accent font-bold text-on-accent' : 'bg-fill text-sub'}`}
-              aria-hidden
-            >
-              {STANCE_LABEL[s]}
+        <div className="mt-4 grid grid-cols-4 gap-1" aria-label={`지금은 ${c.stances[c.stance]}`}>
+          {c.stances.map((s, i) => (
+            <span key={s} aria-hidden className={`rounded-lg px-0.5 py-1.5 text-center text-cap leading-tight ${i === c.stance ? 'bg-accent font-bold text-on-accent' : 'bg-fill text-sub'}`}>
+              {s}
             </span>
           ))}
         </div>
@@ -187,22 +299,24 @@ function CareerView({ a, report, u }: { a: SajuAnalysis; report: Report; u: Unlo
       </section>
 
       <dl className="mt-8 border-t border-line">
-        <YearRow label="올해" y={c.thisYear} />
-        {c.nextYear && <YearRow label="내년" y={c.nextYear} />}
+        {c.signals.map((s) => (
+          <YearRow key={s.label} label={s.label} y={s.y} />
+        ))}
       </dl>
       <p className="mt-4 text-ui font-semibold text-accent">{c.teaser}</p>
 
       <section className="mt-12">
-        <h4 className="text-title2 text-ink">나에게 맞는 일</h4>
-        {c.job && (
-          <p className="panel mt-4 text-ui text-ink-2">
-            지금 하는 일 <b className="text-ink">{c.job.field}</b> · 사주와 {c.job.label} <span className="text-sub tabular-nums">({c.job.score}점)</span>
-          </p>
-        )}
+        <h4 className="text-title2 text-ink">{c.free.title}</h4>
+        {c.free.note && <p className="panel mt-4 text-label text-ink-2">{c.free.note}</p>}
         <ul className="mt-2">
-          {c.fit.map((s) => (
+          {c.free.items.map((s, i) => (
             <li key={s.text} className="border-b border-line py-4 last:border-b-0">
-              <p className="read">
+              {c.free.labels ? (
+                <span className={SIG_TAG[s.tone]}>{c.free.labels[i]}</span>
+              ) : (
+                s.tone !== 'neutral' && <span className={TONE_STYLE[s.tone].tag}>{TONE_STYLE[s.tone].label}</span>
+              )}
+              <p className={`read ${s.tone !== 'neutral' || c.free.labels ? 'mt-2' : ''}`}>
                 <Lead text={s.text} />
               </p>
             </li>
@@ -210,17 +324,19 @@ function CareerView({ a, report, u }: { a: SajuAnalysis; report: Report; u: Unlo
         </ul>
       </section>
 
+      {c.notice && <p className="mt-6 rounded-xl bg-fill px-4 py-3 text-label text-sub">{c.notice}</p>}
+
       <Premium
-        id="career"
-        title="이직·진로 상세 리포트"
-        what="이직·진로"
-        locked={PAYWALL_DEMO ? !isOpen(u.ent, 'career') : undefined}
-        offers={concernOffers(u.ent, 'career')}
-        onTake={(o) => u.buy(o, 'career')}
+        id={id}
+        title={c.detail.title}
+        what={title}
+        items={c.detail.items}
+        locked={PAYWALL_DEMO ? !isOpen(u.ent, id) : undefined}
+        offers={concernOffers(u.ent, id)}
+        onTake={(o) => u.buy(o, id)}
         onRedeem={u.redeem}
-        items={['앞으로 12개월 — 좋은 달과 피할 달', '앞으로 10년 이직 신호', '지금 회사에 남는다면 할 일', '옮긴다면 이것부터 (체크리스트)', '직장에서 반복되기 쉬운 문제', '이야기로 읽는 긴 풀이']}
       >
-        <CareerDetail a={a} c={c} />
+        <ConcernDetail a={a} c={c} />
       </Premium>
     </>
   );
@@ -294,31 +410,6 @@ function DemoBox({ u }: { u: Unlock }) {
 }
 
 /** 아직 만들지 않은 고민 — 시안에서는 가격 사다리만 눌러 볼 수 있게 자리를 둔다 */
-function Upcoming({ id, u }: { id: ConcernId; u: Unlock }) {
-  const c = CONCERNS.find((x) => x.id === id)!;
-  return (
-    <>
-      <div className="panel">
-        <p className="text-ui font-semibold text-ink">{c.title} 고민 리포트는 준비 중이에요</p>
-        <p className="mt-1 text-label text-sub">이직·진로와 같은 틀(한 줄 답 → 이유 → 올해 신호 → 상세)로 채울 거예요.</p>
-      </div>
-      {PAYWALL_DEMO && (
-        <Premium
-          id={id}
-          title={`${c.title} 상세 리포트`}
-          what={c.title}
-          items={['앞으로 12개월 — 좋은 달과 피할 달', '앞으로 10년 신호', '지금 할 일']}
-          locked={!isOpen(u.ent, id)}
-          offers={concernOffers(u.ent, id)}
-          onTake={(o) => u.buy(o, id)}
-          onRedeem={u.redeem}
-        >
-          <p className="read">시안이라 아직 내용이 없어요. 가격 사다리와 버튼 문구를 눌러 보는 자리예요.</p>
-        </Premium>
-      )}
-    </>
-  );
-}
 
 export function ConcernPanel({ a, report, concern, onPick }: { a: SajuAnalysis; report: Report; concern: ConcernId; onPick: (id: ConcernId) => void }) {
   const u = useUnlock(sajuKey(a.input));
@@ -343,9 +434,7 @@ export function ConcernPanel({ a, report, concern, onPick }: { a: SajuAnalysis; 
           ))}
         </div>
       </div>
-      <div className="mt-8">
-        {concern === 'career' ? <CareerView a={a} report={report} u={u} /> : <Upcoming id={concern} u={u} />}
-      </div>
+      <div className="mt-8">{concern !== 'match' && <ConcernView key={concern} a={a} report={report} id={concern} u={u} />}</div>
     </>
   );
 }

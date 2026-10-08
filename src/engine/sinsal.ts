@@ -68,6 +68,10 @@ export function isNobleBranch(dayStem: number, branch: number): boolean {
 }
 
 const MUNCHANG: Record<number, number> = { 0: 5, 1: 6, 2: 8, 3: 9, 4: 8, 5: 9, 6: 11, 7: 0, 8: 2, 9: 3 };
+/** 일간 기준 문창귀인 지지인가 (시험·글재주의 별) */
+export function isMunchangBranch(dayStem: number, branch: number): boolean {
+  return MUNCHANG[dayStem] === branch;
+}
 const YANGIN: Record<number, number> = { 0: 3, 2: 6, 4: 6, 6: 9, 8: 0 };
 const ROK: Record<number, number> = { 0: 2, 1: 3, 2: 5, 3: 6, 4: 5, 5: 6, 6: 8, 7: 9, 8: 11, 9: 0 };
 const HONGYEOM: Record<number, number> = { 0: 6, 1: 6, 2: 2, 3: 7, 4: 4, 5: 4, 6: 10, 7: 9, 8: 0, 9: 8 };
