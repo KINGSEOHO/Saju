@@ -192,7 +192,7 @@ type Sec = 'report' | 'luck' | 'cross' | 'mbti' | 'job' | 'webtoon' | 'chart' | 
 /** 펼치는 줄 — 세부 풀이의 칸이거나 고민 리포트의 고민 하나. 한 번에 하나만 펼친다 */
 type RowId = Sec | ConcernId;
 const DETAILS: { id: Sec; title: string; desc: string }[] = [
-  { id: 'report', title: '풀이 리포트', desc: '종합 · 개운법 · 성향 · 연애 · 직업 · 재물 · 건강' },
+  { id: 'report', title: '풀이 리포트', desc: '종합 · 성향 · 연애 · 직업 · 재물 · 건강' },
   { id: 'luck', title: '운의 흐름', desc: '이번 달 · 올해 · 10년 대운' },
   { id: 'cross', title: '교차 검증', desc: '사주·운·띠·MBTI·직업이 함께 가리키는 것' },
   { id: 'mbti', title: 'MBTI × 사주', desc: '겉(MBTI)과 속(사주)이 같은 점과 다른 점' },

@@ -13,6 +13,7 @@ import { compatReport, RELATION_LABEL, reunionReport, SCORE_NOTE, type CompatRep
 import { MBTI_LIST } from '../report/mbti.ts';
 import { Gloss, Lead } from './common.tsx';
 import { CoupleShare } from './CoupleShare.tsx';
+import { GaeunRows } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
 import { Premium, useUnlock } from './Premium.tsx';
 import { PAYWALL_DEMO } from '../config/plans.ts';
@@ -343,6 +344,15 @@ function CompatDetail({ r }: { r: CompatReport }) {
           ))}
         </ul>
       </Block>
+      <Block title="두 사람의 개운법" desc="두 사람에게 필요한 기운(용신)과 부담되는 기운(기신)을 함께 봤어요.">
+        <p className="read">
+          <Lead text={r.gaeun.why} />
+        </p>
+        <div className="mt-8 space-y-8">
+          <GaeunRows title="함께 가까이할 것" items={r.gaeun.close} tone="close" />
+          <GaeunRows title="함께 멀리할 것" items={r.gaeun.away} tone="away" />
+        </div>
+      </Block>
     </>
   );
 }
@@ -409,7 +419,7 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
         title="궁합 상세 리포트"
         what={b.input.name ? `${b.input.name}님과의 궁합` : '이 사람과의 궁합'}
         {...lock}
-        items={['반복되는 다툼과 푸는 법', '서로에게 하면 좋은 말 · 피해야 할 말', 'MBTI로 본 대화 가이드', '앞으로 10년 — 함께 좋은 해와 흔들리는 해', '오래 가려면']}
+        items={['반복되는 다툼과 푸는 법', '서로에게 하면 좋은 말 · 피해야 할 말', 'MBTI로 본 대화 가이드', '앞으로 10년 — 함께 좋은 해와 흔들리는 해', '오래 가려면', '두 사람의 개운법 — 함께 갈 곳, 데이트 색, 함께 피할 것']}
       >
         <CompatDetail r={r} />
       </Premium>

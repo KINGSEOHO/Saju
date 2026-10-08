@@ -715,7 +715,7 @@ export function personaEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
       shot: 'bust',
       cast: [c.mirror(160, 'angry', 'point'), c.me(440, 'shock', 'stand', { dir: -1 })],
       talk: [shout(0, '그거 말고!!'), say(0, Y.real)],
-    }, { note: `${Y.note} 내 사주에 맞는 색·음식·장소·습관은 풀이 리포트의 ‘개운법’ 탭에 모아 두었습니다.` }),
+    }, { note: `${Y.note} 내 고민에 맞는 색·장소·습관(개운법)은 고민 리포트에 나눠 담았습니다.` }),
   );
 
   // 마무리

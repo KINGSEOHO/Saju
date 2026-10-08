@@ -13,6 +13,7 @@ import { concernReport, examMonthOf, LOVE_STATUS_LABEL, type ConcernReport, type
 import { CONCERNS, type ConcernId } from '../report/concernList.ts';
 import type { Report, Statement, YearSignal } from '../report/generate.ts';
 import { Gloss, Lead, TONE_STYLE } from './common.tsx';
+import { GaeunDetail, GaeunTaste } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
 import { Premium, useUnlock } from './Premium.tsx';
 
@@ -227,6 +228,11 @@ function ConcernDetail({ a, c }: { a: SajuAnalysis; c: ConcernReport }) {
           </Block>
         ) : null,
       )}
+      {c.gaeun && (
+        <Block title={c.gaeun.title} desc="같은 기운이라도 고민마다 쓰는 법이 달라요. 이 고민에 맞춰 골랐어요.">
+          <GaeunDetail id={c.id} g={c.gaeun} />
+        </Block>
+      )}
       {d.statements.map((s) => (
         <Block key={s.title} title={s.title}>
           <StatementList items={s.items} />
@@ -323,6 +329,8 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
           ))}
         </ul>
       </section>
+
+      {c.gaeun && <GaeunTaste g={c.gaeun} />}
 
       {c.notice && <p className="mt-6 rounded-xl bg-fill px-4 py-3 text-label text-sub">{c.notice}</p>}
 

@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { BETA_FREE, PREMIUM_SECTIONS } from '../config/plans.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import type { ConcernId } from '../report/concernList.ts';
-import type { GaeunData, GaeunItem } from '../report/gaeun.ts';
 import { generateReport, type ReportSection, type SectionId, type Statement } from '../report/generate.ts';
 import type { StoryPara } from '../report/story.ts';
 import { DivergingBars } from './Charts.tsx';
@@ -10,12 +9,11 @@ import { ConcernBridge } from './ConcernBridge.tsx';
 import { Gloss, Lead, SectionTitle, TONE_STYLE } from './common.tsx';
 import { SectionRating } from './Feedback.tsx';
 
-const TAB_ORDER: SectionId[] = ['summary', 'gaeun', 'personality', 'love', 'career', 'wealth', 'health'];
+const TAB_ORDER: SectionId[] = ['summary', 'personality', 'love', 'career', 'wealth', 'health'];
 
 /** 풀이를 다 읽은 뒤 '그래서 언제, 어떻게?'로 이어 갈 고민 */
 const NEXT: Record<SectionId, { id: ConcernId; lead: string; peek?: false }> = {
   summary: { id: 'year', lead: '그럼 올해는 어떻게 보내면 좋을까요?' },
-  gaeun: { id: 'year', lead: '올해는 언제, 무엇을 조심하면 좋을까요?', peek: false },
   personality: { id: 'exam', lead: '내 성향에 맞는 공부법은 뭘까요?', peek: false },
   love: { id: 'love', lead: '그래서 인연은 언제 올까요?' },
   career: { id: 'career', lead: '그래서 지금 옮겨도 될까요?' },
@@ -94,90 +92,6 @@ function StoryView({ story, showEvidence }: { story: StoryPara[]; showEvidence: 
   );
 }
 
-function GaeunList({ title, note, items, showEvidence }: { title: string; note: string; items: GaeunItem[]; showEvidence: boolean }) {
-  return (
-    <div>
-      <h3 className="text-title3 text-ink">{title}</h3>
-      <p className="mt-0.5 text-label text-sub">{note}</p>
-      <dl className="mt-3 border-t border-line">
-        {items.map((it) => (
-          <div key={it.key} className="grid grid-cols-[5.5rem_1fr] gap-3 border-b border-line py-4">
-            <dt className="pt-0.5 text-label font-semibold text-sub">{it.label}</dt>
-            <dd className="min-w-0">
-              <p className="font-serif text-[16px] leading-[1.75] text-ink-2">
-                <Gloss text={it.value} />
-              </p>
-              <Evidence text={it.basis} show={showEvidence} />
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-const routineKey = () => `gaeun-routine-${new Date().toISOString().slice(0, 10)}`;
-function loadRoutine(): number[] {
-  try {
-    return JSON.parse(localStorage.getItem(routineKey()) ?? '[]') as number[];
-  } catch {
-    return [];
-  }
-}
-
-function GaeunBoard({ g, showEvidence }: { g: GaeunData; showEvidence: boolean }) {
-  const [done, setDone] = useState<number[]>(loadRoutine);
-  const toggle = (i: number) => {
-    const next = done.includes(i) ? done.filter((x) => x !== i) : [...done, i];
-    setDone(next);
-    try {
-      localStorage.setItem(routineKey(), JSON.stringify(next));
-    } catch {
-      /* 저장이 안 되는 브라우저에서도 화면은 그대로 */
-    }
-  };
-  return (
-    <div className="mb-12 space-y-12">
-      <p className="read">
-        <Lead text={g.why} />
-      </p>
-      <GaeunList title="가까이할 것" note="부족한 기운을 채워 주는 것들" items={g.close} showEvidence={showEvidence} />
-      <GaeunList title="멀리할 것" note="이미 넘치는 기운을 더 키우는 것들" items={g.away} showEvidence={showEvidence} />
-      {g.year && (
-        <div className="panel">
-          <p className={`text-label font-semibold ${g.year.tone === 'good' ? 'text-accent' : g.year.tone === 'bad' ? 'text-ink' : 'text-sub'}`}>{g.year.title}</p>
-          <p className="read mt-2">
-            <Gloss text={g.year.text} />
-          </p>
-          <Evidence text={g.year.basis} show={showEvidence} />
-        </div>
-      )}
-      <div>
-        <div className="flex items-baseline justify-between gap-2">
-          <h3 className="text-title3 text-ink">오늘부터 하는 개운 루틴</h3>
-          <span className="text-label text-sub tabular-nums">
-            오늘 {done.length}/{g.routine.length}
-          </span>
-        </div>
-        <ul className="mt-3 border-t border-line">
-          {g.routine.map((r, i) => (
-            <li key={r.text} className="border-b border-line">
-              <label className="flex cursor-pointer items-start gap-3 py-4">
-                <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={done.includes(i)} onChange={() => toggle(i)} />
-                <span className={`text-ui ${done.includes(i) ? 'text-faint line-through' : 'text-ink'}`}>
-                  {r.text}
-                  {showEvidence && <span className="ml-1.5 text-cap text-sub">({r.basis})</span>}
-                </span>
-              </label>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2 text-cap text-sub">체크는 이 기기에만 저장돼요. 3주만 이어 가 보세요.</p>
-      </div>
-    </div>
-  );
-}
-
 function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSection; showEvidence: boolean }) {
   const locked = !BETA_FREE && PREMIUM_SECTIONS.includes(sec.id);
   const [mode, setMode] = useState<'story' | 'cards'>('story');
@@ -189,7 +103,6 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
         <Gloss text={sec.headline} />
       </p>
       <div className="mt-10">
-        {!locked && sec.gaeun && <GaeunBoard g={sec.gaeun} showEvidence={showEvidence} />}
         {!locked && (
           <div className="mb-8 flex items-center justify-between gap-3">
             <div className="seg w-full max-w-[17rem]" role="tablist" aria-label="보기 방식">

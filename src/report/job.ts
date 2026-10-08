@@ -405,7 +405,7 @@ export function jobEnv(a: SajuAnalysis, catId: string, els: Element[]): JobEnv[]
     else if (tone === 'good') meText = usual ? ENV_EFFECT[g].good : '이 사주의 기울어진 균형을 맞춰 주는 기운이라, 이런 환경에서 일할수록 기운이 채워져요.';
     else {
       meText = usual ? ENV_EFFECT[g].bad : '이 사주에서 이미 넘치는 쪽을 더 키우는 기운이라, 이런 환경이 길어질수록 남보다 빨리 지치기 쉬워요.';
-      tip = usual ? ENV_EFFECT[g].tip : `이런 일이 몰리는 시기엔 쉬는 시간을 일정에 먼저 넣고, 필요한 기운인 ${elWord(a.yongsin.yongsin)}의 습관(개운법 탭)으로 균형을 맞추세요.`;
+      tip = usual ? ENV_EFFECT[g].tip : `이런 일이 몰리는 시기엔 쉬는 시간을 일정에 먼저 넣고, 필요한 기운인 ${elWord(a.yongsin.yongsin)}의 습관(고민 리포트 ‘이직·진로’의 개운법)으로 균형을 맞추세요.`;
     }
     return { el: e, role, tone, short, what, me: meText, tip, basis: `${ELEMENT_KO[e]}(${ELEMENT_HANJA[e]}) = ${role} · 나에게는 ${g}` };
   });

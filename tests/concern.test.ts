@@ -55,6 +55,9 @@ describe('고민 리포트 다섯 개', () => {
         expect(c.teaser.length).toBeGreaterThan(10);
         expect(c.free.items.length).toBeGreaterThan(0);
         expect(c.detail.items.length).toBeGreaterThan(2);
+        // 고민마다 그 고민에 맞춘 개운법 — 잠금 화면 목록에도 적혀 있다
+        expect(c.gaeun, id).toBeTruthy();
+        expect(c.detail.items.some((t) => t.includes('개운법')), id).toBe(true);
         if (c.detail.timeline) expect(c.detail.timeline.items).toHaveLength(10);
         if (c.detail.months) {
           const go = c.detail.months.list.filter((m) => m.kind === 'go');

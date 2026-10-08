@@ -16,6 +16,7 @@ import { isChung, isHae, isHyungPair, isPa, isStemChung, isStemHap, isWonjin, is
 import { josa } from '../engine/josa.ts';
 import { monthPillarOf, yearPillarOf } from '../engine/pillars.ts';
 import { groupOf, tenGodOfStem, type TenGodGroup } from '../engine/tenGods.ts';
+import { coupleGaeun, type CoupleGaeun } from './gaeun.ts';
 import { AXES, AXIS_INFO, parseMbti, type Axis } from './mbti.ts';
 import { EL_WORD } from './plain.ts';
 import { animalName } from './tti.ts';
@@ -68,6 +69,8 @@ export interface CompatReport {
   years: YearSign[];
   /** 상세: 오래 가려면 */
   advice: string[];
+  /** 상세: 두 사람의 개운법 — 둘 다에게 좋은 곳·색, 함께 피할 것 */
+  gaeun: CoupleGaeun;
 }
 
 export interface ReunionReport {
@@ -577,7 +580,7 @@ export function compatReport(a: SajuAnalysis, b: SajuAnalysis): CompatReport {
   if (good.some((f) => f.id === 'branch-hap' || f.id === 'stem-hap')) advice.push('끌림이 강한 사이라 익숙해지면 소홀해지기 쉬워요. 처음의 표현을 일부러 이어 가세요.');
   advice.push('중요한 결정은 두 사람의 운이 모두 좋은 해에, 둘이 함께 내리세요.');
 
-  return { score, tier, tierText, headline, factors, good, bad, tti: t.info, mbti: mb?.pair ?? null, conflict: conflict.slice(0, 3), talk, years, advice: advice.slice(0, 4) };
+  return { score, tier, tierText, headline, factors, good, bad, tti: t.info, mbti: mb?.pair ?? null, conflict: conflict.slice(0, 3), talk, years, advice: advice.slice(0, 4), gaeun: coupleGaeun(a, b, you) };
 }
 
 // ---------------------------------------------------------------------------

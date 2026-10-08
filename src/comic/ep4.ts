@@ -155,7 +155,7 @@ export function mbtiEpisode(a: SajuAnalysis, x: CrossReport): Comic | null {
       props: [{ kind: 'shelf', x: 240, y: 90, w: 440, rows: SHOP[ys], color: EL_COLOR[ys] }],
     }, {
       basis: `용신 ${ELEMENT_KO[ys]}(${ELEMENT_HANJA[ys]})`,
-      note: `${m.gaeun.items.map((it) => `${it.label}: ${it.value}`).join(' · ')}. ${m.gaeun.habits.join(' / ')}. ${m.gaeun.avoid} 자세한 개운법은 풀이 리포트의 ‘개운법’ 탭에 있습니다.`,
+      note: `진짜 개운 아이템은 물건이 아니라 습관 — ${m.gaeun.habits[0]}. 일·연애·돈·시험에 맞춘 개운법은 고민 리포트에 있습니다.`,
       tone: 'good',
     }),
   );

@@ -220,7 +220,7 @@ export function StrengthPanel({ a }: { a: SajuAnalysis }) {
             })}
           </div>
           <p className="read mt-5">
-            쉽게 말해 {elWord(y.yongsin)}·{elWord(y.heesin)} 기운이 들어오는 해·사람·환경은 힘이 되고, {elWord(y.gisin)}·{elWord(y.gusin)} 기운이 강해지는 때는 무리하지 않는 게 좋아요. 색·음식·습관으로 채우는 법은 풀이 리포트의 ‘개운법’에 있어요.
+            쉽게 말해 {elWord(y.yongsin)}·{elWord(y.heesin)} 기운이 들어오는 해·사람·환경은 힘이 되고, {elWord(y.gisin)}·{elWord(y.gusin)} 기운이 강해지는 때는 무리하지 않는 게 좋아요. 이 기운을 일·연애·돈·시험에서 채우는 법(개운법)은 고민마다 달라서 고민 리포트에 나눠 담았어요.
           </p>
           <p className="mt-2 text-cap text-sub">
             {ROLE_PLAIN.용신.long}을 찾는 방법은 학파마다 조금씩 달라요. {why.sure}

@@ -2,7 +2,8 @@
  * 고민 리포트 — '나는 어떤 사람인가'가 아니라 '내 고민은 언제, 어떻게'에 답한다.
  * 다섯 고민(이직·진로, 연애·결혼, 돈, 시험·합격, 올해 운세)이 모두 같은 모양(ConcernReport)이다.
  *  - 무료: 한 줄 답 · 지금 어디쯤인지(네 칸) · 이유 하나 · 올해와 내년 신호 · 나에 대한 풀이 몇 줄
- *  - 상세(유료 예정): 앞으로 12개월 좋은 달·조심할 달, 10년 신호, 지금 할 일, 더 깊은 풀이
+ *  - 상세(유료 예정): 앞으로 12개월 좋은 달·조심할 달, 10년 신호, 지금 할 일, 그 고민에 맞춘 개운법, 더 깊은 풀이
+ *  - 개운법은 무료 부분에 한 가지만 맛보기로 보여 준다
  * 재료는 풀이 리포트의 섹션(연도별 신호·블록·이야기)과 월운·세운에서 가져오고, 답을 정하는 부분만 새로 계산한다.
  * 시험·합격은 풀이 리포트에 섹션이 없어 연도별 신호부터 여기서 계산한다.
  */
@@ -10,6 +11,7 @@ import { pillarHanja, type SajuAnalysis, type Seun, type Wolun } from '../engine
 import { isMunchangBranch, isNobleBranch, twelveSinsal } from '../engine/sinsal.ts';
 import { groupOf, type TenGodGroup } from '../engine/tenGods.ts';
 import type { ConcernId } from './concernList.ts';
+import { concernGaeun, type ConcernGaeun } from './gaeun.ts';
 import type { Report, ReportSection, Statement, Tone, YearSignal } from './generate.ts';
 import { analyzeJob } from './job.ts';
 import { ELEMENT_JOBS } from './kb.ts';
@@ -62,6 +64,8 @@ export interface ConcernReport {
   };
   /** 판단을 대신하지 않는다는 안내 (돈·시험) */
   notice?: string;
+  /** 이 고민에 맞춘 개운법 — taste 하나는 무료, 나머지는 상세 */
+  gaeun?: ConcernGaeun;
 }
 
 export type LoveStatus = 'single' | 'dating' | 'married';
@@ -254,6 +258,7 @@ function careerReport(a: SajuAnalysis, report: Report, months: Wolun[]): Concern
 
   return {
     id: 'career',
+    gaeun: concernGaeun('career', a),
     ask: '지금 옮겨도 될까?',
     answer,
     stances: CAREER_STANCES,
@@ -264,7 +269,7 @@ function careerReport(a: SajuAnalysis, report: Report, months: Wolun[]): Concern
     free: { title: '나에게 맞는 일', note, items: [aptitude[1], style[0], aptitude[2]].filter(Boolean) },
     detail: {
       title: '이직·진로 상세 리포트',
-      items: ['앞으로 12개월 — 좋은 달과 피할 달', '앞으로 10년 이직 신호', '지금 회사에 남는다면 할 일', '옮긴다면 이것부터 (체크리스트)', '직장에서 반복되기 쉬운 문제', '이야기로 읽는 긴 풀이'],
+      items: ['앞으로 12개월 — 좋은 달과 피할 달', '일이 풀리는 개운법 — 면접 날의 색, 잘 맞는 분야, 도와줄 사람', '앞으로 10년 이직 신호', '지금 회사에 남는다면 할 일', '옮긴다면 이것부터 (체크리스트)', '직장에서 반복되기 쉬운 문제', '이야기로 읽는 긴 풀이'],
       months: {
         title: '앞으로 12개월',
         desc: '면접·제안·협상을 언제 하면 좋은지, 언제 미뤄야 하는지예요.',
@@ -368,6 +373,7 @@ function loveReport(a: SajuAnalysis, report: Report, months: Wolun[], status: Lo
 
   return {
     id: 'love',
+    gaeun: concernGaeun('love', a, { love: status }),
     ask: '인연은 언제 올까?',
     answer: answers[status],
     stances: LOVE_STANCES,
@@ -378,7 +384,14 @@ function loveReport(a: SajuAnalysis, report: Report, months: Wolun[], status: Lo
     free: { title: '나의 연애 스타일', items: [...style.slice(0, 2), palace[0]].filter(Boolean) },
     detail: {
       title: '연애·결혼 상세 리포트',
-      items: ['앞으로 12개월 — 좋은 달과 조심할 달', '앞으로 10년 연애·결혼 신호', '지금 할 일', '배우자 인연과 배우자 자리 풀이', '이야기로 읽는 긴 풀이'],
+      items: [
+        '앞으로 12개월 — 좋은 달과 조심할 달',
+        status === 'single' ? '인연을 위한 개운법 — 만남의 장소, 잘 맞는 띠, 데이트 색' : `${status === 'dating' ? '관계를 다지는' : '부부를 위한'} 개운법 — 데이트 장소와 색, 함께 할 습관`,
+        '앞으로 10년 연애·결혼 신호',
+        '지금 할 일',
+        '배우자 인연과 배우자 자리 풀이',
+        '이야기로 읽는 긴 풀이',
+      ],
       months: {
         title: '앞으로 12개월',
         desc: status === 'single' ? '만남을 넓히기 좋은 달과 서두르면 안 되는 달이에요.' : '마음을 표현하고 약속을 정하기 좋은 달과 다툼을 조심할 달이에요.',
@@ -465,6 +478,7 @@ function moneyReport(a: SajuAnalysis, report: Report, months: Wolun[]): ConcernR
 
   return {
     id: 'money',
+    gaeun: concernGaeun('money', a),
     ask: '돈은 언제 모일까?',
     answer,
     stances: MONEY_STANCES,
@@ -475,7 +489,7 @@ function moneyReport(a: SajuAnalysis, report: Report, months: Wolun[]): ConcernR
     free: { title: '돈이 들어오는 방식', items: [vessel[0], ...route.slice(0, 2)].filter(Boolean) },
     detail: {
       title: '돈 상세 리포트',
-      items: ['앞으로 12개월 — 돈이 들어오는 달과 새기 쉬운 달', '앞으로 10년 재물 흐름', '올해 돈 관리 할 일', '돈이 새는 길과 투자 성향', '이야기로 읽는 긴 풀이'],
+      items: ['앞으로 12개월 — 돈이 들어오는 달과 새기 쉬운 달', '돈이 머무는 개운법 — 지갑 색, 자동이체 날짜, 새는 길 막기', '앞으로 10년 재물 흐름', '올해 돈 관리 할 일', '돈이 새는 길과 투자 성향', '이야기로 읽는 긴 풀이'],
       months: {
         title: '앞으로 12개월',
         desc: '정산·협상·판매를 하기 좋은 달과 큰 지출을 미뤄야 할 달이에요.',
@@ -640,7 +654,7 @@ export function examMonthOf(a: SajuAnalysis, ym: { year: number; month: number }
   return { ok: true, w, tag, tone, text, basis: `${w.jieName}부터 · ${pillarHanja(w.pillar)} · 운의 힘 ${w.score}` };
 }
 
-function examReport(a: SajuAnalysis, report: Report, months: Wolun[]): ConcernReport {
+function examReport(a: SajuAnalysis, months: Wolun[]): ConcernReport {
   const tl = examTimeline(a);
   const t = tl[0];
   const map: Record<string, [number, string]> = {
@@ -668,17 +682,15 @@ function examReport(a: SajuAnalysis, report: Report, months: Wolun[]): ConcernRe
         ? `시험운이 가장 강한 해는 ${best}년이에요. 시험 달을 넣으면 그달의 기운과 공부 리듬은 상세 리포트에서 볼 수 있어요.`
         : '앞으로 10년 중 시험운이 크게 몰리는 해는 뚜렷하지 않아요. 운보다 준비한 시간이 결과를 정하는 사주예요.';
 
-  const gaeun = report.sections.find((s) => s.id === 'gaeun')?.gaeun;
-  const color = gaeun?.close.find((x) => x.key === 'color')?.value.split(' (')[0];
-  const time = gaeun?.close.find((x) => x.key === 'time')?.value;
   const day = [
-    time ? `시험 기간의 생활 리듬 — ${time}` : null,
-    color ? `시험 날엔 ${color} 계열의 소품을 하나 챙겨 보세요. 필요한 기운을 채우는 작은 습관이에요.` : null,
     '전날에는 새로운 걸 보지 말고 틀렸던 문제만 다시 보세요.',
-  ].filter((x): x is string => !!x);
+    '시험 날 아침은 평소 먹던 대로 — 낯선 음식과 과한 카페인은 피하세요.',
+    '공부할 때 쓰던 필기구를 그대로 챙기세요. 손에 익은 것이 마음을 붙잡아 줘요.',
+  ];
 
   return {
     id: 'exam',
+    gaeun: concernGaeun('exam', a),
     ask: '이번 시험, 붙을 수 있을까?',
     answer,
     stances: EXAM_STANCES,
@@ -689,7 +701,7 @@ function examReport(a: SajuAnalysis, report: Report, months: Wolun[]): ConcernRe
     free: { title: '나에게 맞는 공부법', items: studyStyle(a) },
     detail: {
       title: '시험·합격 상세 리포트',
-      items: ['시험이 있는 달의 기운', '앞으로 12개월 — 집중이 잘 되는 달과 흐트러지기 쉬운 달', '앞으로 10년 시험·자격 신호', '공부를 방해하는 것', '시험 날 챙길 것'],
+      items: ['시험이 있는 달의 기운', '앞으로 12개월 — 집중이 잘 되는 달과 흐트러지기 쉬운 달', '공부가 잘 되는 개운법 — 공부 자리와 시간, 필기구 색, 시험 기간 음식', '앞으로 10년 시험·자격 신호', '공부를 방해하는 것', '시험 날 챙길 것'],
       months: {
         title: '앞으로 12개월 공부 리듬',
         desc: '어려운 단원과 모의고사를 몰아서 하기 좋은 달, 복습 위주로 가야 할 달이에요.',
@@ -763,10 +775,10 @@ function yearReport(a: SajuAnalysis, report: Report): ConcernReport | null {
   });
   const late = nowIdx >= 7;
   const nr = nxt ? readLuck(a, nxt, '해', nxt.combined) : null;
-  const gaeunYear = report.sections.find((s) => s.id === 'gaeun')?.gaeun?.year;
 
   return {
     id: 'year',
+    gaeun: concernGaeun('year', a),
     ask: '올해 무엇을 조심할까?',
     answer: `올해는 ${r.headline}예요`,
     stances: YEAR_STANCES,
@@ -782,7 +794,7 @@ function yearReport(a: SajuAnalysis, report: Report): ConcernReport | null {
     },
     detail: {
       title: '올해 운세 상세 리포트',
-      items: ['올해 열두 달 — 달마다 한 줄', '분야별 올해 — 연애·일·돈·건강', '올해 더 해 두면 좋은 것과 피할 것', `${nxt?.year ?? '내'}년 미리보기`],
+      items: ['올해 열두 달 — 달마다 한 줄', '분야별 올해 — 연애·일·돈·건강', '올해의 개운법 — 가까이할 것·멀리할 것과 3주 루틴', '올해 더 해 두면 좋은 것과 피할 것', `${nxt?.year ?? '내'}년 미리보기`],
       calendar: { title: '올해 열두 달', desc: '사주의 달은 절기에 바뀌어요. 지난 달은 흐리게 보여요.', rows },
       fields: {
         title: '분야별 올해',
@@ -795,7 +807,7 @@ function yearReport(a: SajuAnalysis, report: Report): ConcernReport | null {
         { title: '올해 더 피할 것', items: r.caution.slice(1, 4) },
         ...(nr && nxt ? [{ title: `${nxt.year}년 미리보기 — ${nr.headline}`, items: [nr.good[0], nr.caution[0]].filter(Boolean) }] : []),
       ],
-      statements: gaeunYear ? [{ title: '올해의 개운', items: [S(`${gaeunYear.title} — ${gaeunYear.text}`, gaeunYear.tone === 'good' ? 'positive' : gaeunYear.tone === 'bad' ? 'caution' : 'neutral', gaeunYear.basis)] }] : [],
+      statements: [],
     },
   };
 }
@@ -812,7 +824,7 @@ export function concernReport(id: ConcernId, a: SajuAnalysis, report: Report, mo
     case 'money':
       return moneyReport(a, report, months);
     case 'exam':
-      return examReport(a, report, months);
+      return examReport(a, months);
     case 'year':
       return yearReport(a, report);
     case 'match':

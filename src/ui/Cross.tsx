@@ -304,7 +304,7 @@ export function MbtiPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
           <SectionTitle
             kicker="MBTI × 사주"
             title="내 MBTI를 골라 주세요"
-            desc="MBTI와 사주를 네 가지 축(에너지·인식·판단·생활 방식)으로 비교해, 같은 점과 다른 점(겉과 속), 살릴 강점과 보완할 약점, 개운법을 알려 드려요."
+            desc="MBTI와 사주를 네 가지 축(에너지·인식·판단·생활 방식)으로 비교해, 같은 점과 다른 점(겉과 속), 살릴 강점과 보완할 약점, 기운을 채우는 습관을 알려 드려요."
           />
           <div className="grid grid-cols-4 gap-2">
             {MBTI_LIST.map((t) => (
@@ -380,7 +380,7 @@ export function MbtiPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
       <NumberedList title="보완할 약점" tone="bad" items={m.weaknesses} />
 
       <div>
-        <h3 className="text-title3 text-ink">개운법 · 필요한 기운 {elWord(g.element)} 채우기</h3>
+        <h3 className="text-title3 text-ink">MBTI에 맞게 {elWord(g.element)} 기운 채우기</h3>
         <div className="mt-4">
           <Dots items={g.habits} />
         </div>
@@ -388,15 +388,7 @@ export function MbtiPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
           <span className="tag-neg mt-0.5 h-fit">피할 것</span>
           <span className="text-ink-2">{g.avoid.replace(/^피할 것:\s*/, '')}</span>
         </p>
-        <dl className="mt-6 grid grid-cols-2 border-t border-l border-line">
-          {g.items.map((it) => (
-            <div key={it.label} className="border-r border-b border-line px-3 py-3">
-              <dt className="text-micro text-sub">{it.label}</dt>
-              <dd className="mt-0.5 text-label font-semibold text-ink">{it.value}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="mt-3 text-cap text-sub">색·방향·숫자는 전통적으로 쓰이는 상징이며 효과가 검증된 것은 아니에요. 실제로 도움이 되는 것은 위의 생활 습관이에요.</p>
+        <p className="mt-4 text-cap text-sub">색·장소·시간처럼 고민마다 다르게 쓰는 개운법은 고민 리포트에 나눠 담았어요.</p>
       </div>
 
       <div className="no-print border-t border-line pt-8">

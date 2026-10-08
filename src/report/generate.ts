@@ -12,7 +12,7 @@ import { josa } from '../engine/josa.ts';
 import { twelveSinsal } from '../engine/sinsal.ts';
 import { elementOfGroup, groupOf, groupOfElement } from '../engine/tenGods.ts';
 import { incomeRoute, investmentRisk, orgRatio as computeOrgRatio, wealthCapacity } from './metrics.ts';
-import { buildGaeun, gaeunBlocks, type GaeunData } from './gaeun.ts';
+import { buildGaeun } from './gaeun.ts';
 import { buildStories, readMinutes, type StoryPara } from './story.ts';
 import { LEVEL_PLAIN, elWord } from './plain.ts';
 import {
@@ -41,7 +41,7 @@ export interface YearSignal {
   tone: Tone;
   notes: string[];
 }
-export type SectionId = 'summary' | 'personality' | 'love' | 'career' | 'wealth' | 'health' | 'gaeun';
+export type SectionId = 'summary' | 'personality' | 'love' | 'career' | 'wealth' | 'health';
 export interface ReportSection {
   id: SectionId;
   title: string;
@@ -52,8 +52,6 @@ export interface ReportSection {
   story?: StoryPara[];
   /** 이야기를 읽는 데 걸리는 대략적인 시간(분) */
   readMinutes?: number;
-  /** 개운법 보드 (가까이할 것 · 멀리할 것) */
-  gaeun?: GaeunData;
 }
 export interface Report {
   sections: ReportSection[];
@@ -746,16 +744,15 @@ export function generateReport(a: SajuAnalysis): Report {
     }
     summary.blocks.push({ heading: '인생의 흐름', items });
   }
-  // 개운법은 전용 섹션으로 (종합에는 한 줄만)
+  // 개운법은 고민마다 쓰는 법이 달라 고민 리포트에 나눠 담고, 종합에는 필요한 기운 한 줄만
   const gaeun = buildGaeun(a);
   summary.blocks.push({
     heading: '운을 보강하는 생활 습관 (용신 활용)',
-    items: [S(`${gaeun.headline}. 색·장소·음식·사람·습관별로 가까이할 것과 멀리할 것은 ‘개운법’ 탭에 정리했습니다.`, 'positive', `용신 ${elKo(a.yongsin.yongsin)} · 기신 ${elKo(a.yongsin.gisin)}`)],
+    items: [S(`${gaeun.headline}. 이 기운을 일·연애·돈·시험에서 어떻게 쓰는지는 고민마다 달라, 고민 리포트에 개운법으로 나눠 담았습니다.`, 'positive', `용신 ${elKo(a.yongsin.yongsin)} · 기신 ${elKo(a.yongsin.gisin)}`)],
   });
   summary.headline = `${pillarHanja(a.pillars.day)}일주 · ${LEVEL_PLAIN[a.strength.level].short} · ${josa(elWord(a.yongsin.yongsin), '이/가')} 필요한 사주`;
 
-  const gaeunSec: ReportSection = { id: 'gaeun', title: '개운법', headline: gaeun.headline, blocks: gaeunBlocks(gaeun.data), gaeun: gaeun.data, story: gaeun.story };
-  const sections = [summary, gaeunSec, personality, love, career, wealth, health];
+  const sections = [summary, personality, love, career, wealth, health];
   const stories = buildStories(a, sections);
   for (const sec of sections) {
     sec.story = stories[sec.id] ?? sec.story;
