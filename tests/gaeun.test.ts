@@ -64,8 +64,8 @@ describe('개운법 (올해 운세에 들어가는 전체판)', () => {
 });
 
 const CONCERNS: GaeunConcern[] = ['career', 'love', 'money', 'exam', 'year'];
-/** 무료로 먼저 보여 주는 한 가지 — 가장 끌리는 것(지갑 색 등)은 상세에 남긴다 */
-const TASTE: Record<GaeunConcern, string> = { career: 'desk', love: 'color', money: 'earn', exam: 'time', year: 'routine' };
+/** 무료로 먼저 보여 주는 한 가지 — 돈은 새는 길, 시험은 필기구 색. 돈 버는 길·지갑 색·공부 방법은 상세에 남긴다 */
+const TASTE: Record<GaeunConcern, string> = { career: 'desk', love: 'color', money: 'leak', exam: 'color', year: 'routine' };
 
 describe('고민별 개운법', () => {
   it('무작위 400명 × 다섯 고민에서 가까이할 것·멀리할 것·루틴이 채워지고 말이 매끄럽다', () => {
@@ -83,7 +83,7 @@ describe('고민별 개운법', () => {
         expect(new Set(g.routine.map((r) => r.text.slice(0, 5))).size).toBe(g.routine.length);
         // 맛보기는 정해 둔 한 가지
         expect(g.taste.key).toBe(TASTE[id]);
-        if (id !== 'year') expect(g.close).toContain(g.taste);
+        if (id !== 'year') expect([...g.close, ...g.away]).toContain(g.taste);
         else expect(g.taste.value).toBe(g.routine[0].text);
         // 올해 운세만 올해의 개운 포인트를 가진다
         expect(!!g.year).toBe(id === 'year');
@@ -95,10 +95,16 @@ describe('고민별 개운법', () => {
     }
   });
 
-  it('지갑 색처럼 가장 끌리는 항목은 무료 맛보기가 아니라 상세에 있다', () => {
+  it('돈은 새는 길이 무료, 돈 버는 길·지갑 색은 상세에 있다', () => {
     const g = concernGaeun('money', people[0]);
-    expect(g.taste.key).not.toBe('wallet');
-    expect(g.close.some((x) => x.key === 'wallet')).toBe(true);
+    expect(g.away).toContain(g.taste);
+    expect(g.close.map((x) => x.key)).toEqual(expect.arrayContaining(['earn', 'wallet']));
+  });
+
+  it('시험은 필기구 색이 무료, 공부 방법·장소·시간은 상세에 앞서 나온다', () => {
+    const g = concernGaeun('exam', people[0]);
+    expect(g.taste.label).toBe('필기구 색');
+    expect(g.close.slice(0, 3).map((x) => x.label)).toEqual(['공부 방법', '공부 장소', '공부 시간']);
   });
 
   it('연애는 지금 상태에 따라 제목·장소·띠·루틴이 달라진다', () => {

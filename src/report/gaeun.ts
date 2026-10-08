@@ -364,7 +364,7 @@ export interface ConcernGaeun {
   title: string;
   /** 이 고민에서 필요한 기운이 하는 일 */
   why: string;
-  /** 무료 부분에서 먼저 보여 주는 한 가지 */
+  /** 무료 부분에서 먼저 보여 주는 한 가지 (가까이할 것이나 멀리할 것 가운데 하나) */
   taste: GaeunItem;
   close: GaeunItem[];
   away: GaeunItem[];
@@ -718,7 +718,7 @@ export function concernGaeun(id: GaeunConcern, a: SajuAnalysis, opt: { love?: St
     return {
       title: '돈이 머무는 개운법',
       why: `돈에서 ${el(need)} 기운은 ‘${GROUP_MEAN[fillG]}’이에요.${extra}`,
-      taste: pick(close, 'earn'),
+      taste: pick(away, 'leak'),
       close,
       away,
       routine,
@@ -727,9 +727,9 @@ export function concernGaeun(id: GaeunConcern, a: SajuAnalysis, opt: { love?: St
 
   // 시험·합격
   const close: GaeunItem[] = [
+    { key: 'habit', icon: '習', label: '공부 방법', value: STUDY_FILL[fillG], basis: fillBasis },
+    { key: 'desk', icon: '方', label: '공부 장소', value: DESK[need], basis: needBasis },
     { key: 'time', icon: '時', label: '공부 시간', value: STUDY_TIME[need], basis: needBasis },
-    { key: 'desk', icon: '方', label: '공부 자리', value: DESK[need], basis: needBasis },
-    { key: 'habit', icon: '習', label: '채울 힘', value: STUDY_FILL[fillG], basis: fillBasis },
     { key: 'color', icon: '色', label: '필기구 색', value: `${K.color} 계열의 펜이나 노트 (희신 ${helpColor}도 좋아요)`, basis: yBasis },
     { key: 'food', icon: '食', label: '시험 기간 음식', value: K.food, basis: needBasis },
   ];
@@ -758,7 +758,7 @@ export function concernGaeun(id: GaeunConcern, a: SajuAnalysis, opt: { love?: St
   return {
     title: '공부가 잘 되는 개운법',
     why: `공부에서 ${el(need)} 기운은 ‘${GROUP_MEAN[fillG]}’이에요.${extra}`,
-    taste: pick(close, 'time'),
+    taste: pick(close, 'color'),
     close,
     away,
     routine,

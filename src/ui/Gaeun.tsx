@@ -111,7 +111,9 @@ export function GaeunDetail({ id, g }: { id: string; g: ConcernGaeun }) {
 /** 무료 부분의 맛보기 — 이 고민의 개운법 한 가지 */
 export function GaeunTaste({ g }: { g: ConcernGaeun }) {
   const t = g.taste;
-  const rest = g.close.length + g.away.length - (g.close.includes(t) ? 1 : 0);
+  // 맛보기는 가까이할 것일 수도, 멀리할 것(예: 돈이 새는 길)일 수도 있다
+  const side = g.close.includes(t) ? 'close' : g.away.includes(t) ? 'away' : null;
+  const rest = g.close.length + g.away.length - (side ? 1 : 0);
   return (
     <section className="mt-12 rounded-2xl border border-line px-5 py-5" aria-label={`${g.title} 한 가지`}>
       <p className="kicker">{g.title} · 하나 먼저</p>
@@ -120,7 +122,10 @@ export function GaeunTaste({ g }: { g: ConcernGaeun }) {
           {t.icon}
         </span>
         <div className="min-w-0">
-          <p className="text-label font-semibold text-sub">{t.label}</p>
+          <p className="flex flex-wrap items-center gap-2 text-label font-semibold text-sub">
+            {t.label}
+            {side && <span className={side === 'close' ? 'tag-pos' : 'tag-neg'}>{side === 'close' ? '가까이할 것' : '멀리할 것'}</span>}
+          </p>
           <p className="mt-1 font-serif text-[17px] leading-[1.7] font-bold text-ink">
             <Gloss text={t.value} />
           </p>
