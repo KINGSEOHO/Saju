@@ -2,10 +2,10 @@
  * 고민 리포트 (시안) — 고민을 고르면 그 고민에 맞춰 '한 줄 답'부터 보여 준다.
  * 지금은 이직·진로만 만들었고, 궁합·재회는 기존 칸으로 보낸다.
  */
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { PAYWALL_DEMO } from '../config/plans.ts';
-import { PROVIDER_NAME, resetDemoPurchases } from '../lib/account.ts';
+import { resetDemo } from '../lib/account.ts';
 import { concernOffers, isOpen, purchaseLabel, sajuKey } from '../lib/entitlements.ts';
 import { careerConcern, STANCE_LABEL, type CareerConcern, type Stance } from '../report/concern.ts';
 import { CONCERNS, type ConcernId } from '../report/concernList.ts';
@@ -217,8 +217,7 @@ function CareerView({ a, report, u }: { a: SajuAnalysis; report: Report; u: Unlo
         locked={PAYWALL_DEMO ? !isOpen(u.ent, 'career') : undefined}
         offers={concernOffers(u.ent, 'career')}
         onTake={(o) => u.buy(o, 'career')}
-        account={u.account}
-        onLogin={u.signIn}
+        onRedeem={u.redeem}
         items={['앞으로 12개월 — 좋은 달과 피할 달', '앞으로 10년 이직 신호', '지금 회사에 남는다면 할 일', '옮긴다면 이것부터 (체크리스트)', '직장에서 반복되기 쉬운 문제', '이야기로 읽는 긴 풀이']}
       >
         <CareerDetail a={a} c={c} />
@@ -227,45 +226,55 @@ function CareerView({ a, report, u }: { a: SajuAnalysis; report: Report; u: Unlo
   );
 }
 
-/** 시안 전용 — 로그인한 계정과 계정에 남은 구매 기록 (실제로 저장되는 것과 같은 모양) */
-function AccountBox({ u }: { u: Unlock }) {
+/** 내 구매 코드 — 산 게 있으면 늘 보여 준다. 다른 휴대폰에서 이 코드를 넣으면 그대로 열린다 */
+function CodeBox({ u }: { u: Unlock }) {
+  const [copied, setCopied] = useState(false);
+  if (!u.account || !u.purchases.length) return null;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(u.account!.code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* 길게 눌러 복사 */
+    }
+  };
+  return (
+    <div className="panel mb-6">
+      <p className="text-label font-semibold text-ink">내 구매 코드</p>
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <span className="font-mono text-title3 font-bold tracking-wider text-ink select-all">{u.account.code}</span>
+        <button type="button" className="btn-small shrink-0" onClick={copy}>
+          {copied ? '복사됨' : '복사'}
+        </button>
+      </div>
+      <p className="mt-2 text-cap text-sub">다른 휴대폰이나 카카오톡 안에서 열 때 이 코드를 넣으면 산 리포트가 그대로 열려요. 캡처해 두세요.</p>
+    </div>
+  );
+}
+
+/** 시안 전용 — 지금까지 연 것과 처음부터 다시 */
+function DemoBox({ u }: { u: Unlock }) {
   const free = u.ent.free ? CONCERNS.find((c) => c.id === u.ent.free)?.title : null;
   return (
-    <div className="mb-6 rounded-xl border border-dashed border-line-strong px-4 py-3">
-      <p className="text-cap font-semibold text-sub">시안 · 로그인과 결제 흐름 체험 (실제로 로그인·결제되지 않아요)</p>
-      {u.account ? (
-        <>
-          <p className="mt-1 text-label text-ink-2">
-            {PROVIDER_NAME[u.account.provider]} 계정(회원번호 {u.account.id})으로 로그인 · 무료 {free ? `‘${free}’에 사용` : '1개 남음'} · 고민에 낸 돈 {u.ent.spent.toLocaleString('ko-KR')}원
-          </p>
-          <details className="mt-2">
-            <summary className="cursor-pointer text-label font-semibold text-accent">계정에 남은 기록 {u.purchases.length}건 보기</summary>
-            {u.purchases.length ? (
-              <ul className="mt-2 border-t border-line text-label">
-                {u.purchases.map((p) => (
-                  <li key={p.at} className="flex justify-between gap-3 border-b border-line py-2">
-                    <span className="min-w-0 text-ink-2">{purchaseLabel(p)}</span>
-                    <span className="shrink-0 text-sub tabular-nums">{p.amount ? `${p.amount.toLocaleString('ko-KR')}원` : '무료'}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-label text-sub">아직 없어요.</p>
-            )}
-            <p className="mt-2 text-cap text-sub">저장하는 것: 로그인 종류·회원번호, 항목, 금액, 시각. 이 사주가 누구 것인지는 생년월일로 만든 짧은 암호값으로만 구분해요.</p>
-          </details>
-          <div className="mt-2 flex gap-4">
-            <button type="button" className="link text-label" onClick={() => void u.signOut()}>
-              로그아웃
-            </button>
-            <button type="button" className="link text-label" onClick={resetDemoPurchases}>
-              기록 지우고 처음부터
-            </button>
-          </div>
-        </>
-      ) : (
-        <p className="mt-1 text-label text-ink-2">로그인 안 함 · 잠긴 리포트를 열려고 하면 로그인부터 물어봐요.</p>
+    <div className="mb-4 rounded-xl border border-dashed border-line-strong px-4 py-3">
+      <p className="text-cap font-semibold text-sub">시안 · 결제 흐름 체험 (실제로 결제되지 않아요)</p>
+      <p className="mt-1 text-label text-ink-2">
+        무료 {free ? `‘${free}’에 사용` : '1개 남음'} · 고민에 낸 돈 {u.ent.spent.toLocaleString('ko-KR')}원 · 기록 {u.purchases.length}건
+      </p>
+      {u.purchases.length > 0 && (
+        <ul className="mt-2 border-t border-line text-label">
+          {u.purchases.map((p) => (
+            <li key={`${p.at}-${p.target}`} className="flex justify-between gap-3 border-b border-line py-1.5">
+              <span className="min-w-0 text-ink-2">{purchaseLabel(p)}</span>
+              <span className="shrink-0 text-sub tabular-nums">{p.amount ? `${p.amount.toLocaleString('ko-KR')}원` : '무료'}</span>
+            </li>
+          ))}
+        </ul>
       )}
+      <button type="button" className="link mt-2 text-label" onClick={resetDemo}>
+        새 휴대폰처럼 처음부터 (코드 입력 시험용)
+      </button>
     </div>
   );
 }
@@ -288,8 +297,7 @@ function Upcoming({ id, u }: { id: ConcernId; u: Unlock }) {
           locked={!isOpen(u.ent, id)}
           offers={concernOffers(u.ent, id)}
           onTake={(o) => u.buy(o, id)}
-          account={u.account}
-          onLogin={u.signIn}
+          onRedeem={u.redeem}
         >
           <p className="read">시안이라 아직 내용이 없어요. 가격 사다리와 버튼 문구를 눌러 보는 자리예요.</p>
         </Premium>
@@ -302,7 +310,8 @@ export function ConcernPanel({ a, report, concern, onPick }: { a: SajuAnalysis; 
   const u = useUnlock(sajuKey(a.input));
   return (
     <>
-      {PAYWALL_DEMO && <AccountBox u={u} />}
+      {PAYWALL_DEMO && <DemoBox u={u} />}
+      <CodeBox u={u} />
       <div className="-mx-5 overflow-x-auto px-5 pb-1">
         <div className="flex w-max gap-2" role="tablist" aria-label="고민 고르기">
           {CONCERNS.map((c) => (

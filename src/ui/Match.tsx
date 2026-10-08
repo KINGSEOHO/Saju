@@ -355,8 +355,7 @@ function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
     locked: PAYWALL_DEMO ? !partnerOpen(u.ent, pk) : undefined,
     offers: partnerOffers(u.ent, pk),
     onTake: (o: Parameters<typeof u.buy>[0]) => void u.buy(o, null, pk),
-    account: u.account,
-    onLogin: u.signIn,
+    onRedeem: u.redeem,
   };
 }
 

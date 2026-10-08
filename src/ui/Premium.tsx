@@ -4,9 +4,9 @@
  * 이용권(lib/entitlements.ts)을 로그인 계정의 결제 기록에서 읽어 오면 같은 자리가 잠금 화면으로 바뀐다.
  * 잠긴 모습은 주소에 ?lock=1 을 붙이거나, 미리보기를 --paywall 로 만들면 볼 수 있다.
  */
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
-import { PROVIDER_NAME, useAccount, type Account, type Provider } from '../lib/account.ts';
+import { useAccount } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer } from '../lib/entitlements.ts';
 import type { ConcernId } from '../report/concernList.ts';
 
@@ -57,27 +57,34 @@ function Confirm({ o, what, onYes, onNo }: { o: Offer; what: string; onYes: () =
   );
 }
 
-/** 연 기록을 계정에 남기려고 로그인부터 — 카카오·네이버 */
-function LoginPrompt({ onLogin, onNo }: { onLogin: (p: Provider) => void; onNo: () => void }) {
+/** 다른 기기에서 산 기록 불러오기 */
+function Redeem({ onRedeem }: { onRedeem: (code: string) => Promise<boolean> }) {
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState('');
+  const [msg, setMsg] = useState('');
+  if (!open)
+    return (
+      <button type="button" className="link mx-auto mt-4 block text-label" onClick={() => setOpen(true)}>
+        다른 휴대폰에서 이미 샀나요? 구매 코드 넣기
+      </button>
+    );
   return (
-    <div className="panel mt-4" role="alertdialog" aria-label="로그인">
-      <p className="text-ui font-bold text-ink">로그인하고 열어요</p>
-      <p className="mt-1 text-label text-sub">
-        연 기록을 계정에 남겨 두면 다른 휴대폰이나 카카오톡 안에서 열어도 그대로 보여요. 계정 정보와 산 항목·금액만 저장하고, 생년월일은 저장하지 않아요.
-      </p>
-      <div className="mt-4 space-y-2">
-        <button type="button" className="btn h-12 w-full bg-[#FEE500] text-[#191919]" onClick={() => onLogin('kakao')}>
-          카카오로 계속하기
-        </button>
-        <button type="button" className="btn h-12 w-full bg-[#03C75A] text-white" onClick={() => onLogin('naver')}>
-          네이버로 계속하기
-        </button>
-        <button type="button" className="btn h-11 w-full text-sub" onClick={onNo}>
-          다음에 할게요
-        </button>
-      </div>
-      {PAYWALL_DEMO && <p className="mt-2 text-center text-cap text-faint">시안이라 실제 로그인 없이 바로 넘어가요.</p>}
-    </div>
+    <form
+      className="panel mt-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setMsg((await onRedeem(code)) ? '' : '코드를 찾지 못했어요. MG-로 시작하는 8자리를 다시 확인해 주세요.');
+      }}
+    >
+      <label className="block">
+        <span className="text-label font-semibold text-ink">구매 코드</span>
+        <input className="field mt-2 uppercase tracking-wider" value={code} onChange={(e) => setCode(e.target.value)} placeholder="MG-XXXX-XXXX" autoComplete="off" />
+      </label>
+      {msg && <p className="mt-2 text-label font-semibold text-ink">{msg}</p>}
+      <button type="submit" className="btn-primary mt-3 w-full">
+        불러오기
+      </button>
+    </form>
   );
 }
 
@@ -90,8 +97,7 @@ export function Premium({
   locked: lockedProp,
   offers,
   onTake,
-  account,
-  onLogin,
+  onRedeem,
   children,
 }: {
   id: string;
@@ -106,22 +112,13 @@ export function Premium({
   /** 잠겼을 때 보여 줄 선택지 — 첫째가 주 버튼 */
   offers?: Offer[];
   onTake?: (o: Offer) => void;
-  /** 로그인한 계정 — 없으면 열기 전에 로그인부터 */
-  account?: Account | null;
-  onLogin?: (p: Provider) => Promise<void>;
+  /** 다른 기기의 구매 코드로 불러오기 */
+  onRedeem?: (code: string) => Promise<boolean>;
   children: ReactNode;
 }) {
   const [note, setNote] = useState(false);
   const [asking, setAsking] = useState<Offer | null>(null);
-  const [login, setLogin] = useState<Offer | null>(null);
-  // 로그인 뒤에는 그 계정의 기록으로 선택지가 바뀔 수 있어, 같은 종류의 선택지로 이어 간다
-  const [resume, setResume] = useState<Offer['kind'] | null>(null);
-  useEffect(() => {
-    if (!resume || !account) return;
-    setAsking(offers?.find((o) => o.kind === resume) ?? null);
-    setResume(null);
-  }, [resume, account, offers]);
-  const choose = (o: Offer) => (onLogin && !account ? setLogin(o) : setAsking(o));
+  const choose = (o: Offer) => setAsking(o);
   const locked = lockedProp ?? (previewLocked() || !BETA_FREE);
   const status = locked ? '잠금 해제하면 볼 수 있어요' : lockedProp === false ? '열려 있어요' : `베타 기간이라 무료로 열려 있어요${price ? ` · 정식 ${price} 예정` : ''}`;
   return (
@@ -146,16 +143,7 @@ export function Premium({
             <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-bg to-transparent" />
           </div>
           {offers?.length && onTake ? (
-            login && onLogin ? (
-              <LoginPrompt
-                onNo={() => setLogin(null)}
-                onLogin={async (p) => {
-                  await onLogin(p);
-                  setResume(login.kind);
-                  setLogin(null);
-                }}
-              />
-            ) : asking ? (
+            asking ? (
               <Confirm
                 o={asking}
                 what={what ?? title}
@@ -175,7 +163,7 @@ export function Premium({
                     {o.note && <p className="mt-1.5 text-center text-cap text-sub">{o.note}</p>}
                   </div>
                 ))}
-                {account && <p className="text-center text-cap text-faint">{PROVIDER_NAME[account.provider]} 계정에 기록돼요</p>}
+                {onRedeem && <Redeem onRedeem={onRedeem} />}
               </div>
             )
           ) : (

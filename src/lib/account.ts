@@ -1,39 +1,48 @@
 /**
- * 계정과 구매 기록.
- * 계정에는 '로그인 종류(카카오·네이버) + 회원번호'와 구매 기록(무엇을·어느 사주의 것인지·얼마에)만 남긴다.
- * 이름·생년월일·출생 시각은 저장하지 않는다.
+ * 구매 기록 — 로그인 없이 '보이지 않는 계정 + 구매 코드'로 관리한다.
+ *  - 사이트에 처음 들어오면 이 기기에 보이지 않는 계정이 하나 생긴다 (손님은 아무것도 누르지 않는다).
+ *  - 산 기록은 그 계정에 붙고, 계정마다 구매 코드(MG-XXXX-XXXX)가 하나 있다.
+ *  - 다른 휴대폰·카카오톡 안 브라우저에서는 구매 코드를 넣으면 같은 계정의 기록이 그대로 열린다.
+ * 기록에는 '무엇을 · 어느 사주의 것인지(암호값) · 얼마에 · 언제'만 남는다. 이름·생년월일은 저장하지 않는다.
  *
- * 지금은 시안용 '이 기기에서 흉내 내는 계정'(demoApi)만 있다. Firebase를 연결하면 같은 모양(AccountApi)으로
- * 카카오·네이버 로그인 → Firebase 로그인, 구매 기록 → Firestore(쓰기는 서버만)로 바꾼다.
+ * 지금은 시안용 demoApi(이 기기 안에서 서버를 흉내)만 있다. 실제로는 Supabase 익명 계정 + 결제 확인
+ * 서버(Edge Function)가 같은 모양(AccountApi)으로 들어온다. 나중에 카카오 로그인을 붙여도 같은 계정에 이어진다.
  */
 import { useEffect, useState } from 'react';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { PAYWALL_DEMO } from '../config/plans.ts';
-import { SUPABASE_KEY, SUPABASE_URL } from '../config/backend.ts';
-import type { Purchase, PurchaseKind } from './entitlements.ts';
-import type { ConcernId } from '../report/concernList.ts';
-
-export type Provider = 'kakao' | 'naver';
-export const PROVIDER_NAME: Record<Provider, string> = { kakao: '카카오', naver: '네이버' };
+import type { Purchase } from './entitlements.ts';
 
 export interface Account {
-  provider: Provider;
-  /** 회원번호 */
+  /** 보이지 않는 계정 번호 */
   id: string;
+  /** 다른 기기에서 넣는 구매 코드 */
+  code: string;
 }
 
 export interface AccountApi {
-  current(): Promise<Account | null>;
-  signIn(p: Provider): Promise<Account>;
-  signOut(): Promise<void>;
+  current(): Promise<Account>;
   purchases(): Promise<Purchase[]>;
   record(p: Purchase): Promise<void>;
+  /** 다른 기기의 구매 코드로 그 계정의 기록을 불러온다 */
+  redeem(code: string): Promise<boolean>;
+}
+
+/** 헷갈리는 글자(0·O·1·I·L)는 뺀다 */
+const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+export function newCode(rand: () => number = Math.random): string {
+  const pick = (n: number) => Array.from({ length: n }, () => ALPHABET[Math.floor(rand() * ALPHABET.length)]).join('');
+  return `MG-${pick(4)}-${pick(4)}`;
+}
+/** 손님이 넣은 코드를 MG-XXXX-XXXX 꼴로 맞춘다 (소문자·공백·하이픈 빠짐 허용) */
+export function normalizeCode(input: string): string | null {
+  const s = input.toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^MG/, '');
+  if (s.length !== 8 || [...s].some((c) => !ALPHABET.includes(c))) return null;
+  return `MG-${s.slice(0, 4)}-${s.slice(4)}`;
 }
 
 // ---------------------------------------------------------------------------
-// 시안용 — 이 기기 안에서만 계정과 기록을 흉내 낸다
+// 시안용 — 이 기기 안에서 서버를 흉내 낸다 (STORE가 서버의 구매 기록 표 역할)
 // ---------------------------------------------------------------------------
-const SESSION = 'mg_demo_account';
+const DEVICE = 'mg_demo_device';
 const STORE = 'mg_demo_purchases';
 const read = <T>(k: string, d: T): T => {
   try {
@@ -45,115 +54,51 @@ const read = <T>(k: string, d: T): T => {
 };
 const write = (k: string, v: unknown) => {
   try {
-    if (v === null) localStorage.removeItem(k);
-    else localStorage.setItem(k, JSON.stringify(v));
+    localStorage.setItem(k, JSON.stringify(v));
   } catch {
     /* 저장이 안 되는 환경에서는 이번 화면에서만 */
   }
 };
-const keyOf = (a: Account) => `${a.provider}:${a.id}`;
+function device(): Account {
+  let a = read<Account | null>(DEVICE, null);
+  if (!a) {
+    a = { id: Math.random().toString(36).slice(2, 10), code: newCode() };
+    write(DEVICE, a);
+  }
+  return a;
+}
 
-const demoCurrent = () => read<Account | null>(SESSION, null);
 const demoApi: AccountApi = {
-  current: async () => demoCurrent(),
-  async signIn(p) {
-    const a: Account = { provider: p, id: p === 'kakao' ? '3141592653' : 'nv_2718281828' };
-    write(SESSION, a);
-    return a;
-  },
-  async signOut() {
-    write(SESSION, null);
-  },
+  current: async () => device(),
   async purchases() {
-    const a = demoCurrent();
-    return a ? (read<Record<string, Purchase[]>>(STORE, {})[keyOf(a)] ?? []) : [];
+    return read<Record<string, Purchase[]>>(STORE, {})[device().code] ?? [];
   },
   async record(p) {
-    const a = demoCurrent();
-    if (!a) throw new Error('로그인이 필요해요');
+    const { code } = device();
     const all = read<Record<string, Purchase[]>>(STORE, {});
-    write(STORE, { ...all, [keyOf(a)]: [...(all[keyOf(a)] ?? []), p] });
+    write(STORE, { ...all, [code]: [...(all[code] ?? []), p] });
+  },
+  async redeem(input) {
+    const code = normalizeCode(input);
+    if (!code || !read<Record<string, Purchase[]>>(STORE, {})[code]) return false;
+    write(DEVICE, { ...device(), code });
+    return true;
   },
 };
 
-/** 시안 전용: 이 계정의 구매 기록을 지운다 */
-export function resetDemoPurchases() {
-  const a = demoCurrent();
-  if (!a) return;
-  const all = read<Record<string, Purchase[]>>(STORE, {});
-  delete all[keyOf(a)];
-  write(STORE, all);
-  window.dispatchEvent(new Event('mg-account'));
-}
-
-// ---------------------------------------------------------------------------
-// Supabase — 카카오 로그인 + purchases 표 (docs/SETUP-SUPABASE.md)
-// 표에는 계정(user_id) · 항목 · 어느 사주의 것인지(암호값) · 금액 · 시각만 있다.
-// 무료 고르기만 사이트에서 직접 기록하고, 돈이 드는 기록은 결제 확인 뒤 서버만 쓴다.
-// ---------------------------------------------------------------------------
-let client: SupabaseClient | null = null;
-function sb(): SupabaseClient {
-  // 사이트는 # 주소를 쓰므로, 로그인에서 돌아올 때 ?code= 로 받는 PKCE 방식을 쓴다
-  client ??= createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true } });
-  return client;
-}
-const BACK = 'mg_login_back';
-
-const supabaseApi: AccountApi = {
-  async current() {
-    const { data } = await sb().auth.getSession();
-    const u = data.session?.user;
-    if (!u) return null;
-    const provider = (u.app_metadata.provider as Provider | undefined) ?? 'kakao';
-    return { provider, id: u.identities?.find((i) => i.provider === provider)?.id ?? u.id };
-  },
-  async signIn(p) {
-    if (p !== 'kakao') throw new Error('네이버 로그인은 준비 중이에요');
-    try {
-      sessionStorage.setItem(BACK, window.location.hash);
-    } catch {
-      /* 돌아온 뒤 첫 화면으로 */
-    }
-    const { error } = await sb().auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: window.location.origin + window.location.pathname } });
-    if (error) throw error;
-    // 카카오 화면으로 넘어가므로 여기서 끝나지 않는다
-    return new Promise<Account>(() => {});
-  },
-  async signOut() {
-    await sb().auth.signOut();
-  },
-  async purchases() {
-    const { data, error } = await sb().from('purchases').select('kind,item,target,amount,created_at').order('created_at');
-    if (error) throw error;
-    return (data ?? []).map((r) => ({ kind: r.kind as PurchaseKind, item: r.item as ConcernId, target: r.target as string, amount: r.amount as number, at: Date.parse(r.created_at as string) }));
-  },
-  async record(p) {
-    if (p.amount > 0) throw new Error('결제는 준비 중이에요');
-    const { error } = await sb().from('purchases').insert({ kind: p.kind, item: p.item, target: p.target, amount: 0 });
-    if (error) throw error;
-  },
-};
-
-/** 카카오에서 돌아오면 로그인 전에 보던 화면으로 되돌린다 */
-export async function finishLogin() {
-  if (PAYWALL_DEMO || !new URLSearchParams(window.location.search).has('code')) return;
-  await sb().auth.getSession();
-  let back = '';
+/** 시안 전용: 이 기기의 기록을 지우고 새 계정으로 시작 */
+export function resetDemo() {
   try {
-    back = sessionStorage.getItem(BACK) ?? '';
-    sessionStorage.removeItem(BACK);
+    localStorage.removeItem(DEVICE);
   } catch {
     /* noop */
   }
-  window.history.replaceState(null, '', window.location.pathname + back);
   window.dispatchEvent(new Event('mg-account'));
-  window.dispatchEvent(new HashChangeEvent('hashchange'));
 }
 
-/** 미리보기(시안)는 흉내 계정, 실제 사이트는 Supabase */
-export const accountApi: AccountApi = PAYWALL_DEMO ? demoApi : supabaseApi;
+export const accountApi: AccountApi = demoApi;
 
-/** 로그인 상태와 구매 기록 — 여러 칸에서 써도 함께 바뀐다 */
+/** 계정·구매 기록 — 여러 칸에서 써도 함께 바뀐다 */
 export function useAccount() {
   const [account, setAccount] = useState<Account | null>(null);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -178,17 +123,14 @@ export function useAccount() {
   return {
     account,
     purchases,
-    signIn: async (p: Provider) => {
-      await accountApi.signIn(p);
-      changed();
-    },
-    signOut: async () => {
-      await accountApi.signOut();
-      changed();
-    },
     record: async (p: Purchase) => {
       await accountApi.record(p);
       changed();
+    },
+    redeem: async (code: string) => {
+      const ok = await accountApi.redeem(code);
+      if (ok) changed();
+      return ok;
     },
   };
 }
