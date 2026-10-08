@@ -2,7 +2,7 @@
  * 미리보기 한 장 만들기 — 사이트 전체를 HTML 파일 하나로 묶는다.
  * 실제 사이트(GitHub Pages)에 올리기 전에, 바꾼 화면을 Claude 앱의 미리보기(Artifact)로 띄워 함께 보려고 쓴다.
  *
- *   node scripts/preview-artifact.mjs [출력 파일]   (기본: dist-preview/index.html)
+ *   node scripts/preview-artifact.mjs [출력 파일] [--paywall]   (기본: dist-preview/index.html)
  *
  * - JS·CSS·글꼴(함초롬바탕·Pretendard)을 모두 파일 안에 넣는다. Noto Serif KR(예비 글꼴)은 크기 때문에 뺀다.
  * - 미리보기 창이 정하는 밝은/어두운 테마를 따르도록 어두운 색 규칙에 data-theme 조건을 더한다.
@@ -14,11 +14,15 @@ import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const outFile = path.resolve(process.argv[2] ?? path.join(root, 'dist-preview/index.html'));
+const args = process.argv.slice(2);
+// --paywall: 베타 무료 대신 결제 흐름(무료 1개 · 가격 사다리 · 상대별 궁합)을 흉내 내는 시안
+const paywall = args.includes('--paywall');
+const outFile = path.resolve(args.find((x) => !x.startsWith('--')) ?? path.join(root, 'dist-preview/index.html'));
 const tmp = path.join(root, 'dist-preview/.build');
 
 process.env.VITE_SHEET_URL = '';
 process.env.VITE_KAKAO_KEY = '';
+process.env.VITE_PAYWALL_DEMO = paywall ? '1' : '';
 
 await build({
   root,
