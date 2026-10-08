@@ -24,21 +24,25 @@ export interface Purchase {
 }
 
 export interface Ent {
-  /** 무료로 고른 고민 */
+  /** 무료로 고른 고민 (첫째) */
   free: ConcernId | null;
+  /** 무료로 연 고민 전부 — 두 기기의 기록을 합치면 둘 이상일 수 있다 */
+  frees: ConcernId[];
   /** 돈 내고 하나씩 연 고민 */
   paid: ConcernId[];
   /** 나머지 전부 열기 */
   all: boolean;
   /** 지금까지 낸 금액 (고민 리포트) */
   spent: number;
-  /** 무료로 연 상대 */
+  /** 무료로 연 상대 (첫째) */
   freePartner: string | null;
+  /** 무료로 연 상대 전부 */
+  freePartners: string[];
   /** 돈 내고 연 상대 */
   partners: string[];
 }
 
-export const EMPTY_ENT: Ent = { free: null, paid: [], all: false, spent: 0, freePartner: null, partners: [] };
+export const EMPTY_ENT: Ent = { free: null, frees: [], paid: [], all: false, spent: 0, freePartner: null, freePartners: [], partners: [] };
 
 /** 돈을 받는 고민 (궁합·재회는 상대마다 따로라 빠진다) */
 export const PAID_CONCERNS: ConcernId[] = CONCERNS.filter((c) => c.id !== 'match').map((c) => c.id);
@@ -57,28 +61,38 @@ export const sajuKey = (i: BirthInput) => hash(birthOf(i));
 export const partnerKey = (i: BirthInput) => hash(`p|${birthOf(i)}`);
 const pairOf = (saju: string, pk: string) => `${saju}>${pk}`;
 
-/** 구매 기록 → 이 사주의 이용권 */
-export function entOf(list: Purchase[], saju: string): Ent {
-  const e: Ent = { ...EMPTY_ENT, paid: [], partners: [] };
+/**
+ * 구매 기록 → 이 사주의 이용권.
+ * 두 기기의 기록을 합친 경우(구매 코드 합치기)에도 이미 연 것은 하나도 닫히지 않게 모두 더하고,
+ * 고민에 낸 돈이 '전부 열기' 가격에 이르면 전부 연다 — 어떤 순서로 사도 2,490원보다 더 내지 않게.
+ */
+export function entOf(list: Purchase[], saju: string, pricing = CONCERN_PRICING): Ent {
+  const e: Ent = { ...EMPTY_ENT, frees: [], paid: [], freePartners: [], partners: [] };
   for (const p of list) {
     if (p.item === 'match') {
       const [s, pk] = p.target.split('>');
       if (s !== saju) continue;
-      if (p.kind === 'partnerFree') e.freePartner = pk;
-      else e.partners.push(pk);
+      if (p.kind === 'partnerFree') {
+        e.freePartner ??= pk;
+        e.freePartners.push(pk);
+      } else e.partners.push(pk);
       continue;
     }
     if (p.target !== saju) continue;
-    if (p.kind === 'free') e.free = p.item;
+    if (p.kind === 'free') {
+      e.free ??= p.item;
+      e.frees.push(p.item);
+    }
     if (p.kind === 'one') e.paid.push(p.item);
     if (p.kind === 'all') e.all = true;
     e.spent += p.amount;
   }
+  if (e.spent >= pricing.all) e.all = true;
   return e;
 }
 
-export const isOpen = (e: Ent, id: ConcernId) => e.all || e.free === id || e.paid.includes(id);
-export const partnerOpen = (e: Ent, pk: string) => e.freePartner === pk || e.partners.includes(pk);
+export const isOpen = (e: Ent, id: ConcernId) => e.all || e.frees.includes(id) || e.paid.includes(id);
+export const partnerOpen = (e: Ent, pk: string) => e.freePartners.includes(pk) || e.partners.includes(pk);
 
 export interface Offer {
   kind: PurchaseKind;

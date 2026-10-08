@@ -2,7 +2,7 @@
  * 고민 리포트 (시안) — 고민을 고르면 그 고민에 맞춰 '한 줄 답'부터 보여 준다.
  * 지금은 이직·진로만 만들었고, 궁합·재회는 기존 칸으로 보낸다.
  */
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { PAYWALL_DEMO } from '../config/plans.ts';
 import { resetDemo } from '../lib/account.ts';
@@ -229,6 +229,19 @@ function CareerView({ a, report, u }: { a: SajuAnalysis; report: Report; u: Unlo
 /** 내 구매 코드 — 산 게 있으면 늘 보여 준다. 다른 휴대폰에서 이 코드를 넣으면 그대로 열린다 */
 function CodeBox({ u }: { u: Unlock }) {
   const [copied, setCopied] = useState(false);
+  const [note, setNote] = useState('');
+  useEffect(() => {
+    const on = () => {
+      try {
+        setNote(sessionStorage.getItem('mg_redeem_note') ?? '');
+        sessionStorage.removeItem('mg_redeem_note');
+      } catch {
+        /* noop */
+      }
+    };
+    window.addEventListener('mg-redeem-note', on);
+    return () => window.removeEventListener('mg-redeem-note', on);
+  }, []);
   if (!u.account || !u.purchases.length) return null;
   const copy = async () => {
     try {
@@ -248,7 +261,8 @@ function CodeBox({ u }: { u: Unlock }) {
           {copied ? '복사됨' : '복사'}
         </button>
       </div>
-      <p className="mt-2 text-cap text-sub">다른 휴대폰이나 카카오톡 안에서 열 때 이 코드를 넣으면 산 리포트가 그대로 열려요. 캡처해 두세요.</p>
+      {note && <p className="mt-2 text-label font-semibold text-accent">{note}</p>}
+      <p className="mt-2 text-cap text-sub">코드는 한 사람에 하나예요. 더 사도 같은 코드에 쌓여요. 다른 휴대폰이나 카카오톡 안에서 열 때 이 코드를 넣으면 산 리포트가 그대로 열려요. 캡처해 두세요.</p>
     </div>
   );
 }

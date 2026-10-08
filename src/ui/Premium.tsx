@@ -6,7 +6,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
-import { useAccount } from '../lib/account.ts';
+import { useAccount, type RedeemResult } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer } from '../lib/entitlements.ts';
 import type { ConcernId } from '../report/concernList.ts';
 
@@ -57,8 +57,8 @@ function Confirm({ o, what, onYes, onNo }: { o: Offer; what: string; onYes: () =
   );
 }
 
-/** 다른 기기에서 산 기록 불러오기 */
-function Redeem({ onRedeem }: { onRedeem: (code: string) => Promise<boolean> }) {
+/** 다른 기기에서 산 기록 불러오기 — 이 기기에서 따로 산 것이 있으면 합친다 */
+function Redeem({ onRedeem }: { onRedeem: (code: string) => Promise<RedeemResult> }) {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState('');
@@ -73,19 +73,36 @@ function Redeem({ onRedeem }: { onRedeem: (code: string) => Promise<boolean> }) 
       className="panel mt-4"
       onSubmit={async (e) => {
         e.preventDefault();
-        setMsg((await onRedeem(code)) ? '' : '코드를 찾지 못했어요. MG-로 시작하는 8자리를 다시 확인해 주세요.');
+        const r = await onRedeem(code);
+        if (!r.ok) return setMsg('코드를 찾지 못했어요. MG-로 시작하는 8자리를 다시 확인해 주세요.');
+        setOpen(false);
+        setCode('');
+        setMsg('');
+        if (r.merged) setRedeemNote(`이 휴대폰에서 산 ${r.merged}건도 합쳤어요. 앞으로는 ${r.code} 코드 하나만 쓰면 돼요.`);
+        else setRedeemNote(`불러왔어요. 앞으로도 ${r.code} 코드를 쓰면 돼요.`);
       }}
     >
       <label className="block">
         <span className="text-label font-semibold text-ink">구매 코드</span>
         <input className="field mt-2 uppercase tracking-wider" value={code} onChange={(e) => setCode(e.target.value)} placeholder="MG-XXXX-XXXX" autoComplete="off" />
       </label>
+      <p className="mt-2 text-cap text-sub">이 휴대폰에서 따로 산 것이 있어도 사라지지 않아요. 넣은 코드 쪽으로 합쳐요.</p>
       {msg && <p className="mt-2 text-label font-semibold text-ink">{msg}</p>}
       <button type="submit" className="btn-primary mt-3 w-full">
         불러오기
       </button>
     </form>
   );
+}
+
+/** 코드를 넣은 뒤 리포트가 열리면 이 칸은 사라지므로, 결과 안내는 페이지 위쪽 구매 코드 칸에서 보여 준다 */
+function setRedeemNote(text: string) {
+  try {
+    sessionStorage.setItem('mg_redeem_note', text);
+  } catch {
+    /* noop */
+  }
+  window.dispatchEvent(new Event('mg-redeem-note'));
 }
 
 export function Premium({
@@ -113,7 +130,7 @@ export function Premium({
   offers?: Offer[];
   onTake?: (o: Offer) => void;
   /** 다른 기기의 구매 코드로 불러오기 */
-  onRedeem?: (code: string) => Promise<boolean>;
+  onRedeem?: (code: string) => Promise<RedeemResult>;
   children: ReactNode;
 }) {
   const [note, setNote] = useState(false);
