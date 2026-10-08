@@ -50,6 +50,12 @@ const ConcernPanel = lazy(() =>
     () => ({ default: ChunkError }),
   ),
 );
+const AccountTest = lazy(() =>
+  import('./ui/AccountTest.tsx').then(
+    (m) => ({ default: m.AccountTest }),
+    () => ({ default: ChunkError }),
+  ),
+);
 const MatchPanel = lazy(() =>
   import('./ui/Match.tsx').then(
     (m) => ({ default: m.MatchPanel }),
@@ -63,11 +69,12 @@ const CrossTabs = lazy(() =>
   ),
 );
 
-type Route = { name: 'home' } | { name: 'start'; step: number } | { name: 'result'; input: BirthInput } | { name: 'admin' };
+type Route = { name: 'home' } | { name: 'start'; step: number } | { name: 'result'; input: BirthInput } | { name: 'admin' } | { name: 'account' };
 
 function parseRoute(): Route {
   const h = window.location.hash.replace(/^#/, '');
   if (h.startsWith('/admin')) return { name: 'admin' };
+  if (h.startsWith('/account')) return { name: 'account' };
   if (h.startsWith('/start')) {
     const n = Number(h.split('/')[2]);
     return { name: 'start', step: Number.isInteger(n) && n >= 1 && n <= FLOW_STEPS ? n : 1 };
@@ -85,6 +92,8 @@ export default function App() {
     const on = () => setRoute(parseRoute());
     window.addEventListener('hashchange', on);
     flushQueue();
+    // 카카오 로그인에서 돌아온 경우 (?code=…) — 로그인 코드는 이때만 불러온다
+    if (new URLSearchParams(window.location.search).has('code')) void import('./lib/account.ts').then((m) => m.finishLogin());
     return () => window.removeEventListener('hashchange', on);
   }, []);
 
@@ -121,6 +130,11 @@ export default function App() {
         <ErrorBoundary resetKey={route}>
           {route.name === 'home' && <Home />}
           {route.name === 'result' && <Result input={route.input} />}
+          {route.name === 'account' && (
+            <Suspense fallback={<Loading>불러오는 중…</Loading>}>
+              <AccountTest />
+            </Suspense>
+          )}
           {route.name === 'admin' && (
             <div className="wrap py-8">
               <Admin />
