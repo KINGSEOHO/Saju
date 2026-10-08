@@ -20,14 +20,30 @@ function unlocked(_id: string): boolean {
   return false;
 }
 
-export function Premium({ id, title, items, children }: { id: string; title: string; items: string[]; children: ReactNode }) {
+export function Premium({
+  id,
+  title,
+  items,
+  price,
+  forceLocked,
+  children,
+}: {
+  id: string;
+  title: string;
+  items: string[];
+  /** 정식 가격 (예: '1,990원') — 잠금 버튼과 베타 안내에 쓴다 */
+  price?: string;
+  /** 시안에서 '무료 사용자 화면'을 보여 줄 때 */
+  forceLocked?: boolean;
+  children: ReactNode;
+}) {
   const [note, setNote] = useState(false);
-  const locked = previewLocked() || (!BETA_FREE && !unlocked(id));
+  const locked = forceLocked ?? (previewLocked() || (!BETA_FREE && !unlocked(id)));
   return (
     <section className="mt-14 border-t-2 border-ink pt-5" aria-label={title}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="tag">상세 리포트</span>
-        <span className="text-cap text-sub">{locked ? '잠금 해제하면 볼 수 있어요' : '베타 기간이라 무료로 열려 있어요'}</span>
+        <span className="text-cap text-sub">{locked ? '잠금 해제하면 볼 수 있어요' : `베타 기간이라 무료로 열려 있어요${price ? ` · 정식 ${price} 예정` : ''}`}</span>
       </div>
       <h3 className="mt-3 text-title2 text-ink">{title}</h3>
       {locked ? (
@@ -45,7 +61,7 @@ export function Premium({ id, title, items, children }: { id: string; title: str
             <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-bg to-transparent" />
           </div>
           <button type="button" className="btn-primary mt-4 w-full" onClick={() => setNote(true)}>
-            잠금 해제하기
+            {price ? `${price}에 잠금 해제하기` : '잠금 해제하기'}
           </button>
           {note && <p className="mt-2 text-label font-semibold text-accent">결제는 준비 중이에요. 조금만 기다려 주세요.</p>}
         </div>

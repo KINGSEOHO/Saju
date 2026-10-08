@@ -4,6 +4,7 @@ import { groupOf } from './engine/tenGods.ts';
 import { flushQueue, send, sessionId } from './lib/api.ts';
 import { clearDraft, inputToDraft, saveDraft } from './lib/birthDraft.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
+import { CONCERNS, type ConcernId } from './report/concernList.ts';
 import { crossReport } from './report/cross.ts';
 import { generateReport, type Report } from './report/generate.ts';
 import { AXES, sajuAxes } from './report/mbti.ts';
@@ -40,6 +41,12 @@ function ChunkError() {
 const WebtoonPanel = lazy(() =>
   import('./ui/Webtoon.tsx').then(
     (m) => ({ default: m.WebtoonPanel }),
+    () => ({ default: ChunkError }),
+  ),
+);
+const ConcernPanel = lazy(() =>
+  import('./ui/Concern.tsx').then(
+    (m) => ({ default: m.ConcernPanel }),
     () => ({ default: ChunkError }),
   ),
 );
@@ -173,8 +180,9 @@ function Home() {
   );
 }
 
-type Sec = 'report' | 'match' | 'luck' | 'cross' | 'mbti' | 'job' | 'webtoon' | 'chart' | 'detail';
+type Sec = 'concern' | 'report' | 'match' | 'luck' | 'cross' | 'mbti' | 'job' | 'webtoon' | 'chart' | 'detail';
 const DETAILS: { id: Sec; title: string; desc: string }[] = [
+  { id: 'concern', title: '고민 리포트', desc: '이직·진로 · 궁합·재회 · 연애·결혼 · 돈 · 올해 운세' },
   { id: 'report', title: '풀이 리포트', desc: '종합 · 개운법 · 성향 · 연애 · 직업 · 재물 · 건강' },
   { id: 'match', title: '궁합 · 재회', desc: '상대 생년월일로 보는 사주 · 띠 · MBTI 궁합' },
   { id: 'luck', title: '운의 흐름', desc: '이번 달 · 올해 · 10년 대운' },
@@ -190,8 +198,14 @@ function Loading({ children }: { children: ReactNode }) {
   return <p className="py-6 text-ui text-sub">{children}</p>;
 }
 
-function DetailContent({ id, a, report }: { id: Sec; a: SajuAnalysis; report: Report }) {
+function DetailContent({ id, a, report, concern, pickConcern }: { id: Sec; a: SajuAnalysis; report: Report; concern: ConcernId; pickConcern: (c: ConcernId) => void }) {
   switch (id) {
+    case 'concern':
+      return (
+        <Suspense fallback={<Loading>고민 리포트를 불러오는 중…</Loading>}>
+          <ConcernPanel a={a} report={report} concern={concern} onPick={pickConcern} />
+        </Suspense>
+      );
     case 'report':
       return <ReportView a={a} />;
     case 'luck':
@@ -245,6 +259,7 @@ function Result({ input }: { input: BirthInput }) {
   }, [input, now]);
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState<Sec | null>(null);
+  const [concern, setConcern] = useState<ConcernId>('career');
   const [jump, setJump] = useState<{ id: Sec; n: number } | null>(null);
 
   useEffect(() => {
@@ -293,6 +308,12 @@ function Result({ input }: { input: BirthInput }) {
   const openSection = (id: Sec) => {
     setOpen(id);
     setJump({ id, n: Date.now() });
+  };
+  // 궁합·재회는 원래 칸으로, 나머지 고민은 고민 리포트 칸에서
+  const pickConcern = (c: ConcernId) => {
+    if (c === 'match') return openSection('match');
+    setConcern(c);
+    openSection('concern');
   };
   const edit = () => {
     saveDraft(inputToDraft(input));
@@ -467,18 +488,33 @@ function Result({ input }: { input: BirthInput }) {
         </section>
       )}
 
-      <ShareSection a={a} d={shareData} />
-
-      <section className="no-print panel mt-12" aria-labelledby="match-teaser">
-        <p className="kicker">궁합 · 재회</p>
-        <h2 id="match-teaser" className="mt-2 text-title3 text-ink">
-          그 사람과는 얼마나 잘 맞을까요?
+      <section className="no-print mt-14" aria-labelledby="concern-pick">
+        <p className="kicker">고민 리포트</p>
+        <h2 id="concern-pick" className="mt-2 text-title2 text-ink">
+          지금 어떤 고민이 있어요?
         </h2>
-        <p className="mt-1 text-label text-sub">상대 생년월일만 있으면 사주·띠·MBTI로 함께 비교해요. 헤어진 사이라면 다시 연락하기 좋은 때를 알려 드려요.</p>
-        <button type="button" className="btn-secondary mt-4 w-full" onClick={() => openSection('match')}>
-          궁합 · 재회 보기
-        </button>
+        <p className="mt-1 text-label text-sub">고르면 그 고민에 맞춰 한 줄 답부터 알려 드려요.</p>
+        <ul className="mt-4 border-t border-line">
+          {CONCERNS.map((c) => (
+            <li key={c.id} className="border-b border-line">
+              <button
+                type="button"
+                disabled={!c.ready}
+                onClick={() => pickConcern(c.id)}
+                className="flex w-full items-center justify-between gap-3 py-4 text-left disabled:cursor-default"
+              >
+                <span className="min-w-0">
+                  <span className={`block font-serif text-title3 font-bold ${c.ready ? 'text-ink' : 'text-faint'}`}>{c.title}</span>
+                  <span className={`mt-0.5 block text-cap ${c.ready ? 'text-sub' : 'text-faint'}`}>{c.ask}</span>
+                </span>
+                {c.ready ? <Chevron className="-rotate-90" /> : <span className="tag-mute shrink-0">준비 중</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
       </section>
+
+      <ShareSection a={a} d={shareData} />
 
       <section className="mt-16" aria-labelledby="details">
         <h2 id="details" className="text-title2 text-ink">
@@ -507,7 +543,7 @@ function Result({ input }: { input: BirthInput }) {
                 {isOpen && (
                   <div className="pt-6 pb-12">
                     <ErrorBoundary inline resetKey={d.id}>
-                      <DetailContent id={d.id} a={a} report={report} />
+                      <DetailContent id={d.id} a={a} report={report} concern={concern} pickConcern={pickConcern} />
                     </ErrorBoundary>
                   </div>
                 )}

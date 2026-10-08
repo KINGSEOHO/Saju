@@ -41,6 +41,13 @@ export function monthLabel(a: SajuAnalysis, w: Wolun) {
   };
 }
 
+/** 올해가 아닌 달은 연도를 붙인다 (예: 2027년 1월 5일 ~ 2월 3일) */
+export function monthTitle(a: SajuAnalysis, w: Wolun) {
+  const year = (ms: number) => Number(new Intl.DateTimeFormat('en-US', { timeZone: a.input.timeZone, year: 'numeric' }).format(new Date(ms)));
+  const y = year(w.startMs);
+  return `${y !== year(a.now) ? `${y}년 ` : ''}${monthLabel(a, w).title}`;
+}
+
 /** 다음 달 운으로 바뀌는 시점이 7일 이내면 안내 */
 export function upcomingSwitch(a: SajuAnalysis, w: Wolun): { when: string; next: Wolun } | null {
   const next = a.wolun[a.wolun.indexOf(w) + 1];

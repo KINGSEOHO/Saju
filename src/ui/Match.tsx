@@ -5,7 +5,7 @@
  * 상대 정보는 이 기기 안에서만 계산한다 (partnerDraft.ts).
  */
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { analyze, type BirthInput, type SajuAnalysis, type Wolun } from '../engine/index.ts';
+import { analyze, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
 import { CITIES } from '../engine/timezone.ts';
 import { checkDate, checkTime, formatTime, formatYmd } from '../lib/birthDraft.ts';
 import { checkBreakup, formatYm, loadPartner, partnerInput, savePartner, type PartnerDraft } from '../lib/partnerDraft.ts';
@@ -13,7 +13,7 @@ import { compatReport, RELATION_LABEL, reunionReport, SCORE_NOTE, type CompatRep
 import { MBTI_LIST } from '../report/mbti.ts';
 import { Gloss, Lead } from './common.tsx';
 import { CoupleShare } from './CoupleShare.tsx';
-import { monthLabel, upcomingMonths } from './Luck.tsx';
+import { monthTitle, upcomingMonths } from './Luck.tsx';
 import { Premium } from './Premium.tsx';
 
 // ---------------------------------------------------------------------------
@@ -405,13 +405,6 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
 // ---------------------------------------------------------------------------
 // 재회 — 점수 없음
 // ---------------------------------------------------------------------------
-/** 올해가 아닌 달은 연도를 붙인다 */
-function monthTitle(a: SajuAnalysis, w: Wolun) {
-  const y = Number(new Intl.DateTimeFormat('en-US', { timeZone: a.input.timeZone, year: 'numeric' }).format(new Date(w.startMs)));
-  const now = Number(new Intl.DateTimeFormat('en-US', { timeZone: a.input.timeZone, year: 'numeric' }).format(new Date(a.now)));
-  return `${y !== now ? `${y}년 ` : ''}${monthLabel(a, w).title}`;
-}
-
 function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p: PartnerDraft; onEdit: () => void }) {
   const breakup = checkBreakup(p.breakup, a.now).value;
   const months = useMemo(() => upcomingMonths(a, 12), [a]);
