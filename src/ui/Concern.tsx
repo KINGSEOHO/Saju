@@ -5,13 +5,16 @@
 import { useMemo, type ReactNode } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { PAYWALL_DEMO } from '../config/plans.ts';
-import { concernOffers, EMPTY_ENT, isOpen, sajuKey, take, type Ent } from '../lib/entitlements.ts';
+import { PROVIDER_NAME, resetDemoPurchases } from '../lib/account.ts';
+import { concernOffers, isOpen, purchaseLabel, sajuKey } from '../lib/entitlements.ts';
 import { careerConcern, STANCE_LABEL, type CareerConcern, type Stance } from '../report/concern.ts';
 import { CONCERNS, type ConcernId } from '../report/concernList.ts';
 import type { Report, YearSignal } from '../report/generate.ts';
 import { Gloss, Lead, TONE_STYLE } from './common.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
-import { Premium, useEnt } from './Premium.tsx';
+import { Premium, useUnlock } from './Premium.tsx';
+
+type Unlock = ReturnType<typeof useUnlock>;
 
 const SIG_TAG = { positive: 'tag-pos', negative: 'tag-neg', caution: 'tag-mute', neutral: 'tag-mute' } as const;
 const STANCES: Stance[] = ['move', 'prepare', 'stay', 'hold'];
@@ -153,7 +156,7 @@ function CareerDetail({ a, c }: { a: SajuAnalysis; c: CareerConcern }) {
   );
 }
 
-function CareerView({ a, report, ent, setEnt }: { a: SajuAnalysis; report: Report; ent: Ent; setEnt: (e: Ent) => void }) {
+function CareerView({ a, report, u }: { a: SajuAnalysis; report: Report; u: Unlock }) {
   const months = useMemo(() => upcomingMonths(a, 12), [a]);
   const c = useMemo(() => careerConcern(a, report, months), [a, report, months]);
   if (!c) return <p className="text-ui text-sub">이직·진로 풀이를 만들지 못했어요.</p>;
@@ -211,9 +214,11 @@ function CareerView({ a, report, ent, setEnt }: { a: SajuAnalysis; report: Repor
         id="career"
         title="이직·진로 상세 리포트"
         what="이직·진로"
-        locked={PAYWALL_DEMO ? !isOpen(ent, 'career') : undefined}
-        offers={concernOffers(ent, 'career')}
-        onTake={(o) => setEnt(take(ent, o, 'career'))}
+        locked={PAYWALL_DEMO ? !isOpen(u.ent, 'career') : undefined}
+        offers={concernOffers(u.ent, 'career')}
+        onTake={(o) => u.buy(o, 'career')}
+        account={u.account}
+        onLogin={u.signIn}
         items={['앞으로 12개월 — 좋은 달과 피할 달', '앞으로 10년 이직 신호', '지금 회사에 남는다면 할 일', '옮긴다면 이것부터 (체크리스트)', '직장에서 반복되기 쉬운 문제', '이야기로 읽는 긴 풀이']}
       >
         <CareerDetail a={a} c={c} />
@@ -222,24 +227,51 @@ function CareerView({ a, report, ent, setEnt }: { a: SajuAnalysis; report: Repor
   );
 }
 
-/** 시안 전용 — 지금까지 무엇을 열었는지와 처음 상태로 되돌리기 */
-function DemoStatus({ ent, reset }: { ent: Ent; reset: () => void }) {
-  const free = ent.free ? CONCERNS.find((c) => c.id === ent.free)?.title : null;
+/** 시안 전용 — 로그인한 계정과 계정에 남은 구매 기록 (실제로 저장되는 것과 같은 모양) */
+function AccountBox({ u }: { u: Unlock }) {
+  const free = u.ent.free ? CONCERNS.find((c) => c.id === u.ent.free)?.title : null;
   return (
     <div className="mb-6 rounded-xl border border-dashed border-line-strong px-4 py-3">
-      <p className="text-cap font-semibold text-sub">시안 · 결제 흐름 체험 (실제로 결제되지 않아요)</p>
-      <p className="mt-1 text-label text-ink-2">
-        무료 {free ? `‘${free}’에 사용` : '1개 남음'} · 낸 돈 {ent.spent.toLocaleString('ko-KR')}원{ent.partners.length ? ` · 궁합 상대 ${ent.partners.length}명 열림` : ''}
-      </p>
-      <button type="button" className="link mt-1 text-label" onClick={reset}>
-        처음 상태로 되돌리기
-      </button>
+      <p className="text-cap font-semibold text-sub">시안 · 로그인과 결제 흐름 체험 (실제로 로그인·결제되지 않아요)</p>
+      {u.account ? (
+        <>
+          <p className="mt-1 text-label text-ink-2">
+            {PROVIDER_NAME[u.account.provider]} 계정(회원번호 {u.account.id})으로 로그인 · 무료 {free ? `‘${free}’에 사용` : '1개 남음'} · 고민에 낸 돈 {u.ent.spent.toLocaleString('ko-KR')}원
+          </p>
+          <details className="mt-2">
+            <summary className="cursor-pointer text-label font-semibold text-accent">계정에 남은 기록 {u.purchases.length}건 보기</summary>
+            {u.purchases.length ? (
+              <ul className="mt-2 border-t border-line text-label">
+                {u.purchases.map((p) => (
+                  <li key={p.at} className="flex justify-between gap-3 border-b border-line py-2">
+                    <span className="min-w-0 text-ink-2">{purchaseLabel(p)}</span>
+                    <span className="shrink-0 text-sub tabular-nums">{p.amount ? `${p.amount.toLocaleString('ko-KR')}원` : '무료'}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-label text-sub">아직 없어요.</p>
+            )}
+            <p className="mt-2 text-cap text-sub">저장하는 것: 로그인 종류·회원번호, 항목, 금액, 시각. 이 사주가 누구 것인지는 생년월일로 만든 짧은 암호값으로만 구분해요.</p>
+          </details>
+          <div className="mt-2 flex gap-4">
+            <button type="button" className="link text-label" onClick={() => void u.signOut()}>
+              로그아웃
+            </button>
+            <button type="button" className="link text-label" onClick={resetDemoPurchases}>
+              기록 지우고 처음부터
+            </button>
+          </div>
+        </>
+      ) : (
+        <p className="mt-1 text-label text-ink-2">로그인 안 함 · 잠긴 리포트를 열려고 하면 로그인부터 물어봐요.</p>
+      )}
     </div>
   );
 }
 
 /** 아직 만들지 않은 고민 — 시안에서는 가격 사다리만 눌러 볼 수 있게 자리를 둔다 */
-function Upcoming({ id, ent, setEnt }: { id: ConcernId; ent: Ent; setEnt: (e: Ent) => void }) {
+function Upcoming({ id, u }: { id: ConcernId; u: Unlock }) {
   const c = CONCERNS.find((x) => x.id === id)!;
   return (
     <>
@@ -253,9 +285,11 @@ function Upcoming({ id, ent, setEnt }: { id: ConcernId; ent: Ent; setEnt: (e: En
           title={`${c.title} 상세 리포트`}
           what={c.title}
           items={['앞으로 12개월 — 좋은 달과 피할 달', '앞으로 10년 신호', '지금 할 일']}
-          locked={!isOpen(ent, id)}
-          offers={concernOffers(ent, id)}
-          onTake={(o) => setEnt(take(ent, o, id))}
+          locked={!isOpen(u.ent, id)}
+          offers={concernOffers(u.ent, id)}
+          onTake={(o) => u.buy(o, id)}
+          account={u.account}
+          onLogin={u.signIn}
         >
           <p className="read">시안이라 아직 내용이 없어요. 가격 사다리와 버튼 문구를 눌러 보는 자리예요.</p>
         </Premium>
@@ -265,10 +299,10 @@ function Upcoming({ id, ent, setEnt }: { id: ConcernId; ent: Ent; setEnt: (e: En
 }
 
 export function ConcernPanel({ a, report, concern, onPick }: { a: SajuAnalysis; report: Report; concern: ConcernId; onPick: (id: ConcernId) => void }) {
-  const [ent, setEnt] = useEnt(sajuKey(a.input));
+  const u = useUnlock(sajuKey(a.input));
   return (
     <>
-      {PAYWALL_DEMO && <DemoStatus ent={ent} reset={() => setEnt(EMPTY_ENT)} />}
+      {PAYWALL_DEMO && <AccountBox u={u} />}
       <div className="-mx-5 overflow-x-auto px-5 pb-1">
         <div className="flex w-max gap-2" role="tablist" aria-label="고민 고르기">
           {CONCERNS.map((c) => (
@@ -281,13 +315,13 @@ export function ConcernPanel({ a, report, concern, onPick }: { a: SajuAnalysis; 
               className={`h-10 shrink-0 rounded-full border px-4 text-label font-semibold transition-colors ${concern === c.id ? 'border-accent bg-accent text-on-accent' : 'border-line text-ink active:bg-fill'}`}
             >
               {c.title}
-              {PAYWALL_DEMO && c.id !== 'match' && isOpen(ent, c.id) && <span className="ml-1 font-normal opacity-80">· 열림</span>}
+              {PAYWALL_DEMO && c.id !== 'match' && isOpen(u.ent, c.id) && <span className="ml-1 font-normal opacity-80">· 열림</span>}
             </button>
           ))}
         </div>
       </div>
       <div className="mt-8">
-        {concern === 'career' ? <CareerView a={a} report={report} ent={ent} setEnt={setEnt} /> : <Upcoming id={concern} ent={ent} setEnt={setEnt} />}
+        {concern === 'career' ? <CareerView a={a} report={report} u={u} /> : <Upcoming id={concern} u={u} />}
       </div>
     </>
   );

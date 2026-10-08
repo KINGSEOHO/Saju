@@ -1,56 +1,54 @@
 import { describe, expect, it } from 'vitest';
-import { concernOffers, EMPTY_ENT, isOpen, PAID_CONCERNS, partnerOffers, take, type Ent } from '../src/lib/entitlements.ts';
+import { concernOffers, entOf, isOpen, PAID_CONCERNS, partnerOffers, partnerOpen, purchaseOf, type Purchase } from '../src/lib/entitlements.ts';
 
-const pick = (e: Ent, id: (typeof PAID_CONCERNS)[number], kind: string) => {
-  const o = concernOffers(e, id).find((x) => x.kind === kind)!;
-  expect(o).toBeTruthy();
-  return { e: take(e, o, id), o };
-};
+const S = 'saju1';
+function buy(list: Purchase[], id: (typeof PAID_CONCERNS)[number], kind: string) {
+  const o = concernOffers(entOf(list, S), id).find((x) => x.kind === kind);
+  expect(o, `${id} ${kind}`).toBeTruthy();
+  return { list: [...list, purchaseOf(o!, S, id)], o: o! };
+}
 
-describe('고민 리포트 가격', () => {
-  it('하나는 무료, 그다음 990원 → 400원 더 → 1,100원 더, 합계 2,490원', () => {
-    let e = EMPTY_ENT;
-    let r = pick(e, 'career', 'free');
+describe('고민 리포트 가격 (5개)', () => {
+  it('하나 무료 → 990원 → 990원 더 → 나머지 전부는 차액, 합계 2,490원', () => {
+    expect(PAID_CONCERNS).toEqual(['career', 'love', 'money', 'exam', 'year']);
+    let r = buy([], 'career', 'free');
     expect(r.o.cost).toBe(0);
-    e = r.e;
-    r = pick(e, 'love', 'one');
-    expect(r.o.cost).toBe(990);
-    expect(r.o.label).toBe('990원에 이 고민 열기');
-    e = r.e;
-    r = pick(e, 'money', 'one');
-    expect(r.o.cost).toBe(400);
-    expect(r.o.label).toBe('400원 더 내고 이 고민 열기');
-    expect(r.o.note).toBe('지금까지 990원 · 열면 합계 1,390원');
-    e = r.e;
-    const last = concernOffers(e, 'year');
-    expect(last).toHaveLength(1);
-    expect(last[0].cost).toBe(1100);
-    expect(last[0].label).toBe('1,100원 더 내고 마지막 고민 열기');
-    e = take(e, last[0], 'year');
+    const love = concernOffers(entOf(r.list, S), 'love');
+    expect(love.map((o) => o.label)).toEqual(['990원에 이 고민 열기', '2,490원에 나머지 전부 열기']);
+    r = buy(r.list, 'love', 'one');
+    const money = concernOffers(entOf(r.list, S), 'money');
+    expect(money.map((o) => o.label)).toEqual(['990원 더 내고 이 고민 열기', '1,500원 더 내고 나머지 전부 열기']);
+    expect(money[0].note).toBe('지금까지 990원 · 열면 합계 1,980원');
+    r = buy(r.list, 'money', 'one');
+    // 하나 더 사면 2,970원이 되어 '전부 열기'보다 비싸지므로, 나머지 전부만 남는다
+    const exam = concernOffers(entOf(r.list, S), 'exam');
+    expect(exam.map((o) => o.label)).toEqual(['510원 더 내고 나머지 전부 열기']);
+    r = buy(r.list, 'exam', 'all');
+    const e = entOf(r.list, S);
     expect(PAID_CONCERNS.every((id) => isOpen(e, id))).toBe(true);
     expect(e.spent).toBe(2490);
   });
 
-  it('언제 전부 열어도 합계는 2,490원을 넘지 않는다', () => {
-    let e = take(EMPTY_ENT, concernOffers(EMPTY_ENT, 'career')[0], 'career');
-    const all0 = concernOffers(e, 'love').find((o) => o.kind === 'all')!;
-    expect(all0.cost).toBe(2490);
-    e = take(e, concernOffers(e, 'love')[0], 'love');
-    const all1 = concernOffers(e, 'money').find((o) => o.kind === 'all')!;
-    expect(all1.cost).toBe(1500);
-    expect(all1.label).toBe('1,500원 더 내고 나머지 전부 열기');
-    expect(take(e, all1, 'money').spent).toBe(2490);
-  });
-
   it('무료를 쓰기 전에 전부 열 수도 있다', () => {
-    const o = concernOffers(EMPTY_ENT, 'career').find((x) => x.kind === 'all')!;
-    expect(o.cost).toBe(2490);
-    expect(PAID_CONCERNS.every((id) => isOpen(take(EMPTY_ENT, o, 'career'), id))).toBe(true);
+    const r = buy([], 'career', 'all');
+    expect(r.o.cost).toBe(2490);
+    expect(PAID_CONCERNS.every((id) => isOpen(entOf(r.list, S), id))).toBe(true);
   });
 
-  it('궁합·재회는 상대 한 명마다 990원', () => {
-    const e = take(EMPTY_ENT, partnerOffers(EMPTY_ENT, 'p1')[0], null, 'p1');
-    expect(partnerOffers(e, 'p1')).toHaveLength(0);
-    expect(partnerOffers(e, 'p2')[0].cost).toBe(990);
+  it('다른 사주에는 이용권이 넘어가지 않는다', () => {
+    const r = buy([], 'career', 'all');
+    expect(isOpen(entOf(r.list, 'saju2'), 'career')).toBe(false);
+  });
+});
+
+describe('궁합·재회', () => {
+  it('첫 상대는 무료, 그다음부터 한 명마다 990원', () => {
+    const first = partnerOffers(entOf([], S), 'p1');
+    expect(first[0]).toMatchObject({ kind: 'partnerFree', cost: 0 });
+    const list = [purchaseOf(first[0], S, null, 'p1')];
+    expect(partnerOpen(entOf(list, S), 'p1')).toBe(true);
+    const second = partnerOffers(entOf(list, S), 'p2');
+    expect(second[0]).toMatchObject({ kind: 'partner', cost: 990 });
+    expect(entOf([...list, purchaseOf(second[0], S, null, 'p2')], S).partners).toEqual(['p2']);
   });
 });

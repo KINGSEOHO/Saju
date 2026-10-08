@@ -14,9 +14,9 @@ import { MBTI_LIST } from '../report/mbti.ts';
 import { Gloss, Lead } from './common.tsx';
 import { CoupleShare } from './CoupleShare.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
-import { Premium, useEnt } from './Premium.tsx';
+import { Premium, useUnlock } from './Premium.tsx';
 import { PAYWALL_DEMO } from '../config/plans.ts';
-import { partnerKey, partnerOffers, partnerOpen, sajuKey, take } from '../lib/entitlements.ts';
+import { partnerKey, partnerOffers, partnerOpen, sajuKey } from '../lib/entitlements.ts';
 
 // ---------------------------------------------------------------------------
 // 상대 정보 입력
@@ -349,12 +349,14 @@ function CompatDetail({ r }: { r: CompatReport }) {
 
 /** 궁합·재회 상세는 상대 한 명마다 따로 연다 */
 function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
-  const [ent, setEnt] = useEnt(sajuKey(a.input));
+  const u = useUnlock(sajuKey(a.input));
   const pk = partnerKey(b.input);
   return {
-    locked: PAYWALL_DEMO ? !partnerOpen(ent, pk) : undefined,
-    offers: partnerOffers(ent, pk),
-    onTake: (o: Parameters<typeof take>[1]) => setEnt(take(ent, o, null, pk)),
+    locked: PAYWALL_DEMO ? !partnerOpen(u.ent, pk) : undefined,
+    offers: partnerOffers(u.ent, pk),
+    onTake: (o: Parameters<typeof u.buy>[0]) => void u.buy(o, null, pk),
+    account: u.account,
+    onLogin: u.signIn,
   };
 }
 
@@ -406,7 +408,7 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
       <Premium
         id="compat"
         title="궁합 상세 리포트"
-        what="궁합"
+        what={b.input.name ? `${b.input.name}님과의 궁합` : '이 사람과의 궁합'}
         {...lock}
         items={['반복되는 다툼과 푸는 법', '서로에게 하면 좋은 말 · 피해야 할 말', 'MBTI로 본 대화 가이드', '앞으로 10년 — 함께 좋은 해와 흔들리는 해', '오래 가려면']}
       >
@@ -478,7 +480,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
         </ul>
       </section>
 
-      <Premium id="reunion" title="재회 상세 리포트" what="재회" {...lock} items={['앞으로 12개월 — 연락하기 좋은 달과 피할 달', '지금 할 일 네 가지', '다시 만난다면 서로에게 하면 좋은 말 · 피할 말']}>
+      <Premium id="reunion" title="재회 상세 리포트" what={b.input.name ? `${b.input.name}님과의 재회` : '이 사람과의 재회'} {...lock} items={['앞으로 12개월 — 연락하기 좋은 달과 피할 달', '지금 할 일 네 가지', '다시 만난다면 서로에게 하면 좋은 말 · 피할 말']}>
         <Block title="연락하기 좋은 달" desc="두 사람의 배우자 자리와 손잡는 달, 내 운이 좋은 달이에요.">
           {r.good.length ? (
             <ul className="border-t border-line">
