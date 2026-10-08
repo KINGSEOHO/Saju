@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { PAYWALL_DEMO } from './config/plans.ts';
 import { analyze, pillarHanja, STEMS, type BirthInput, type SajuAnalysis } from './engine/index.ts';
 import { groupOf } from './engine/tenGods.ts';
 import { flushQueue, send, sessionId } from './lib/api.ts';
@@ -16,6 +17,7 @@ import { ElementsPanel, InteractionsPanel, StrengthPanel } from './ui/Analysis.t
 import { BirthFlow, FLOW_STEPS, goToStep } from './ui/BirthForm.tsx';
 import { ElementStrip } from './ui/Charts.tsx';
 import { BottomBar, Chevron, Disclosure, Gloss, GLOSSARY, Lead, Term } from './ui/common.tsx';
+import { ConcernBridge } from './ui/ConcernBridge.tsx';
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx';
 import { Faq } from './ui/Faq.tsx';
 import { ReviewForm } from './ui/Feedback.tsx';
@@ -44,9 +46,15 @@ const WebtoonPanel = lazy(() =>
     () => ({ default: ChunkError }),
   ),
 );
-const ConcernPanel = lazy(() =>
+const ConcernBody = lazy(() =>
   import('./ui/Concern.tsx').then(
-    (m) => ({ default: m.ConcernPanel }),
+    (m) => ({ default: m.ConcernBody }),
+    () => ({ default: ChunkError }),
+  ),
+);
+const ConcernTop = lazy(() =>
+  import('./ui/Concern.tsx').then(
+    (m) => ({ default: m.ConcernTop }),
     () => ({ default: ChunkError }),
   ),
 );
@@ -180,11 +188,11 @@ function Home() {
   );
 }
 
-type Sec = 'concern' | 'report' | 'match' | 'luck' | 'cross' | 'mbti' | 'job' | 'webtoon' | 'chart' | 'detail';
+type Sec = 'report' | 'luck' | 'cross' | 'mbti' | 'job' | 'webtoon' | 'chart' | 'detail';
+/** 펼치는 줄 — 세부 풀이의 칸이거나 고민 리포트의 고민 하나. 한 번에 하나만 펼친다 */
+type RowId = Sec | ConcernId;
 const DETAILS: { id: Sec; title: string; desc: string }[] = [
-  { id: 'concern', title: '고민 리포트', desc: '이직·진로 · 궁합·재회 · 연애·결혼 · 돈 · 올해 운세' },
   { id: 'report', title: '풀이 리포트', desc: '종합 · 개운법 · 성향 · 연애 · 직업 · 재물 · 건강' },
-  { id: 'match', title: '궁합 · 재회', desc: '상대 생년월일로 보는 사주 · 띠 · MBTI 궁합' },
   { id: 'luck', title: '운의 흐름', desc: '이번 달 · 올해 · 10년 대운' },
   { id: 'cross', title: '교차 검증', desc: '사주·운·띠·MBTI·직업이 함께 가리키는 것' },
   { id: 'mbti', title: 'MBTI × 사주', desc: '겉(MBTI)과 속(사주)이 같은 점과 다른 점' },
@@ -198,23 +206,17 @@ function Loading({ children }: { children: ReactNode }) {
   return <p className="py-6 text-ui text-sub">{children}</p>;
 }
 
-function DetailContent({ id, a, report, concern, pickConcern }: { id: Sec; a: SajuAnalysis; report: Report; concern: ConcernId; pickConcern: (c: ConcernId) => void }) {
+/** onConcern — 풀이 끝의 '그래서 언제?' 카드가 고민 리포트의 그 고민을 연다 */
+function DetailContent({ id, a, report, onConcern }: { id: Sec; a: SajuAnalysis; report: Report; onConcern: (c: ConcernId) => void }) {
   switch (id) {
-    case 'concern':
-      return (
-        <Suspense fallback={<Loading>고민 리포트를 불러오는 중…</Loading>}>
-          <ConcernPanel a={a} report={report} concern={concern} onPick={pickConcern} />
-        </Suspense>
-      );
     case 'report':
-      return <ReportView a={a} />;
+      return <ReportView a={a} onConcern={onConcern} />;
     case 'luck':
-      return <LuckPanel a={a} />;
-    case 'match':
       return (
-        <Suspense fallback={<Loading>궁합 화면을 불러오는 중…</Loading>}>
-          <MatchPanel a={a} />
-        </Suspense>
+        <>
+          <LuckPanel a={a} />
+          <ConcernBridge a={a} report={report} id="year" lead="올해 남은 달은 어떻게 보내면 좋을까요?" onGo={onConcern} />
+        </>
       );
     case 'cross':
     case 'mbti':
@@ -222,6 +224,8 @@ function DetailContent({ id, a, report, concern, pickConcern }: { id: Sec; a: Sa
       return (
         <Suspense fallback={<Loading>교차 분석을 계산하는 중…</Loading>}>
           <CrossTabs a={a} report={report} tab={id} />
+          {id === 'mbti' && <ConcernBridge a={a} report={report} id="match" lead="그 사람과는 얼마나 잘 맞을까요?" onGo={onConcern} />}
+          {id === 'job' && <ConcernBridge a={a} report={report} id="career" lead="그래서 지금 옮겨도 될까요?" onGo={onConcern} />}
         </Suspense>
       );
     case 'webtoon':
@@ -248,6 +252,57 @@ function DetailContent({ id, a, report, concern, pickConcern }: { id: Sec; a: Sa
   }
 }
 
+function ConcernContent({ id, a, report }: { id: ConcernId; a: SajuAnalysis; report: Report }) {
+  if (id === 'match')
+    return (
+      <Suspense fallback={<Loading>궁합 화면을 불러오는 중…</Loading>}>
+        <MatchPanel a={a} />
+      </Suspense>
+    );
+  return (
+    <Suspense fallback={<Loading>고민 리포트를 불러오는 중…</Loading>}>
+      <ConcernBody a={a} report={report} id={id} />
+    </Suspense>
+  );
+}
+
+/** 세부 풀이와 고민 리포트가 함께 쓰는 펼침 줄. 펼친 줄의 제목은 화면 위에 붙어 다닌다 */
+function Row({ id, title, desc, open, onToggle, children }: { id: RowId; title: string; desc: string; open: boolean; onToggle: () => void; children: ReactNode }) {
+  return (
+    <li className="border-b border-line">
+      <button
+        type="button"
+        data-row={id}
+        data-sticky-tabs={open ? '' : undefined}
+        aria-expanded={open}
+        onClick={onToggle}
+        className={`flex items-center justify-between gap-3 py-4 text-left ${open ? 'sticky top-14 z-20 -mx-5 w-[calc(100%+2.5rem)] border-b border-line bg-bg px-5' : 'w-full'}`}
+      >
+        <span className="min-w-0">
+          <span className="block font-serif text-title3 font-bold text-ink">{title}</span>
+          <span className="mt-0.5 block text-cap text-sub">{open ? '접으려면 다시 누르세요' : desc}</span>
+        </span>
+        <Chevron open={open} />
+      </button>
+      {open && (
+        <div className="pt-6 pb-12">
+          <ErrorBoundary inline resetKey={id}>
+            {children}
+          </ErrorBoundary>
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** 고민 리포트 칸 제목으로 (머리말 아래로) */
+function scrollToConcerns() {
+  const el = document.getElementById('concerns');
+  if (!el) return;
+  const head = document.querySelector<HTMLElement>('[data-sticky-head]')?.offsetHeight ?? 56;
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - head - 16, behavior: 'smooth' });
+}
+
 function Result({ input }: { input: BirthInput }) {
   const [now] = useState(() => Date.now());
   const result = useMemo((): { a: SajuAnalysis } | { error: string } => {
@@ -258,9 +313,8 @@ function Result({ input }: { input: BirthInput }) {
     }
   }, [input, now]);
   const [copied, setCopied] = useState(false);
-  const [open, setOpen] = useState<Sec | null>(null);
-  const [concern, setConcern] = useState<ConcernId>('career');
-  const [jump, setJump] = useState<{ id: Sec; n: number } | null>(null);
+  const [open, setOpen] = useState<RowId | null>(null);
+  const [jump, setJump] = useState<{ id: RowId; n: number } | null>(null);
 
   useEffect(() => {
     if ('a' in result) {
@@ -301,19 +355,13 @@ function Result({ input }: { input: BirthInput }) {
   }
   const a = result.a;
   const p = a.pillars;
-  const toggle = (id: Sec) => {
+  const toggle = (id: RowId) => {
     setOpen((cur) => (cur === id ? null : id));
     setJump({ id, n: Date.now() });
   };
-  const openSection = (id: Sec) => {
+  const openSection = (id: RowId) => {
     setOpen(id);
     setJump({ id, n: Date.now() });
-  };
-  // 궁합·재회는 원래 칸으로, 나머지 고민은 고민 리포트 칸에서
-  const pickConcern = (c: ConcernId) => {
-    if (c === 'match') return openSection('match');
-    setConcern(c);
-    openSection('concern');
   };
   const edit = () => {
     saveDraft(inputToDraft(input));
@@ -488,68 +536,47 @@ function Result({ input }: { input: BirthInput }) {
         </section>
       )}
 
-      <section className="no-print mt-14" aria-labelledby="concern-pick">
-        <p className="kicker">고민 리포트</p>
-        <h2 id="concern-pick" className="mt-2 text-title2 text-ink">
-          지금 어떤 고민이 있어요?
-        </h2>
-        <p className="mt-1 text-label text-sub">고르면 그 고민에 맞춰 한 줄 답부터 알려 드려요.</p>
-        <ul className="mt-4 border-t border-line">
-          {CONCERNS.map((c) => (
-            <li key={c.id} className="border-b border-line">
-              <button
-                type="button"
-                disabled={!c.ready}
-                onClick={() => pickConcern(c.id)}
-                className="flex w-full items-center justify-between gap-3 py-4 text-left disabled:cursor-default"
-              >
-                <span className="min-w-0">
-                  <span className={`block font-serif text-title3 font-bold ${c.ready ? 'text-ink' : 'text-faint'}`}>{c.title}</span>
-                  <span className={`mt-0.5 block text-cap ${c.ready ? 'text-sub' : 'text-faint'}`}>{c.ask}</span>
-                </span>
-                {c.ready ? <Chevron className="-rotate-90" /> : <span className="tag-mute shrink-0">준비 중</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
       <ShareSection a={a} d={shareData} />
 
       <section className="mt-16" aria-labelledby="details">
         <h2 id="details" className="text-title2 text-ink">
           세부 풀이
         </h2>
-        <p className="mt-1 text-label text-sub">누르면 이 자리에서 펼쳐져요.</p>
+        <p className="mt-1 text-label text-sub">
+          누르면 이 자리에서 펼쳐져요. 고민이 있다면{' '}
+          <button type="button" className="link no-print" onClick={scrollToConcerns}>
+            고민 리포트로 바로 가기
+          </button>
+        </p>
         <ul className="mt-4 border-t border-line">
-          {DETAILS.map((d) => {
-            const isOpen = open === d.id;
-            return (
-              <li key={d.id} className="border-b border-line">
-                <button
-                  type="button"
-                  data-row={d.id}
-                  data-sticky-tabs={isOpen ? '' : undefined}
-                  aria-expanded={isOpen}
-                  onClick={() => toggle(d.id)}
-                  className={`flex items-center justify-between gap-3 py-4 text-left ${isOpen ? 'sticky top-14 z-20 -mx-5 w-[calc(100%+2.5rem)] border-b border-line bg-bg px-5' : 'w-full'}`}
-                >
-                  <span className="min-w-0">
-                    <span className="block font-serif text-title3 font-bold text-ink">{d.title}</span>
-                    <span className="mt-0.5 block text-cap text-sub">{isOpen ? '접으려면 다시 누르세요' : d.desc}</span>
-                  </span>
-                  <Chevron open={isOpen} />
-                </button>
-                {isOpen && (
-                  <div className="pt-6 pb-12">
-                    <ErrorBoundary inline resetKey={d.id}>
-                      <DetailContent id={d.id} a={a} report={report} concern={concern} pickConcern={pickConcern} />
-                    </ErrorBoundary>
-                  </div>
-                )}
-              </li>
-            );
-          })}
+          {DETAILS.map((d) => (
+            <Row key={d.id} id={d.id} title={d.title} desc={d.desc} open={open === d.id} onToggle={() => toggle(d.id)}>
+              <DetailContent id={d.id} a={a} report={report} onConcern={openSection} />
+            </Row>
+          ))}
+        </ul>
+      </section>
+
+      <section className="mt-16" aria-labelledby="concerns">
+        <p className="kicker">고민 리포트</p>
+        <h2 id="concerns" className="mt-2 text-title2 text-ink">
+          지금 어떤 고민이 있어요?
+        </h2>
+        <p className="mt-1 text-label text-sub">세부 풀이가 ‘나는 어떤 사람인지’라면, 고민 리포트는 ‘그래서 언제, 어떻게’를 알려 드려요.</p>
+        {/* 지금은 베타라 산 기록이 없어 시안에서만 보인다. 결제를 붙이면 산 것이 있을 때 늘 보이게 바꾼다 */}
+        {PAYWALL_DEMO && (
+          <div className="mt-5">
+            <Suspense fallback={null}>
+              <ConcernTop a={a} />
+            </Suspense>
+          </div>
+        )}
+        <ul className="mt-4 border-t border-line">
+          {CONCERNS.map((c) => (
+            <Row key={c.id} id={c.id} title={c.title} desc={c.ask} open={open === c.id} onToggle={() => toggle(c.id)}>
+              <ConcernContent id={c.id} a={a} report={report} />
+            </Row>
+          ))}
         </ul>
       </section>
 

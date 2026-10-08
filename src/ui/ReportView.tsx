@@ -1,14 +1,27 @@
 import { useMemo, useState } from 'react';
 import { BETA_FREE, PREMIUM_SECTIONS } from '../config/plans.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
+import type { ConcernId } from '../report/concernList.ts';
 import type { GaeunData, GaeunItem } from '../report/gaeun.ts';
 import { generateReport, type ReportSection, type SectionId, type Statement } from '../report/generate.ts';
 import type { StoryPara } from '../report/story.ts';
 import { DivergingBars } from './Charts.tsx';
+import { ConcernBridge } from './ConcernBridge.tsx';
 import { Gloss, Lead, SectionTitle, TONE_STYLE } from './common.tsx';
 import { SectionRating } from './Feedback.tsx';
 
 const TAB_ORDER: SectionId[] = ['summary', 'gaeun', 'personality', 'love', 'career', 'wealth', 'health'];
+
+/** 풀이를 다 읽은 뒤 '그래서 언제, 어떻게?'로 이어 갈 고민 */
+const NEXT: Record<SectionId, { id: ConcernId; lead: string; peek?: false }> = {
+  summary: { id: 'year', lead: '그럼 올해는 어떻게 보내면 좋을까요?' },
+  gaeun: { id: 'year', lead: '올해는 언제, 무엇을 조심하면 좋을까요?', peek: false },
+  personality: { id: 'exam', lead: '내 성향에 맞는 공부법은 뭘까요?', peek: false },
+  love: { id: 'love', lead: '그래서 인연은 언제 올까요?' },
+  career: { id: 'career', lead: '그래서 지금 옮겨도 될까요?' },
+  wealth: { id: 'money', lead: '그래서 돈은 언제 모일까요?' },
+  health: { id: 'year', lead: '올해 건강은 언제 특히 조심해야 할까요?', peek: false },
+};
 
 function Evidence({ text, show }: { text?: string; show: boolean }) {
   if (!show || !text) return null;
@@ -247,9 +260,17 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
   );
 }
 
-export function ReportView({ a }: { a: SajuAnalysis }) {
+/** 고민 리포트를 보고 돌아와 다시 펼쳐도 읽던 탭이 그대로 열리게 (페이지를 새로 열면 처음부터) */
+let lastTab: SectionId = 'summary';
+
+/** onConcern — 있으면 탭 끝에 고민 리포트로 가는 카드를 붙인다 */
+export function ReportView({ a, onConcern }: { a: SajuAnalysis; onConcern?: (id: ConcernId) => void }) {
   const report = useMemo(() => generateReport(a), [a]);
-  const [tab, setTab] = useState<SectionId>('summary');
+  const [tab, setTabState] = useState<SectionId>(() => lastTab);
+  const setTab = (id: SectionId) => {
+    lastTab = id;
+    setTabState(id);
+  };
   const [showEvidence, setShowEvidence] = useState(true);
   const sec = report.sections.find((s) => s.id === tab)!;
   return (
@@ -286,6 +307,7 @@ export function ReportView({ a }: { a: SajuAnalysis }) {
       </label>
       <div className="mt-8">
         <SectionBody a={a} sec={sec} showEvidence={showEvidence} />
+        {onConcern && <ConcernBridge key={tab} a={a} report={report} {...NEXT[tab]} onGo={onConcern} />}
       </div>
     </section>
   );

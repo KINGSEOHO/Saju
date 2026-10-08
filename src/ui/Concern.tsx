@@ -1,7 +1,7 @@
 /**
- * 고민 리포트 — 고민을 고르면 그 고민에 맞춰 '한 줄 답'부터 보여 준다.
+ * 고민 리포트 — 결과 화면 아래 '고민 리포트' 칸에서 고민 한 줄을 펼치면 그 고민에 맞춰 '한 줄 답'부터 보여 준다.
  * 다섯 고민이 모두 같은 모양(report/concern.ts의 ConcernReport)이라 화면도 하나로 그린다.
- * 궁합·재회는 상대 정보를 넣는 기존 칸으로 보낸다.
+ * 궁합·재회 줄은 상대 정보를 넣는 화면(Match.tsx)을 그대로 쓴다.
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
@@ -409,32 +409,19 @@ function DemoBox({ u }: { u: Unlock }) {
   );
 }
 
-/** 아직 만들지 않은 고민 — 시안에서는 가격 사다리만 눌러 볼 수 있게 자리를 둔다 */
+/** 고민 하나 — 고민 리포트 칸의 줄을 펼치면 보인다 */
+export function ConcernBody({ a, report, id }: { a: SajuAnalysis; report: Report; id: ConcernId }) {
+  const u = useUnlock(sajuKey(a.input));
+  return <ConcernView a={a} report={report} id={id} u={u} />;
+}
 
-export function ConcernPanel({ a, report, concern, onPick }: { a: SajuAnalysis; report: Report; concern: ConcernId; onPick: (id: ConcernId) => void }) {
+/** 고민 리포트 칸 맨 위 — 내 구매 코드(산 것이 있을 때)와 시안 체험 상자. 궁합·재회에서 산 것도 같은 코드에 쌓인다 */
+export function ConcernTop({ a }: { a: SajuAnalysis }) {
   const u = useUnlock(sajuKey(a.input));
   return (
     <>
       {PAYWALL_DEMO && <DemoBox u={u} />}
       <CodeBox u={u} />
-      <div className="-mx-5 overflow-x-auto px-5 pb-1">
-        <div className="flex w-max gap-2" role="tablist" aria-label="고민 고르기">
-          {CONCERNS.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              role="tab"
-              aria-selected={concern === c.id}
-              onClick={() => onPick(c.id)}
-              className={`h-10 shrink-0 rounded-full border px-4 text-label font-semibold transition-colors ${concern === c.id ? 'border-accent bg-accent text-on-accent' : 'border-line text-ink active:bg-fill'}`}
-            >
-              {c.title}
-              {PAYWALL_DEMO && c.id !== 'match' && isOpen(u.ent, c.id) && <span className="ml-1 font-normal opacity-80">· 열림</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="mt-8">{concern !== 'match' && <ConcernView key={concern} a={a} report={report} id={concern} u={u} />}</div>
     </>
   );
 }
