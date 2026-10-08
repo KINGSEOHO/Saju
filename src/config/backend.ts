@@ -10,3 +10,10 @@
 const FALLBACK_SHEET_URL = '';
 
 export const SHEET_URL: string = (import.meta.env.VITE_SHEET_URL as string | undefined) || FALLBACK_SHEET_URL;
+
+/**
+ * 로그인·구매 기록 (Supabase) — 둘 다 사이트에 공개돼도 되는 값이다.
+ * 비밀 키(service_role · sb_secret_…)는 절대 여기에 넣지 않는다.
+ */
+export const SUPABASE_URL = 'https://xtubxywlsehlsphnnzsr.supabase.co';
+export const SUPABASE_KEY = 'sb_publishable_1SDzq-ggVfaGcd4ivrKSnA_KshOK3Tu';

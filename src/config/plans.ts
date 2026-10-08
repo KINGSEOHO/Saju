@@ -19,6 +19,16 @@ export const PREMIUM_SECTIONS: SectionId[] = ['love', 'career', 'wealth', 'healt
  * 점수·잘 맞는 점·부딪히는 점·띠/MBTI 한 줄은 무료로 둔다.
  */
 
+/**
+ * 고민 리포트 가격 (궁합·재회 빼고 5개) — 하나는 무료로 고르고, 하나 더 열 때마다 single, 나머지 전부는 합계 all.
+ * 하나씩 사도 '지금까지 낸 금액'과의 차액만 받고, 합계가 all을 넘지 않게 한다 (lib/entitlements.ts).
+ */
+export const CONCERN_PRICING = { single: 990, all: 2490 };
+/** 궁합·재회 상세 — 첫 상대는 무료, 그다음부터 한 명마다 */
+export const PARTNER_PRICE = 990;
+/** 미리보기에서만 결제 흐름을 흉내 낸다 (node scripts/preview-artifact.mjs --paywall) */
+export const PAYWALL_DEMO = import.meta.env.VITE_PAYWALL_DEMO === '1';
+
 /** 리뷰에서 지불 의향을 물을 가격 (원) — A/B 테스트 가능하도록 설정값으로 둔다 */
 export const PRICE_OPTIONS = [
   { id: 'free_only', label: '무료' },
