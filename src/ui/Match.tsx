@@ -4,20 +4,21 @@
  *  - 재회: 점수를 매기지 않고, 헤어진 시기·반복될 조건·연락하기 좋은 달만 알려 준다.
  * 상대 정보는 이 기기 안에서만 계산한다 (partnerDraft.ts).
  */
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { analyze, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
 import { CITIES } from '../engine/timezone.ts';
 import { checkDate, checkTime, formatTime, formatYmd } from '../lib/birthDraft.ts';
 import { checkBreakup, formatYm, loadPartner, partnerInput, savePartner, type PartnerDraft } from '../lib/partnerDraft.ts';
-import { compatReport, RELATION_LABEL, reunionReport, SCORE_NOTE, type CompatReport, type Factor, type Relation, type YearSign } from '../report/compat.ts';
+import { compatReport, RELATION_LABEL, reunionReport, SCORE_NOTE, type CompatReport, type Factor, type Relation, type ReunionReport, type YearSign } from '../report/compat.ts';
 import { MBTI_LIST } from '../report/mbti.ts';
 import { Gloss, Lead } from './common.tsx';
 import { CoupleShare } from './CoupleShare.tsx';
 import { GaeunRows } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
-import { Premium, useUnlock } from './Premium.tsx';
+import { Premium, useUnlock, type Peek } from './Premium.tsx';
 import { PAYWALL_DEMO } from '../config/plans.ts';
 import { partnerKey, partnerOffers, partnerOpen, sajuKey } from '../lib/entitlements.ts';
+import { track } from '../lib/funnel.ts';
 import { seasonKey } from '../report/season.ts';
 
 // ---------------------------------------------------------------------------
@@ -370,9 +371,36 @@ function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
   };
 }
 
+/** 궁합 잠금 화면에서 먼저 보여 줄 것 — 앞으로 10년 중 첫 해 (부딪히는 점은 무료에 이미 있으니 다툼은 빼고) */
+export function compatPeek(r: CompatReport): Peek | undefined {
+  const y = r.years[0];
+  if (!y) return undefined;
+  return {
+    label: `먼저 보여 드려요 · 앞으로 10년에서 ${r.years.length}개 중 1개`,
+    title: `${y.to ? `${y.year}–${String(y.to).slice(2)}` : y.year}년 · ${YEAR_KIND[y.kind].label}`,
+    text: y.text,
+    rest: `${r.years.length > 1 ? `나머지 ${r.years.length - 1}개와 ` : ''}반복되는 다툼, 서로에게 하는 말, 두 사람의 개운법은 열면 볼 수 있어요.`,
+  };
+}
+
+/** 재회 잠금 화면에서 먼저 보여 줄 것 — 연락하기 좋은 달 중 첫 달 (없으면 피할 달) */
+export function reunionPeek(a: SajuAnalysis, r: ReunionReport): Peek | undefined {
+  const [list, label, other, otherLabel] = r.good.length ? [r.good, '연락하기 좋은 달', r.avoid, '피할 달'] : [r.avoid, '연락을 피할 달', r.good, '좋은 달'];
+  const m = list[0];
+  if (!m) return undefined;
+  const rest = [list.length > 1 ? `나머지 ${list.length - 1}개` : '', other.length ? `${otherLabel} ${other.length}개` : ''].filter(Boolean);
+  return {
+    label: `먼저 보여 드려요 · ${label} ${list.length}개 중 1개`,
+    title: monthTitle(a, m.w),
+    text: m.why,
+    rest: `${rest.length ? `${rest.join('와 ')}, ` : ''}지금 할 일은 열면 볼 수 있어요.`,
+  };
+}
+
 function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Relation }) {
   const lock = usePartnerLock(a, b);
   const r = useMemo(() => compatReport(a, b), [a, b]);
+  useEffect(() => track('match_result', { item: 'compat' }), []);
   const noMbti = !a.input.mbti && !b.input.mbti ? '두 사람' : !a.input.mbti ? '내' : '상대';
   return (
     <>
@@ -424,6 +452,7 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
         what={b.input.name ? `${b.input.name}님과의 궁합` : '이 사람과의 궁합'}
         {...lock}
         items={['반복되는 다툼과 푸는 법', '서로에게 하면 좋은 말 · 피해야 할 말', 'MBTI로 본 대화 가이드', '앞으로 10년 — 함께 좋은 해와 흔들리는 해', '오래 가려면', '두 사람의 개운법 — 함께 갈 곳, 데이트 색, 함께 피할 것']}
+        peek={compatPeek(r)}
       >
         <CompatDetail r={r} />
       </Premium>
@@ -442,6 +471,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
   const months = useMemo(() => upcomingMonths(a, 12), [a]);
   const r = useMemo(() => reunionReport(a, b, breakup, months), [a, b, breakup?.year, breakup?.month, months]); // eslint-disable-line react-hooks/exhaustive-deps
   const c = useMemo(() => compatReport(a, b), [a, b]);
+  useEffect(() => track('match_result', { item: 'reunion' }), []);
   const head = r.breakup ? (r.breakup.shaken ? '그때는 흔들리기 쉬운 시기였어요' : '시기보다 두 사람 사이의 문제에 가까웠어요') : '다시 만난다면, 이것부터 봐야 해요';
   return (
     <>
@@ -508,7 +538,14 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
         </ul>
       </section>
 
-      <Premium id="reunion" title="재회 상세 리포트" what={b.input.name ? `${b.input.name}님과의 재회` : '이 사람과의 재회'} {...lock} items={['앞으로 12개월 — 연락하기 좋은 달과 피할 달', '지금 할 일 네 가지', '다시 만난다면 서로에게 하면 좋은 말 · 피할 말']}>
+      <Premium
+        id="reunion"
+        title="재회 상세 리포트"
+        what={b.input.name ? `${b.input.name}님과의 재회` : '이 사람과의 재회'}
+        {...lock}
+        items={['앞으로 12개월 — 연락하기 좋은 달과 피할 달', '지금 할 일 네 가지', '다시 만난다면 서로에게 하면 좋은 말 · 피할 말']}
+        peek={reunionPeek(a, r)}
+      >
         <Block title="연락하기 좋은 달" desc="두 사람의 배우자 자리와 손잡는 달, 인연의 기운이 드는 달이에요.">
           {r.good.length ? (
             <ul className="border-t border-line">

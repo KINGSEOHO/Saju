@@ -5,6 +5,8 @@
  *  - 전부 열기(고민 4개 + 그해 신년운세): 9,900원. 하나씩 산 금액은 빼 주고, 합계가 9,900원을 넘지 않게 한다.
  *    지난 시즌에 낸 신년운세 값은 빼 주지 않는다 (그건 그해 상품이라서).
  *  - 궁합·재회 상세: 상대 한 명마다 4,900원 (그 사람과의 궁합·재회가 함께 열린다).
+ *  - 첫 결제 혜택: 한 번도 결제하지 않은 계정은 고민 4개 중 하나를 처음 한 번만 1,900원에 연다.
+ *    낸 돈은 그대로 '전부 열기' 차액에 셈한다 (1,900원을 냈으면 나머지 전부는 8,000원).
  * 예전 시안의 무료 기록('free'·'partnerFree')은 그대로 열어 둔다.
  * 구매 기록에는 '무엇을(항목) · 어느 사주의 것인지(생년월일로 만든 짧은 암호값) · 얼마에 · 언제'만 남긴다.
  */
@@ -49,6 +51,8 @@ export interface Ent {
   spent: number;
   /** 연 상대 (돈 내고 연 상대 + 예전 시안의 무료 상대) */
   partners: string[];
+  /** 이 계정에서 아직 한 번도 결제하지 않았는지 (어느 사주든) — 첫 결제 혜택 */
+  first: boolean;
 }
 
 /** 돈을 받는 고민 (궁합·재회는 상대마다 따로라 빠진다) */
@@ -78,7 +82,7 @@ const DEFAULT_SEASON: SeasonKey = { year: 0, title: '올해 운세' };
  * 이번 묶음에 낸 돈이 '전부 열기' 가격에 이르면 전부 연다 — 어떤 순서로 사도 9,900원보다 더 내지 않게.
  */
 export function entOf(list: Purchase[], saju: string, season: SeasonKey = DEFAULT_SEASON, prices = PRICES): Ent {
-  const e: Ent = { season, paid: [], frees: [], years: [], all: false, spent: 0, partners: [] };
+  const e: Ent = { season, paid: [], frees: [], years: [], all: false, spent: 0, partners: [], first: !list.some((p) => p.amount > 0) };
   for (const p of list) {
     if (p.item === 'match') {
       const [s, pk] = p.target.split('>');
@@ -123,9 +127,14 @@ export interface Offer {
   cost: number;
   label: string;
   note?: string;
+  /** 혜택이면 그 이름과 원래 가격 (첫 결제 혜택) */
+  promo?: { name: string; was: number };
 }
 
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
+
+/** 하나를 사고 나면 '전부 열기'까지 이만큼도 안 남을 때는 하나 대신 전부 열기만 보여 준다 — 몇백 원짜리 결제를 만들지 않으려고 */
+const MIN_REST = 1000;
 
 /** 잠긴 고민 하나에서 보여 줄 선택지 — 첫째가 주 버튼 */
 export function concernOffers(e: Ent, id: ConcernId, prices = PRICES): Offer[] {
@@ -135,13 +144,23 @@ export function concernOffers(e: Ent, id: ConcernId, prices = PRICES): Offer[] {
   const lockedCore = CORE_CONCERNS.filter((c) => !isOpen(e, c)).length;
   // 고민 4개가 이미 다 열린 사람에게 남은 것은 그해 신년운세뿐
   if (id === 'year' && e.all) return [{ kind: 'one', cost: prices.year, label: `${won(prices.year)}에 ${yearName} 열기`, note: '고민 4개는 이미 열려 있어요.' }];
-  const single = id === 'year' ? prices.year : prices.concern;
+  // 첫 결제 혜택은 고민 4개에만 (신년운세는 시즌 상품이라 정가)
+  const welcome = e.first && id !== 'year';
+  const single = id === 'year' ? prices.year : welcome ? prices.first : prices.concern;
   const allCost = Math.max(prices.all - e.spent, 0);
   // '전부 열기'로 함께 열리는 것
   const rest = [...(yearOpen ? [] : [yearName]), ...(lockedCore ? [`고민 ${lockedCore}개`] : [])].join('와 ');
   const out: Offer[] = [];
-  // 하나만 — 합계가 '전부 열기'보다 쌀 때만
-  if (e.spent + single < prices.all) {
+  // 하나만 — 사고 나서도 '전부 열기'까지 1,000원 이상 남을 때만 (첫 결제 혜택은 늘)
+  if (welcome) {
+    out.push({
+      kind: 'one',
+      cost: single,
+      label: `첫 결제 ${won(single)}에 이 고민 열기`,
+      note: `처음 한 번만이에요 · 다음부터는 ${won(prices.concern)}`,
+      promo: { name: '첫 결제 혜택', was: prices.concern },
+    });
+  } else if (e.spent + single <= prices.all - MIN_REST) {
     out.push({
       kind: 'one',
       cost: single,

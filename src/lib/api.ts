@@ -7,7 +7,7 @@ import { SHEET_URL } from '../config/backend.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { matchJob } from '../report/job.ts';
 import { parseMbti } from '../report/mbti.ts';
-import { computeStats, type RawData, type Stats } from './stats.ts';
+import { computeFunnel, computeStats, type RawData, type Stats } from './stats.ts';
 
 const QUEUE_KEY = 'mg_pending_v1';
 const SESSION_KEY = 'mg_session_v1';
@@ -170,5 +170,7 @@ export async function fetchStats(token: string): Promise<Stats> {
   }
   const r = await fetch('/api/stats', { headers: { Authorization: `Bearer ${token}` } });
   if (!r.ok) throw new Error(r.status === 401 ? '관리자 토큰이 올바르지 않습니다.' : `서버 오류 (${r.status})`);
-  return r.json();
+  // 자체 서버는 단계별 측정의 원본(최근 90일)만 넘기고, 계산은 시트와 같은 함수로 한다
+  const { funnelEvents, ...rest } = (await r.json()) as Omit<Stats, 'funnel'> & { funnelEvents?: RawData['events'] };
+  return { ...rest, funnel: computeFunnel(funnelEvents ?? []) };
 }

@@ -34,6 +34,89 @@ export interface Stats {
   recentReviews: { created_at: string; overall: number; accuracy: number; text: string | null; price: string | null; meta: Meta }[];
   recentComments: { created_at: string; section: string; rating: number; comment: string }[];
   decision: { ready: boolean; notes: string[]; wtpPaidShare: number | null; medianPrice: string | null };
+  funnel: Funnel;
+}
+
+/** 단계별 측정 — 단계마다 몇 명(기기)이 남았는지. src/lib/funnel.ts가 남긴 이벤트로 계산한다 */
+export interface Funnel {
+  /** 측정을 시작한 때 (첫 '접속' 기록). 그 전의 기록은 세지 않는다 */
+  since: string | null;
+  steps: { key: string; label: string; n: number }[];
+  /** 고민마다 — 펼침 · 상세나 가격 화면 봄 · 결제 버튼 · 결제 · 매출 */
+  items: { item: string; label: string; open: number; view: number; click: number; paid: number; revenue: number }[];
+  /** 궁합·재회를 펼친 사람과 상대 정보를 넣고 결과까지 본 사람 */
+  match: { open: number; result: number };
+  /** 결제 버튼에서 고른 선택지 (first = 첫 결제 혜택) */
+  offers: Bucket[];
+  revenue: number;
+  /** 접속한 사람 한 명당 매출 */
+  perVisitor: number | null;
+}
+
+type FunnelEvent = RawData['events'][number];
+
+const FUNNEL_ITEMS: [string, string][] = [
+  ['career', '이직·진로'],
+  ['love', '연애·결혼'],
+  ['money', '돈'],
+  ['exam', '시험·합격'],
+  ['year', '신년운세'],
+  ['match', '궁합·재회'],
+];
+
+export function computeFunnel(events: FunnelEvent[]): Funnel {
+  const visits = events.filter((e) => e.type === 'visit').map((e) => String(e.created_at));
+  const since = visits.length ? visits.reduce((m, t) => (t < m ? t : m)) : null;
+  const ev = since ? events.filter((e) => String(e.created_at) >= since) : [];
+  const itemOf = (e: FunnelEvent) => {
+    const it = String(e.meta?.item ?? '');
+    return it === 'compat' || it === 'reunion' ? 'match' : it;
+  };
+  const who = (pred: (e: FunnelEvent) => boolean) => new Set(ev.filter(pred).map((e) => e.session_id)).size;
+  function is(...types: string[]) {
+    return (e: FunnelEvent) => types.includes(e.type);
+  }
+  const paidRows = ev.filter(is('paid'));
+  const money = (rows: FunnelEvent[]) => rows.reduce((sum, e) => sum + (Number(e.meta?.amount) || 0), 0);
+  const revenue = money(paidRows);
+  const visitors = who(is('visit'));
+  // 궁합·재회를 펼친 사람 중 상대 정보를 넣고 결과까지 본 사람 (펼친 기록이 없는 결과는 세지 않는다)
+  function matchStep() {
+    const opened = new Set(ev.filter((e) => e.type === 'concern_open' && itemOf(e) === 'match').map((e) => e.session_id));
+    const result = new Set(ev.filter((e) => e.type === 'match_result' && opened.has(e.session_id)).map((e) => e.session_id));
+    return { open: opened.size, result: result.size };
+  }
+  return {
+    since: since ? fmtTime(since) : null,
+    steps: [
+      { key: 'visit', label: '사이트 접속', n: visitors },
+      { key: 'analyze', label: '결과 봄', n: who(is('analyze')) },
+      { key: 'concern_open', label: '고민 리포트 펼침', n: who(is('concern_open')) },
+      { key: 'view', label: '상세나 가격 화면까지 봄', n: who(is('detail_view', 'lock_view')) },
+      { key: 'pay_click', label: '결제 버튼 누름', n: who(is('pay_click')) },
+      { key: 'paid', label: '결제 완료', n: who(is('paid')) },
+    ],
+    items: FUNNEL_ITEMS.map(([item, label]) => {
+      const mine = (...types: string[]) => {
+        const hit = is(...types);
+        return (e: FunnelEvent) => hit(e) && itemOf(e) === item;
+      };
+      const rows = paidRows.filter((e) => itemOf(e) === item);
+      return {
+        item,
+        label,
+        open: who(mine('concern_open')),
+        view: who(mine('detail_view', 'lock_view')),
+        click: who(mine('pay_click')),
+        paid: rows.length,
+        revenue: money(rows),
+      };
+    }),
+    match: matchStep(),
+    offers: count(ev.filter(is('pay_click')).map((e) => String(e.meta?.offer ?? ''))),
+    revenue,
+    perVisitor: visitors ? revenue / visitors : null,
+  };
 }
 
 const SECTIONS = ['summary', 'personality', 'love', 'career', 'wealth', 'health', 'gaeun', 'webtoon'];
@@ -127,5 +210,6 @@ export function computeStats(raw: RawData): Stats {
     })),
     recentComments: [...fb].reverse().filter((f) => f.comment).slice(0, 30).map((f) => ({ created_at: fmtTime(f.created_at), section: f.section, rating: Number(f.rating), comment: String(f.comment) })),
     decision: { ready, notes, wtpPaidShare, medianPrice },
+    funnel: computeFunnel(ev),
   };
 }

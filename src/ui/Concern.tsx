@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { PAYWALL_DEMO, PRICES } from '../config/plans.ts';
 import { resetDemo } from '../lib/account.ts';
+import { clearFunnel, funnelLog, ITEM_LABEL, STEP_LABEL } from '../lib/funnel.ts';
 import { formatYm } from '../lib/partnerDraft.ts';
 import { concernOffers, isOpen, purchaseLabel, sajuKey } from '../lib/entitlements.ts';
 import { concernReport, examMonthOf, LOVE_STATUS_LABEL, type ConcernReport, type LoveStatus, type MonthRow, type MonthSign } from '../report/concern.ts';
@@ -16,7 +17,7 @@ import { seasonKey } from '../report/season.ts';
 import { Gloss, Lead, TONE_STYLE } from './common.tsx';
 import { GaeunDetail, GaeunTaste } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
-import { Premium, useUnlock } from './Premium.tsx';
+import { Premium, useUnlock, type Peek } from './Premium.tsx';
 
 type Unlock = ReturnType<typeof useUnlock>;
 
@@ -255,6 +256,33 @@ function ConcernDetail({ a, c }: { a: SajuAnalysis; c: ConcernReport }) {
   );
 }
 
+/**
+ * 잠금 화면에서 먼저 보여 줄 결과 하나 — 좋은 달 중 첫 달. 신년운세는 무료에서 힘이 실리는 달을 이미 보여 주므로 조심할 달을.
+ * 달이 하나도 없으면 첫 목록(지금 할 일 등)의 첫 줄.
+ */
+export function concernPeek(a: SajuAnalysis, c: ConcernReport): Peek | undefined {
+  const m = c.detail.months;
+  if (m) {
+    const go = m.list.filter((x) => x.kind === 'go');
+    const avoid = m.list.filter((x) => x.kind === 'avoid');
+    const order = c.id === 'year' ? [{ list: avoid, label: m.avoidLabel, other: go, otherLabel: m.goLabel }] : [];
+    order.push({ list: go, label: m.goLabel, other: avoid, otherLabel: m.avoidLabel }, { list: avoid, label: m.avoidLabel, other: go, otherLabel: m.goLabel });
+    const pick = order.find((x) => x.list.length);
+    if (pick) {
+      const rest = [pick.list.length > 1 ? `나머지 ${pick.list.length - 1}개` : '', pick.other.length ? `${pick.otherLabel} ${pick.other.length}개` : ''].filter(Boolean);
+      return {
+        label: `먼저 보여 드려요 · ${pick.label} ${pick.list.length}개 중 1개`,
+        title: monthTitle(a, pick.list[0].w),
+        text: pick.list[0].why,
+        rest: `${rest.length ? `${rest.join('와 ')}, ` : ''}그 밖의 내용은 열면 볼 수 있어요.`,
+      };
+    }
+  }
+  const l = c.detail.lists.find((x) => x.items.length);
+  if (!l) return undefined;
+  return { label: `먼저 보여 드려요 · ${l.title}`, title: `${l.items.length}가지 중 첫째`, text: l.items[0], rest: '나머지와 그 밖의 내용은 열면 볼 수 있어요.' };
+}
+
 function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id: ConcernId; u: Unlock }) {
   const months = useMemo(() => upcomingMonths(a, 12), [a]);
   const [love, setLove] = useTabState<LoveStatus>('mg_love_status', 'single');
@@ -344,6 +372,7 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         offers={concernOffers(u.ent, id)}
         onTake={(o) => u.buy(o, id)}
         onRedeem={u.redeem}
+        peek={concernPeek(a, c)}
       >
         <ConcernDetail a={a} c={c} />
       </Premium>
@@ -392,13 +421,42 @@ function CodeBox({ u }: { u: Unlock }) {
   );
 }
 
+/** 시안 전용 — 이 기기에서 남긴 측정 단계 (시안이라 어디에도 보내지 않는다) */
+function FunnelLog() {
+  const [log, setLog] = useState(funnelLog);
+  useEffect(() => {
+    const on = () => setLog(funnelLog());
+    window.addEventListener('mg-funnel', on);
+    return () => window.removeEventListener('mg-funnel', on);
+  }, []);
+  return (
+    <details className="mt-2 border-t border-line pt-2" data-funnel-log>
+      <summary className="cursor-pointer text-label font-semibold text-ink-2">측정 기록 {log.length}개 보기</summary>
+      <p className="mt-1 text-cap text-sub">실제 사이트에서는 이 단계들이 이름·생년월일 없이 통계 시트로 가요. 시안에서는 보내지 않고 여기에만 남겨요.</p>
+      {log.length > 0 && (
+        <ol className="mt-2 space-y-0.5 text-label text-ink-2">
+          {log.map((x, i) => (
+            <li key={`${x.at}-${i}`} className="tabular-nums">
+              {i + 1}. {STEP_LABEL[x.step]}
+              {x.meta.item ? ` · ${ITEM_LABEL[String(x.meta.item)] ?? x.meta.item}` : ''}
+              {typeof x.meta.amount === 'number' ? ` · ${x.meta.amount.toLocaleString('ko-KR')}원` : ''}
+              {x.meta.offer === 'first' ? ' (첫 결제 혜택)' : ''}
+            </li>
+          ))}
+        </ol>
+      )}
+    </details>
+  );
+}
+
 /** 시안 전용 — 지금까지 연 것과 처음부터 다시 */
 function DemoBox({ u }: { u: Unlock }) {
   return (
     <div className="mb-4 rounded-xl border border-dashed border-line-strong px-4 py-3">
       <p className="text-cap font-semibold text-sub">시안 · 결제 흐름 체험 (실제로 결제되지 않아요)</p>
       <p className="mt-1 text-label text-ink-2">
-        이번 묶음에 낸 돈 {u.ent.spent.toLocaleString('ko-KR')}원 · 기록 {u.purchases.length}건 · 전부 열기 {PRICES.all.toLocaleString('ko-KR')}원까지만
+        이번 묶음에 낸 돈 {u.ent.spent.toLocaleString('ko-KR')}원 · 기록 {u.purchases.length}건 · 전부 열기 {PRICES.all.toLocaleString('ko-KR')}원까지만 · 첫 결제 혜택{' '}
+        {u.ent.first ? '남아 있음' : '씀'}
       </p>
       {u.purchases.length > 0 && (
         <ul className="mt-2 border-t border-line text-label">
@@ -410,9 +468,17 @@ function DemoBox({ u }: { u: Unlock }) {
           ))}
         </ul>
       )}
-      <button type="button" className="link mt-2 text-label" onClick={resetDemo}>
+      <button
+        type="button"
+        className="link mt-2 text-label"
+        onClick={() => {
+          resetDemo();
+          clearFunnel();
+        }}
+      >
         새 휴대폰처럼 처음부터 (코드 입력 시험용)
       </button>
+      <FunnelLog />
     </div>
   );
 }

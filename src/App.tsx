@@ -2,10 +2,11 @@ import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 're
 import { PAYWALL_DEMO } from './config/plans.ts';
 import { analyze, pillarHanja, STEMS, type BirthInput, type SajuAnalysis } from './engine/index.ts';
 import { groupOf } from './engine/tenGods.ts';
-import { flushQueue, send, sessionId } from './lib/api.ts';
+import { flushQueue } from './lib/api.ts';
+import { track } from './lib/funnel.ts';
 import { clearDraft, inputToDraft, saveDraft } from './lib/birthDraft.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
-import { concernsFor, type ConcernId } from './report/concernList.ts';
+import { CONCERNS, concernsFor, type ConcernId } from './report/concernList.ts';
 import { crossReport } from './report/cross.ts';
 import { generateReport, type Report } from './report/generate.ts';
 import { AXES, sajuAxes } from './report/mbti.ts';
@@ -94,6 +95,8 @@ export default function App() {
     const on = () => setRoute(parseRoute());
     window.addEventListener('hashchange', on);
     flushQueue();
+    // 단계별 측정의 첫 단계 — 관리 화면으로 들어온 것은 세지 않는다 (한 번 방문에 한 번)
+    if (parseRoute().name !== 'admin') track('visit');
     return () => window.removeEventListener('hashchange', on);
   }, []);
 
@@ -343,10 +346,12 @@ function Result({ input }: { input: BirthInput }) {
   const [jump, setJump] = useState<{ id: RowId; n: number } | null>(null);
 
   useEffect(() => {
-    if ('a' in result) {
-      send('events', { sessionId: sessionId(), type: 'analyze', meta: { dayStem: result.a.pillars.day.stem, gender: input.gender, timeKnown: result.a.pillars.timeKnown } });
-    }
+    if ('a' in result) track('analyze', { dayStem: result.a.pillars.day.stem, gender: input.gender, timeKnown: result.a.pillars.timeKnown }, false);
   }, [result, input.gender]);
+  // 고민 리포트를 펼치면 (줄을 누르든, 결론 아래 지름길이나 세부 풀이의 안내로 오든) 그 고민을 한 번 센다
+  useEffect(() => {
+    if (open && CONCERNS.some((c) => c.id === open)) track('concern_open', { item: open });
+  }, [open]);
 
   const report = useMemo(() => ('a' in result ? generateReport(result.a) : null), [result]);
   const cross = useMemo(() => ('a' in result && report ? crossReport(result.a, report) : null), [result, report]);

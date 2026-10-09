@@ -23,6 +23,10 @@ var META = [
   ['calendar', '달력'],
   ['mbti', 'MBTI'],
   ['jobCat', '직업분야'],
+  // 단계별 측정(이벤트)용 — 뒤에 붙여야 예전 행의 열 위치가 그대로다
+  ['item', '항목'],
+  ['offer', '선택'],
+  ['amount', '금액'],
 ];
 
 var TABLES = {
@@ -44,11 +48,12 @@ var TABLES = {
 };
 
 var SECTIONS = ['summary', 'personality', 'love', 'career', 'wealth', 'health', 'gaeun', 'webtoon'];
-// 지금 묻는 가격: 무료 / 990원 / 1,990원 (예전 응답 값도 계속 받는다)
-var PRICES = ['free_only', 'p990', 'p1990', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900'];
+// 지금 묻는 가격: 무료 / 1,900원 / 3,900원 / 6,900원 / 9,900원 (예전 응답 값도 계속 받는다)
+var PRICES = ['free_only', 'p990', 'p1900', 'p1990', 'p2900', 'p3900', 'p4900', 'p6900', 'p9900', 'p19900', 'p29900'];
 var FEATURES = ['monthly', 'compat', 'daeun_detail', 'pdf', 'expert', 'career_deep', 'date_pick', 'name'];
 var COMPARES = ['much_better', 'better', 'same', 'worse', 'never'];
-var EVENTS = ['analyze', 'share', 'print', 'premium_interest'];
+// 단계별 측정: 접속 → 결과 봄 → 고민 펼침 → (궁합 결과) → 상세·가격 화면 봄 → 결제 버튼 → 결제 완료
+var EVENTS = ['analyze', 'share', 'print', 'premium_interest', 'visit', 'concern_open', 'match_result', 'detail_view', 'lock_view', 'pay_click', 'paid'];
 
 function json(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);

@@ -4,7 +4,7 @@ import { FEATURE_OPTIONS, PRICE_LABEL } from '../config/plans.ts';
 import { STEMS } from '../engine/index.ts';
 import { SHEET_URL } from '../config/backend.ts';
 import { checkConnection, fetchStats, flushQueue, pendingCount } from '../lib/api.ts';
-import type { Stats } from '../lib/stats.ts';
+import type { Funnel, Stats } from '../lib/stats.ts';
 
 const SECTION_KO: Record<string, string> = { summary: '종합', personality: '성향', love: '연애·결혼', career: '직업·이직', wealth: '재물', health: '건강', gaeun: '개운법', webtoon: '인생 웹툰' };
 const PRICE_KO = PRICE_LABEL;
@@ -50,6 +50,95 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
       <h3 className="mb-3 text-ui font-semibold text-ink">{title}</h3>
       {children}
     </div>
+  );
+}
+
+const OFFER_KO: Record<string, string> = { first: '첫 결제 1,900원', one: '하나 열기', all: '전부 열기', partner: '궁합·재회 1명' };
+const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : '-');
+const won = (n: number) => `${Math.round(n).toLocaleString('ko-KR')}원`;
+
+/** 결제까지 가는 길 — 단계마다 몇 명이 남았는지, 어디서 가장 많이 빠지는지 */
+function FunnelView({ f }: { f: Funnel }) {
+  if (!f.since)
+    return (
+      <section>
+        <h2 className="text-title2 text-ink">결제까지 가는 길</h2>
+        <p className="mt-2 text-label text-sub">아직 측정 기록이 없어요. 측정을 넣은 버전이 배포되고, 시트의 Apps Script도 새 코드로 다시 배포한 뒤부터 쌓여요 (docs/SETUP-SHEETS.md).</p>
+      </section>
+    );
+  const top = f.steps[0].n;
+  return (
+    <section>
+      <h2 className="text-title2 text-ink">결제까지 가는 길</h2>
+      <p className="mt-1 text-cap text-sub">{f.since}부터 · 사람 수는 기기 기준 · 이름·생년월일 없이 단계만 세요</p>
+      <ol className="mt-4 border-t border-line">
+        {f.steps.map((s, i) => (
+          <li key={s.key} className="border-b border-line py-3">
+            <div className="flex items-baseline justify-between gap-3 text-label">
+              <span className="text-ink">
+                {i + 1}. {s.label}
+              </span>
+              <span className="shrink-0 tabular-nums text-ink">
+                <b>{s.n}</b>명
+                {i > 0 && (
+                  <span className="text-sub">
+                    {' '}
+                    · 앞 단계의 {pct(s.n, f.steps[i - 1].n)} · 처음의 {pct(s.n, top)}
+                  </span>
+                )}
+              </span>
+            </div>
+            <div className="mt-1.5 h-2 overflow-hidden rounded bg-fill">
+              <div className="h-full rounded bg-accent" style={{ width: top ? `${(s.n / top) * 100}%` : '0%' }} />
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Stat label="매출 (결제 완료 합계)" value={won(f.revenue)} />
+        <Stat label="접속한 사람 1명당 매출" value={f.perVisitor === null ? '-' : won(f.perVisitor)} />
+      </div>
+      <p className="mt-3 text-cap text-sub">
+        가격 화면은 보는데 버튼을 안 누르면 가격이나 맛보기 문제, 버튼은 누르는데 결제를 끝내지 않으면 결제 과정 문제, 고민 리포트를 안 펼치면 무료 부분이 궁금증을 못 만드는 거예요. 베타 기간에는 잠금
+        화면이 없어 ‘상세까지 봄’이 곧 관심도예요.
+      </p>
+      <div className="mt-6 overflow-x-auto">
+        <table className="w-full min-w-[30rem] text-label tabular-nums">
+          <thead>
+            <tr className="border-b border-line-strong text-left text-cap text-sub">
+              <th className="py-2 font-semibold">고민</th>
+              <th className="py-2 text-right font-semibold">펼침</th>
+              <th className="py-2 text-right font-semibold">상세·가격 봄</th>
+              <th className="py-2 text-right font-semibold">결제 버튼</th>
+              <th className="py-2 text-right font-semibold">결제</th>
+              <th className="py-2 text-right font-semibold">매출</th>
+            </tr>
+          </thead>
+          <tbody>
+            {f.items.map((r) => (
+              <tr key={r.item} className="border-b border-line">
+                <td className="py-2 text-ink">{r.label}</td>
+                <td className="py-2 text-right">{r.open}</td>
+                <td className="py-2 text-right">{r.view}</td>
+                <td className="py-2 text-right">{r.click}</td>
+                <td className="py-2 text-right">{r.paid}</td>
+                <td className="py-2 text-right">{won(r.revenue)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-cap text-sub">
+        궁합·재회는 펼친 {f.match.open}명 중 {f.match.result}명({pct(f.match.result, f.match.open)})이 상대 정보를 넣고 결과까지 봤어요.
+      </p>
+      {f.offers.length > 0 && (
+        <div className="mt-6">
+          <Group title="결제 버튼에서 고른 것">
+            <HBars rows={f.offers.map((o) => ({ label: OFFER_KO[o.key] ?? o.key, n: o.n }))} unit="번" />
+          </Group>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -129,6 +218,7 @@ export function Admin() {
       </form>
       {stats && (
         <>
+          <FunnelView f={stats.funnel} />
           <section>
             <h2 className="text-title2 text-ink">유료화 판단 지표</h2>
             <div className="mt-4 grid grid-cols-2 gap-2">

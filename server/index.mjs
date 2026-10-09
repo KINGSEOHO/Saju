@@ -63,12 +63,16 @@ db.exec(`
 // 유틸
 // ---------------------------------------------------------------------------
 const SECTIONS = new Set(['summary', 'personality', 'love', 'career', 'wealth', 'health', 'gaeun', 'webtoon']);
-const PRICES = new Set(['free_only', 'p990', 'p1990', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900']);
-const PRICE_ORDER = ['free_only', 'p990', 'p1990', 'p2900', 'p4900', 'p9900', 'p19900', 'p29900'];
+const PRICE_ORDER = ['free_only', 'p990', 'p1900', 'p1990', 'p2900', 'p3900', 'p4900', 'p6900', 'p9900', 'p19900', 'p29900'];
+const PRICES = new Set(PRICE_ORDER);
 const FEATURES = new Set(['monthly', 'compat', 'daeun_detail', 'pdf', 'expert', 'career_deep', 'date_pick', 'name']);
 const COMPARES = new Set(['much_better', 'better', 'same', 'worse', 'never']);
-const EVENT_TYPES = new Set(['analyze', 'share', 'print', 'premium_interest']);
-const META_KEYS = ['dayPillar', 'dayStem', 'gender', 'ageGroup', 'strength', 'gyeokguk', 'yongsin', 'yongsinMethod', 'confidence', 'timeKnown', 'calendar', 'mbti', 'jobCat'];
+// 단계별 측정(src/lib/funnel.ts)과 같은 이름
+const FUNNEL_TYPES = ['visit', 'analyze', 'concern_open', 'match_result', 'detail_view', 'lock_view', 'pay_click', 'paid'];
+const EVENT_TYPES = new Set(['share', 'print', 'premium_interest', ...FUNNEL_TYPES]);
+const CHART_KEYS = ['dayPillar', 'dayStem', 'gender', 'ageGroup', 'strength', 'gyeokguk', 'yongsin', 'yongsinMethod', 'confidence', 'timeKnown', 'calendar', 'mbti', 'jobCat'];
+// 단계별 측정(이벤트)용 — 어느 고민 · 고른 선택지 · 금액
+const META_KEYS = [...CHART_KEYS, 'item', 'offer', 'amount'];
 
 const int15 = (v) => (Number.isInteger(v) && v >= 1 && v <= 5 ? v : null);
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) || null : null);
@@ -211,6 +215,11 @@ function stats() {
     meta: r.meta ? JSON.parse(r.meta) : {},
   }));
   const recentComments = q('SELECT created_at, section, rating, comment FROM feedback WHERE comment IS NOT NULL ORDER BY id DESC LIMIT 30');
+  // 단계별 측정 — 최근 90일 원본을 넘기고, 계산은 관리 화면(src/lib/stats.ts의 computeFunnel)이 한다
+  const funnelEvents = q(
+    `SELECT created_at, session_id, type, meta FROM events WHERE type IN (${FUNNEL_TYPES.map(() => '?').join(',')}) AND created_at >= datetime('now', '-90 days') ORDER BY id`,
+    ...FUNNEL_TYPES,
+  ).map((r) => ({ ...r, meta: r.meta ? JSON.parse(r.meta) : {} }));
 
   // 유료 전환 판단 보조 (docs/MONETIZATION.md 의 게이트 기준)
   const priced = price.reduce((a, p) => a + p.n, 0);
@@ -253,6 +262,7 @@ function stats() {
     daily,
     recentReviews,
     recentComments,
+    funnelEvents,
     decision: { ready, notes, wtpPaidShare, medianPrice },
   };
 }

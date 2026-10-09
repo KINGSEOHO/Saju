@@ -208,7 +208,14 @@ export function ReviewForm({ a }: { a: SajuAnalysis }) {
         <legend className="text-label font-semibold text-ink">이 정도 상세 리포트라면 한 번에 얼마까지 낼 수 있나요?</legend>
         <div className="seg mt-2" role="radiogroup">
           {PRICE_OPTIONS.map((p) => (
-            <button type="button" key={p.id} role="radio" aria-checked={price === p.id} onClick={() => setPrice(p.id)} className={`seg-item text-ui ${price === p.id ? 'seg-on' : ''}`}>
+            <button
+              type="button"
+              key={p.id}
+              role="radio"
+              aria-checked={price === p.id}
+              onClick={() => setPrice(p.id)}
+              className={`seg-item px-1 whitespace-nowrap tabular-nums ${price === p.id ? 'seg-on' : ''}`}
+            >
               {p.label}
             </button>
           ))}
