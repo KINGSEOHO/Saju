@@ -221,6 +221,10 @@ export function isHyungPair(a: number, b: number): boolean {
   if ((a === 0 && b === 3) || (a === 3 && b === 0)) return true;
   return SAMHYEONG.some((g) => g.includes(a) && g.includes(b));
 }
+/** 자형(自刑) — 辰·午·酉·亥가 같은 글자끼리 만날 때 */
+export function isJahyeong(a: number, b: number): boolean {
+  return a === b && JAHYEONG.includes(a);
+}
 /** 같은 삼합 무리의 두 글자면 그 오행 */
 export function samhapPair(a: number, b: number): Element | null {
   if (a === b) return null;

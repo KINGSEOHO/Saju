@@ -389,6 +389,9 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
         <TierScale score={r.score} />
         <p className="mt-4 text-ui text-ink-2">{r.tierText}</p>
         <Notice title="점수는 참고만 하세요" text={SCORE_NOTE} />
+        {r.notes.map((t) => (
+          <Notice key={t} title="정확도 안내" text={t} />
+        ))}
       </section>
 
       <section className="mt-12">
@@ -448,6 +451,9 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
           {head}
         </h3>
         <Notice title="재회는 점수로 보지 않아요" text={r.note} />
+        {c.notes.map((t) => (
+          <Notice key={t} title="정확도 안내" text={t} />
+        ))}
       </section>
 
       <section className="mt-12">
@@ -458,6 +464,18 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
             <p className="read mt-3">
               <Lead text={r.breakup.text} />
             </p>
+            {r.breakup.signals.length > 0 && (
+              <ul className="mt-4 space-y-2.5">
+                {r.breakup.signals.map((s) => (
+                  <li key={s} className="flex gap-2.5 text-ui text-ink-2">
+                    <span aria-hidden className={`mt-2 size-1.5 shrink-0 rounded-full ${r.breakup!.shaken ? 'bg-ink' : 'bg-faint'}`} />
+                    <span>
+                      <Gloss text={s} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <p className="mt-2 text-cap text-sub">
               <Gloss text={`헤어질 무렵의 운: ${r.breakup.basis}`} />
             </p>
@@ -491,7 +509,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
       </section>
 
       <Premium id="reunion" title="재회 상세 리포트" what={b.input.name ? `${b.input.name}님과의 재회` : '이 사람과의 재회'} {...lock} items={['앞으로 12개월 — 연락하기 좋은 달과 피할 달', '지금 할 일 네 가지', '다시 만난다면 서로에게 하면 좋은 말 · 피할 말']}>
-        <Block title="연락하기 좋은 달" desc="두 사람의 배우자 자리와 손잡는 달, 내 운이 좋은 달이에요.">
+        <Block title="연락하기 좋은 달" desc="두 사람의 배우자 자리와 손잡는 달, 인연의 기운이 드는 달이에요.">
           {r.good.length ? (
             <ul className="border-t border-line">
               {r.good.map((g) => (
@@ -505,7 +523,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
             <p className="text-ui text-sub">앞으로 12개월 안에는 두드러지게 좋은 달이 없어요. 서두르기보다 나를 돌보는 시간으로 쓰세요.</p>
           )}
         </Block>
-        <Block title="연락을 피할 달">
+        <Block title="연락을 피할 달" desc="배우자 자리를 흔들거나, 말이 날카로워지기 쉬운 달이에요.">
           {r.avoid.length ? (
             <ul className="border-t border-line">
               {r.avoid.map((g) => (

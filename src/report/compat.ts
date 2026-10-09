@@ -4,18 +4,22 @@
  * 궁합 점수 = 60점에서 시작해 아래 신호를 더하고 뺀다 (35~97점으로 자름).
  *  - 사주: 두 사람의 '나'(일간) 사이, 배우자 자리(일지) 사이의 합·충·원진·형, 전통적으로 배우자를 뜻하는 기운,
  *          서로에게 필요한 기운(용신)을 채워 주는지 / 부담되는 기운(기신)을 키우는지
+ *    · 배우자 기운은 정(正: 정재·정관)과 편(偏: 편재·편관)을 나눠 본다. 남자의 일간이 여자의 일간을 극해 서로가 서로의
+ *      배우자 기운이 되는 짝(정재↔정관, 편재↔편관)은 '이끄는 쪽·맞추는 쪽'으로 감점하지 않고 배우자 기운 한 장으로 본다.
+ *    · 태어난 시간을 모르는 사람이 있으면 오행 비율로 보는 신호(용신·기신)는 절반만 반영하고, 화면에 정확도 안내를 붙인다.
  *  - 띠: 삼합·육합(잘 맞음), 충·원진(부딪힘) — 민간 해석이라 작게 반영
  *  - MBTI: 두 사람 모두 넣었을 때만 아주 작게 반영하고, 주로 대화 방식 안내에 쓴다
  * 점수는 단순한 지표다. 화면에 늘 그 사실을 함께 적는다.
  *
- * 재회는 점수를 매기지 않는다. 헤어진 시기에 운이 관계 자리를 흔들었는지, 다시 만나면 반복될 조건,
- * 앞으로 12개월 중 연락하기 좋은 달과 피할 달, 지금 할 일만 알려 준다.
+ * 재회는 점수를 매기지 않는다. 헤어진 시기에 운이 관계를 흔들었는지(그해가 배우자 자리를 충했는지, 여자에게 상관·남자에게
+ * 겁재의 해였는지, 대운이 바뀐 해였는지), 다시 만나면 반복될 조건, 앞으로 12개월 중 연락하기 좋은 달(배우자 자리와 합하는 달,
+ * 인연의 기운이 드는 달)과 피할 달, 지금 할 일만 알려 준다.
  */
 import { BRANCHES, STEMS, controls, generates, type Element, type SajuAnalysis, type Wolun } from '../engine/index.ts';
-import { isChung, isHae, isHyungPair, isPa, isStemChung, isStemHap, isWonjin, isYukhap, samhapPair } from '../engine/interactions.ts';
+import { isChung, isHae, isHyungPair, isJahyeong, isPa, isStemChung, isStemHap, isWonjin, isYukhap, samhapPair } from '../engine/interactions.ts';
 import { josa } from '../engine/josa.ts';
 import { monthPillarOf, yearPillarOf } from '../engine/pillars.ts';
-import { groupOf, tenGodOfStem, type TenGodGroup } from '../engine/tenGods.ts';
+import { groupOf, tenGodOfStem, type TenGod, type TenGodGroup } from '../engine/tenGods.ts';
 import { coupleGaeun, type CoupleGaeun } from './gaeun.ts';
 import { AXES, AXIS_INFO, parseMbti, type Axis } from './mbti.ts';
 import { EL_WORD } from './plain.ts';
@@ -71,10 +75,13 @@ export interface CompatReport {
   advice: string[];
   /** 상세: 두 사람의 개운법 — 둘 다에게 좋은 곳·색, 함께 피할 것 */
   gaeun: CoupleGaeun;
+  /** 정확도 안내 — 태어난 시간을 모르거나, 계산 기준에 따라 일주가 달라지는 사람이 있을 때 */
+  notes: string[];
 }
 
 export interface ReunionReport {
-  breakup: { when: string; shaken: boolean; text: string; basis: string } | null;
+  /** 헤어진 시기 — signals는 그때 관계를 흔든 운의 신호 (센 것부터) */
+  breakup: { when: string; shaken: boolean; text: string; basis: string; signals: string[] } | null;
   repeat: { title: string; text: string }[];
   good: { w: Wolun; why: string }[];
   avoid: { w: Wolun; why: string }[];
@@ -86,11 +93,68 @@ export const SCORE_NOTE = '점수는 두 사람의 사주 구조를 비교해 �
 
 const bName = (b: number) => `${BRANCHES[b].hanja}(${BRANCHES[b].ko})`;
 const sName = (s: number) => `${STEMS[s].hanja}(${STEMS[s].ko})`;
+const pName = (p: { stem: number; branch: number }) => `${STEMS[p.stem].hanja}${BRANCHES[p.branch].hanja}(${STEMS[p.stem].ko}${BRANCHES[p.branch].ko})`;
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
 /** 이 사람에게 전통적으로 배우자를 뜻하는 기운 */
 function spouseGroup(a: SajuAnalysis): TenGodGroup {
   return a.input.gender === 'male' ? '재성' : '관성';
+}
+
+/** 정재·정관 — 배우자 기운 중 정(正) */
+const isJeong = (g: TenGod) => g === '정재' || g === '정관';
+
+/** 두 사람의 '나'(일간)가 서로에게 어떤 십성인지, 그게 서로의 배우자 기운인지 */
+interface StemBond {
+  /** 상대 일간이 나에게 */
+  toMe: TenGod;
+  /** 내 일간이 상대에게 */
+  toYou: TenGod;
+  /** 상대가 내 배우자 기운인지 */
+  me: boolean;
+  /** 내가 상대의 배우자 기운인지 */
+  you: boolean;
+  /** 서로가 서로의 배우자 기운 — 남자의 일간이 여자의 일간을 극하는 짝 */
+  both: boolean;
+}
+
+function stemBond(a: SajuAnalysis, b: SajuAnalysis): StemBond {
+  const toMe = tenGodOfStem(a.pillars.day.stem, b.pillars.day.stem);
+  const toYou = tenGodOfStem(b.pillars.day.stem, a.pillars.day.stem);
+  const me = groupOf(toMe) === spouseGroup(a);
+  const you = groupOf(toYou) === spouseGroup(b);
+  return { toMe, toYou, me, you, both: me && you };
+}
+
+/** 그 천간이 이 사람에게 인연(배우자)의 기운이면 그 십성 — 남자는 재성, 여자는 관성 */
+function spouseStar(x: SajuAnalysis, stem: number): TenGod | null {
+  const g = tenGodOfStem(x.pillars.day.stem, stem);
+  return groupOf(g) === spouseGroup(x) ? g : null;
+}
+
+/** 그 천간이 관계를 지키는 기운을 치면 그 십성 — 여자에게 상관(상관견관), 남자에게 겁재(비겁탈재) */
+function hurtStar(x: SajuAnalysis, stem: number): '상관' | '겁재' | null {
+  const g = tenGodOfStem(x.pillars.day.stem, stem);
+  if (x.input.gender === 'female') return g === '상관' ? g : null;
+  return g === '겁재' ? g : null;
+}
+
+const timeKnown = (x: SajuAnalysis) => x.input.hour !== null;
+/** 밤 11시 무렵에 태어나 계산 기준(자시를 어디서 나누는지)에 따라 일주가 달라지는 사람 */
+const dayUnsure = (x: SajuAnalysis) => x.warnings.some((w) => w.kind === 'zi' || (w.kind === 'hour' && !!w.alternative?.includes('대안 일주')));
+
+/** 정확도 안내 */
+function accuracyNotes(a: SajuAnalysis, b: SajuAnalysis, you: string): string[] {
+  const who = (f: (x: SajuAnalysis) => boolean) => (f(a) && f(b) ? '두 사람 모두' : f(a) ? '내가' : f(b) ? josa(you, '이/가') : null);
+  const out: string[] = [];
+  const noTime = who((x) => !timeKnown(x));
+  if (noTime)
+    out.push(
+      `${noTime} 태어난 시간을 몰라 시주를 빼고 봤어요. ‘나’ 글자와 배우자 자리(일주)로 본 판단은 그대로지만, 오행 비율로 본 ‘서로 채워 주는 기운’은 절반만 반영했어요. 밤 11시가 넘어 태어났다면 일주가 달라질 수 있어요.`,
+    );
+  const zi = who(dayUnsure);
+  if (zi) out.push(`${zi} 밤 11시 무렵에 태어나, 계산 기준(자시를 어디서 나누는지)에 따라 일주가 달라질 수 있어요. 일주가 바뀌면 궁합의 중심 판단도 달라지니 참고하세요.`);
+  return out;
 }
 
 const GROUP_STYLE: Record<TenGodGroup, { who: string; good: string; avoid: string }> = {
@@ -109,7 +173,7 @@ function topGroup(a: SajuAnalysis): TenGodGroup {
 // ---------------------------------------------------------------------------
 // 사주 신호
 // ---------------------------------------------------------------------------
-function dayStemFactor(a: SajuAnalysis, b: SajuAnalysis, you: string): Factor | null {
+function dayStemFactor(a: SajuAnalysis, b: SajuAnalysis, you: string, bond: StemBond): Factor | null {
   const s1 = a.pillars.day.stem;
   const s2 = b.pillars.day.stem;
   const e1 = STEMS[s1].element;
@@ -175,6 +239,9 @@ function dayStemFactor(a: SajuAnalysis, b: SajuAnalysis, you: string): Factor | 
       text: `${josa(EL_WORD[e2], '이/가')} ${josa(EL_WORD[e1], '을/를')} 살리듯, ${josa(you, '이/가')} 나를 챙기고 북돋는 쪽이에요. 기대기 좋은 사이지만, 받기만 한다고 느끼지 않게 고마움을 자주 표현해 주세요.`,
       basis: `${basis} 상대가 나를 생(生)함`,
     };
+  // 남자의 일간이 여자의 일간을 극해 서로가 서로의 배우자 기운이 되는 짝은 전통적으로 정석의 구조라,
+  // '이끄는 쪽·맞추는 쪽'으로 감점하지 않고 배우자 기운(spouseFactors)에서 정·편을 나눠 한 번에 본다
+  if (bond.both) return null;
   if (controls(e1, e2))
     return {
       id: 'stem-lead',
@@ -200,16 +267,25 @@ function dayBranchFactor(a: SajuAnalysis, b: SajuAnalysis): Factor | null {
   const b1 = a.pillars.day.branch;
   const b2 = b.pillars.day.branch;
   const basis = `배우자 자리(일지) ${bName(b1)} · ${bName(b2)}`;
-  if (isYukhap(b1, b2))
+  if (isYukhap(b1, b2)) {
+    // 巳申은 합 속에 형·파가, 寅亥는 합 속에 파가 함께 있다 — 끌림은 같아도 마찰이 섞인다
+    const mixed = isHyungPair(b1, b2) ? '형' : isPa(b1, b2) ? '파' : null;
+    const tail =
+      mixed === '형'
+        ? ' 다만 합 속에 형(刑)이 함께 있어, 가까워질수록 말이 날카로워지는 때가 있어요. 편할수록 예의를 지켜 주세요.'
+        : mixed === '파'
+          ? ' 다만 합 속에 파(破)가 함께 있어, 함께 세운 계획이 가끔 어긋나요. 중요한 약속은 한 번 더 확인하세요.'
+          : '';
     return {
       id: 'branch-hap',
       system: '사주',
       tone: 'good',
-      points: 12,
+      points: mixed === '형' ? 8 : mixed === '파' ? 10 : 12,
       title: '생활이 잘 맞물리는 사이',
-      text: '두 사람의 배우자 자리가 합(合)을 이뤄요. 함께 사는 모습, 쉬는 방식, 생활 리듬이 자연스럽게 맞물려요. 같이 지낼수록 편해지는 짝이에요.',
-      basis: `${basis} 육합`,
+      text: `두 사람의 배우자 자리가 합(合)을 이뤄요. 함께 사는 모습, 쉬는 방식, 생활 리듬이 자연스럽게 맞물려요. 같이 지낼수록 편해지는 짝이에요.${tail}`,
+      basis: `${basis} 육합${mixed ? ` · ${mixed}` : ''}`,
     };
+  }
   const sh = samhapPair(b1, b2);
   if (sh)
     return {
@@ -271,6 +347,16 @@ function dayBranchFactor(a: SajuAnalysis, b: SajuAnalysis): Factor | null {
       text: '두 사람의 배우자 자리가 파(破)의 관계예요. 함께 세운 계획이 자주 틀어질 수 있으니, 중요한 약속은 미리 확인하는 습관이 도움이 돼요.',
       basis: `${basis} 파`,
     };
+  if (isJahyeong(b1, b2))
+    return {
+      id: 'branch-jahyeong',
+      system: '사주',
+      tone: 'bad',
+      points: -2,
+      title: '닮아서 함께 예민해지는 사이',
+      text: '두 사람의 배우자 자리가 같은 글자이면서 자형(自刑)이에요. 생활 습관은 닮아 편하지만, 둘 다 스스로를 몰아붙이는 면이 있어 지칠 때 함께 예민해지기 쉬워요. 한 사람이 지치면 다른 사람이 먼저 쉬어 가자고 말해 주세요.',
+      basis: `${basis} 자형`,
+    };
   if (b1 === b2)
     return {
       id: 'branch-same',
@@ -284,35 +370,69 @@ function dayBranchFactor(a: SajuAnalysis, b: SajuAnalysis): Factor | null {
   return null;
 }
 
-function spouseFactors(a: SajuAnalysis, b: SajuAnalysis, you: string): Factor[] {
+/**
+ * 배우자 기운 — 정(정재·정관)이면 정석의 짝, 편(편재·편관)이면 끌림과 긴장이 함께 오는 짝.
+ * 서로가 서로의 배우자 기운이면 한 장으로 묶는다 (일간이 천간합이면 끌림은 합 쪽에서 이미 셌으니 조금 덜 더한다).
+ */
+function spouseFactors(a: SajuAnalysis, you: string, bond: StemBond, hap: boolean): Factor[] {
+  if (bond.both) {
+    const basis = `상대 일간이 나에게 ${bond.toMe} · 내 일간이 상대에게 ${bond.toYou}`;
+    if (isJeong(bond.toMe))
+      return [
+        {
+          id: 'spouse-both',
+          system: '사주',
+          tone: 'good',
+          points: hap ? 8 : 10,
+          title: '서로가 서로의 배우자 기운인 짝',
+          text: `내 사주에서 ${josa(you, '은/는')} 배우자를 뜻하는 기운(${bond.toMe})이고, ${you}의 사주에서 나도 배우자를 뜻하는 기운(${bond.toYou})이에요. 전통적으로 가장 정석적인 부부의 짝이라, 처음부터 ‘함께할 사람’으로 느끼기 쉽고 함께할수록 자리가 잡혀요.`,
+          basis,
+        },
+      ];
+    const feel =
+      a.input.gender === 'male' ? `끌림과 설렘은 크지만, 내가 이끌려 할수록 ${you}에게는 압박이 될 수 있어요.` : `든든하고 강하게 끌리지만, ${you}의 방식이 나에게 압박으로 느껴질 때가 있어요.`;
+    return [
+      {
+        id: 'spouse-both-pyeon',
+        system: '사주',
+        tone: 'good',
+        points: 4,
+        title: '강하게 끌리지만 긴장도 있는 짝',
+        text: `내 사주에서 ${josa(you, '은/는')} 배우자를 뜻하는 기운 중 ${bond.toMe}, ${you}의 사주에서 나는 ${josa(bond.toYou, '이에요/예요')}. ${feel} 정(正)이 아닌 편(偏)의 짝이라, 서로를 바꾸려 하지 않을 때 오래가요.`,
+        basis,
+      },
+    ];
+  }
   const out: Factor[] = [];
-  const g1 = groupOf(tenGodOfStem(a.pillars.day.stem, b.pillars.day.stem));
-  if (g1 === spouseGroup(a))
+  if (bond.me)
     out.push({
       id: 'spouse-me',
       system: '사주',
       tone: 'good',
-      points: 6,
+      points: isJeong(bond.toMe) ? 5 : 3,
       title: `${josa(you, '은/는')} 내 사주의 배우자 기운`,
-      text: `${you}의 ‘나’ 글자가, 내 사주에서 전통적으로 배우자를 뜻하는 기운(${spouseGroup(a)})이에요. 처음 만났을 때 ‘이 사람이다’ 싶은 느낌을 받기 쉬운 구조예요.`,
-      basis: `상대 일간이 나에게 ${tenGodOfStem(a.pillars.day.stem, b.pillars.day.stem)}`,
+      text: `${you}의 ‘나’ 글자가, 내 사주에서 전통적으로 배우자를 뜻하는 기운(${bond.toMe})이에요. ${isJeong(bond.toMe) ? '처음 만났을 때 ‘이 사람이다’ 싶은 느낌을 받기 쉬운 구조예요.' : '강하게 끌리지만, 정(正)이 아닌 편(偏)이라 설렘과 긴장이 함께 와요.'}`,
+      basis: `상대 일간이 나에게 ${bond.toMe}`,
     });
-  const g2 = groupOf(tenGodOfStem(b.pillars.day.stem, a.pillars.day.stem));
-  if (g2 === spouseGroup(b))
+  if (bond.you)
     out.push({
       id: 'spouse-you',
       system: '사주',
       tone: 'good',
-      points: 6,
+      points: isJeong(bond.toYou) ? 5 : 3,
       title: `나는 ${you}의 배우자 기운`,
-      text: `내 ‘나’ 글자가 ${you}의 사주에서 전통적으로 배우자를 뜻하는 기운(${spouseGroup(b)})이에요. 상대에게 나는 ‘함께할 사람’으로 느껴지기 쉬워요.`,
-      basis: `내 일간이 상대에게 ${tenGodOfStem(b.pillars.day.stem, a.pillars.day.stem)}`,
+      text: `내 ‘나’ 글자가 ${you}의 사주에서 전통적으로 배우자를 뜻하는 기운(${bond.toYou})이에요. ${isJeong(bond.toYou) ? '상대에게 나는 ‘함께할 사람’으로 느껴지기 쉬워요.' : '상대에게 나는 강하게 끌리는 사람이지만, 정(正)이 아닌 편(偏)이라 설렘과 긴장이 함께 와요.'}`,
+      basis: `내 일간이 상대에게 ${bond.toYou}`,
     });
   return out;
 }
 
 function elementFactors(a: SajuAnalysis, b: SajuAnalysis, you: string): Factor[] {
   const out: Factor[] = [];
+  // 태어난 시간을 모르는 사람이 있으면 오행 비율·용신이 6글자로만 나와 덜 정확하다 — 절반만 반영
+  const unsure = !timeKnown(a) || !timeKnown(b);
+  const weigh = (p: number) => (unsure ? Math.round(p / 2) : p);
+  const tail = unsure ? ' (태어난 시간을 몰라 참고용)' : '';
   const give = (from: SajuAnalysis, to: SajuAnalysis, dir: 'toMe' | 'toYou') => {
     const need = to.yongsin.yongsin;
     const burden = to.yongsin.gisin;
@@ -325,20 +445,20 @@ function elementFactors(a: SajuAnalysis, b: SajuAnalysis, you: string): Factor[]
         id: `fill-${dir}`,
         system: '사주',
         tone: 'good',
-        points: has >= 30 ? 8 : 6,
+        points: weigh(has >= 30 ? 8 : 6),
         title: `${giver === '나' ? '내가' : josa(giver, '이/가')} ${whom}에게 필요한 기운을 채워 주는 사이`,
         text: `${josa(whom, '은/는')} ${EL_WORD[need]} 기운이 필요한 사주인데, ${giver === '나' ? '내' : `${giver}의`} 사주에 그 기운이 ${has.toFixed(0)}%나 있어요. 함께 있으면 마음이 안정되고 일이 잘 풀리는 느낌을 받기 쉬워요.`,
-        basis: `${whom}의 용신 ${EL_WORD[need]} · ${giver === '나' ? '내' : `${giver}의`} 사주 ${EL_WORD[need]} ${has.toFixed(0)}%`,
+        basis: `${whom}의 용신 ${EL_WORD[need]} · ${giver === '나' ? '내' : `${giver}의`} 사주 ${EL_WORD[need]} ${has.toFixed(0)}%${tail}`,
       });
     else if (heavy >= 32)
       out.push({
         id: `burden-${dir}`,
         system: '사주',
         tone: 'bad',
-        points: -5,
+        points: weigh(-5),
         title: `${giver === '나' ? '내' : `${giver}의`} 기운이 ${whom}에게는 부담인 사이`,
         text: `${josa(whom, '은/는')} ${EL_WORD[burden]} 기운이 부담되는 사주인데, ${giver === '나' ? '내' : `${giver}의`} 사주에 그 기운이 ${heavy.toFixed(0)}%로 많아요. 오래 붙어 있으면 이유 없이 지칠 수 있으니, 각자 쉬는 시간을 꼭 챙기세요.`,
-        basis: `${whom}의 기신 ${EL_WORD[burden]} · ${giver === '나' ? '내' : `${giver}의`} 사주 ${EL_WORD[burden]} ${heavy.toFixed(0)}%`,
+        basis: `${whom}의 기신 ${EL_WORD[burden]} · ${giver === '나' ? '내' : `${giver}의`} 사주 ${EL_WORD[burden]} ${heavy.toFixed(0)}%${tail}`,
       });
   };
   give(b, a, 'toMe');
@@ -498,7 +618,8 @@ function tierOf(score: number): { tier: string; text: string } {
 export function compatReport(a: SajuAnalysis, b: SajuAnalysis): CompatReport {
   const you = b.input.name?.trim() || '그 사람';
   const factors: Factor[] = [];
-  const ds = dayStemFactor(a, b, you);
+  const bond = stemBond(a, b);
+  const ds = dayStemFactor(a, b, you, bond);
   if (ds) factors.push(ds);
   const db = dayBranchFactor(a, b);
   if (db) factors.push(db);
@@ -524,7 +645,7 @@ export function compatReport(a: SajuAnalysis, b: SajuAnalysis): CompatReport {
       text: '‘나’ 글자와 배우자 자리가 함께 부딪혀요(천극지충). 끌림이 강해도 생각과 생활이 모두 엇갈리기 쉬워, 서로 다름을 인정하는 약속이 꼭 필요해요.',
       basis: `${dayPillars} 천극지충`,
     });
-  factors.push(...spouseFactors(a, b, you), ...elementFactors(a, b, you));
+  factors.push(...spouseFactors(a, you, bond, ds?.id === 'stem-hap'), ...elementFactors(a, b, you));
   const t = ttiFactor(a, b);
   if (t.f) factors.push(t.f);
   const mb = mbtiPair(a, b);
@@ -577,10 +698,27 @@ export function compatReport(a: SajuAnalysis, b: SajuAnalysis): CompatReport {
   if (bad.some((f) => f.id === 'branch-wonjin' || f.id === 'branch-hae')) advice.push('서운한 일은 그날 안에, 짧게라도 말하세요. 쌓아 두면 애증으로 바뀌어요.');
   if (bad.some((f) => f.id.startsWith('burden'))) advice.push('함께 있어도 피곤하다면 관계 문제가 아니라 기운 문제일 수 있어요. 각자 쉬는 날을 정해 두세요.');
   if (mb && !mb.pair.axes[2].same) advice.push('다툴 때는 ‘공감 먼저, 해결은 나중’ 순서를 지키세요.');
+  if (good.some((f) => f.id === 'spouse-both-pyeon')) advice.push('끌림이 강한 만큼 서로를 바꾸려 들면 부딪혀요. 상대의 방식을 한 가지씩 인정해 주세요.');
   if (good.some((f) => f.id === 'branch-hap' || f.id === 'stem-hap')) advice.push('끌림이 강한 사이라 익숙해지면 소홀해지기 쉬워요. 처음의 표현을 일부러 이어 가세요.');
   advice.push('중요한 결정은 두 사람의 운이 모두 좋은 해에, 둘이 함께 내리세요.');
 
-  return { score, tier, tierText, headline, factors, good, bad, tti: t.info, mbti: mb?.pair ?? null, conflict: conflict.slice(0, 3), talk, years, advice: advice.slice(0, 4), gaeun: coupleGaeun(a, b, you) };
+  return {
+    score,
+    tier,
+    tierText,
+    headline,
+    factors,
+    good,
+    bad,
+    tti: t.info,
+    mbti: mb?.pair ?? null,
+    conflict: conflict.slice(0, 3),
+    talk,
+    years,
+    advice: advice.slice(0, 4),
+    gaeun: coupleGaeun(a, b, you),
+    notes: accuracyNotes(a, b, you),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -605,45 +743,97 @@ function pillarsOfMonth(year: number, month: number) {
 export function reunionReport(a: SajuAnalysis, b: SajuAnalysis, breakup: { year: number; month: number } | null, months: Wolun[]): ReunionReport {
   const you = b.input.name?.trim() || '그 사람';
   const c = compatReport(a, b);
+  const people = [
+    { x: a, whom: '나', whose: '내' },
+    { x: b, whom: you, whose: `${you}의` },
+  ];
   let br: ReunionReport['breakup'] = null;
   if (breakup) {
     const p = pillarsOfMonth(breakup.year, breakup.month);
-    const yh = branchHit(p.year.branch, a, b);
-    const mh = branchHit(p.month.branch, a, b);
-    const hit = yh.bad ?? mh.bad;
-    br = hit
-      ? {
-          when: `${breakup.year}년 ${breakup.month}월`,
-          shaken: true,
-          text: `헤어질 무렵 들어온 운이 두 사람의 배우자 자리를 흔들었어요(${hit}). 그때의 이별에는 두 사람의 잘못만이 아니라 ‘흔들리기 쉬운 시기’라는 몫도 있었어요.`,
-          basis: `${breakup.year}년 ${bName(p.year.branch)} · ${breakup.month}월 ${bName(p.month.branch)}`,
-        }
-      : {
-          when: `${breakup.year}년 ${breakup.month}월`,
-          shaken: false,
-          text: '헤어질 무렵의 운은 관계 자리를 크게 흔들지 않았어요. 그렇다면 이별의 이유는 시기보다 두 사람 사이의 문제에 더 가까워요. 그 문제를 풀지 않으면 다시 만나도 같은 지점에서 멈추기 쉬워요.',
-          basis: `${breakup.year}년 ${bName(p.year.branch)} · ${breakup.month}월 ${bName(p.month.branch)}`,
-        };
+    // 센 신호: 그해가 배우자 자리를 충, 여자에게 상관·남자에게 겁재의 해. 약한 신호: 그해의 원진·형, 그달의 충, 대운이 바뀐 해
+    const strong: string[] = [];
+    const weak: string[] = [];
+    const pair = (x: number, d: number) => `${BRANCHES[x].hanja}${BRANCHES[d].hanja}`;
+    for (const { x, whom, whose } of people) {
+      const d = x.pillars.day.branch;
+      const y = p.year.branch;
+      if (isChung(y, d)) strong.push(`그해의 기운이 ${whose} 배우자 자리와 정면으로 부딪혔어요 (${pair(y, d)} 충).`);
+      else if (isWonjin(y, d)) weak.push(`그해의 기운이 ${whose} 배우자 자리와 어긋나, 이유 없는 서운함이 쌓이기 쉬웠어요 (${pair(y, d)} 원진).`);
+      else if (isHyungPair(y, d)) weak.push(`그해의 기운이 ${whose} 배우자 자리와 부딪혀, 가까울수록 말이 날카로워지기 쉬웠어요 (${pair(y, d)} 형).`);
+      if (isChung(p.month.branch, d)) weak.push(`그달의 기운이 ${whose} 배우자 자리와 부딪혔어요 (${pair(p.month.branch, d)} 충).`);
+      const hurt = hurtStar(x, p.year.stem);
+      if (hurt === '상관') strong.push(`그해는 ${whom}에게 상관(傷官)의 해였어요. 관계를 지키는 기운(관성)을 꺾는 해라, 상대의 부족함이 크게 보이고 말이 날카로워지기 쉬워요.`);
+      if (hurt === '겁재') strong.push(`그해는 ${whom}에게 겁재(劫財)의 해였어요. 곁의 사람(재성)을 두고 경쟁하거나 빼앗기기 쉬운 해라, 자존심 싸움이 이별로 번지기 쉬워요.`);
+    }
+    // 큰 운(대운)이 바뀐 해 — 두 사람이 같은 해에 바뀌었으면 한 줄로
+    const turned = people.filter(({ x }) => x.daeun.list.slice(1).some((dd) => dd.startYear === breakup.year));
+    if (turned.length) weak.push(`${turned.length === 2 ? '두 사람 모두' : turned[0].whose} 큰 운(대운)이 바뀌던 해였어요. 삶의 방향이 바뀔 때는 관계도 함께 흔들리기 쉬워요.`);
+    const signals = [...strong, ...weak];
+    // 두 사람의 대운이 같은 해에 바뀌었으면 약한 신호 둘로 센다
+    const shaken = strong.length > 0 || weak.length + (turned.length === 2 ? 1 : 0) >= 2;
+    br = {
+      when: `${breakup.year}년 ${breakup.month}월`,
+      shaken,
+      signals,
+      text: shaken
+        ? '헤어질 무렵의 운에 관계를 흔드는 신호가 있었어요. 그때의 이별에는 두 사람의 잘못만이 아니라 ‘흔들리기 쉬운 시기’라는 몫도 있었어요.'
+        : signals.length
+          ? '헤어질 무렵 작은 흔들림은 있었지만, 이별을 설명할 만큼 크지는 않았어요. 이별의 이유는 시기보다 두 사람 사이의 문제에 더 가까워요. 그 문제를 풀지 않으면 다시 만나도 같은 지점에서 멈추기 쉬워요.'
+          : '헤어질 무렵의 운은 관계 자리를 크게 흔들지 않았어요. 그렇다면 이별의 이유는 시기보다 두 사람 사이의 문제에 더 가까워요. 그 문제를 풀지 않으면 다시 만나도 같은 지점에서 멈추기 쉬워요.',
+      basis: `${breakup.year}년 ${pName(p.year)} · ${breakup.month}월 ${pName(p.month)}`,
+    };
   }
   const repeat = c.bad.slice(0, 2).map((f) => ({ title: f.title, text: f.text }));
   if (!repeat.length)
     repeat.push({ title: '구조보다 상황의 문제', text: '타고난 구조에서 크게 부딪히는 지점은 적어요. 그때의 상황(거리·시간·주변 사람)이 무엇이었는지 먼저 돌아보세요.' });
 
+  // 앞으로 12개월 — 배우자 자리와 합하는 달, 인연의 기운이 드는 달은 좋고, 배우자 자리를 치는 달, 관계를 지키는 기운을 치는 달은 피한다
   const scored = months.map((w) => {
-    const h = branchHit(w.pillar.branch, a, b);
-    return { w, h };
+    const s = w.pillar.stem;
+    return {
+      w,
+      h: branchHit(w.pillar.branch, a, b),
+      starMe: spouseStar(a, s),
+      starYou: spouseStar(b, s),
+      hurt: people.flatMap(({ x, whom }) => {
+        const g = hurtStar(x, s);
+        return g ? [{ whom, g }] : [];
+      }),
+    };
   });
+  type M = (typeof scored)[number];
+  const byTime = (x: { w: Wolun }, y: { w: Wolun }) => x.w.startMs - y.w.startMs;
+  const pull = (x: M) => (x.h.good === '육합' ? 3 : x.h.good === '삼합' ? 2 : 0) + (x.starMe ? 1 : 0) + (x.starYou ? 1 : 0);
+  const harm = (x: M) => (x.h.bad === '충' ? 3 : x.h.bad === '원진' ? 2 : x.h.bad === '형' ? 1 : 0) + (x.hurt.length ? 2 : 0);
+  const goodWhy = (x: M) => {
+    const star =
+      x.starMe && x.starYou ? '두 사람 모두에게 인연의 기운이 드는 달' : x.starMe ? `나에게 인연의 기운(${x.starMe})이 드는 달` : x.starYou ? `${you}에게 인연의 기운(${x.starYou})이 드는 달` : '';
+    const parts = [x.h.good ? `관계 자리와 손잡는 달(${x.h.good})` : '', star].filter(Boolean);
+    return `${parts.join('이자 ')} — ${x.h.good ? '연락이 부드럽게 닿기 쉬워요.' : '마음을 전하기 좋아요.'}`;
+  };
+  const HURT_WORD = { 상관: '상관(傷官)', 겁재: '겁재(劫財)' } as const;
+  const avoidWhy = (x: M) => {
+    const parts = [x.h.bad ? `관계 자리를 흔드는 달(${x.h.bad})` : '', x.hurt.length ? `${x.hurt.map((h) => `${h.whom}에게 ${HURT_WORD[h.g]}`).join(', ')}의 달` : ''].filter(Boolean);
+    const first = x.hurt[0]?.g;
+    const end =
+      first === '상관' ? '말이 날카로워져, 마음과 다른 말로 상처를 주기 쉬워요.' : first === '겁재' ? '자존심이 앞서 대화가 기싸움이 되기 쉬워요.' : '연락하면 지난 갈등이 되살아나기 쉬워요.';
+    return `${parts.join('이자 ')} — ${end}`;
+  };
   const good = scored
-    .filter((x) => x.h.good && !x.h.bad && x.w.score >= 46)
+    .filter((x) => pull(x) > 0 && !harm(x) && x.w.score >= 46)
+    .sort((x, y) => pull(y) - pull(x) || byTime(x, y))
     .slice(0, 3)
-    .map((x) => ({ w: x.w, why: `관계 자리와 손잡는 달(${x.h.good}) — 연락이 부드럽게 닿기 쉬워요.` }));
+    .map((x) => ({ w: x.w, why: goodWhy(x) }));
   if (good.length < 2)
-    for (const x of scored.filter((y) => !y.h.bad && y.w.score >= 56 && !good.some((g) => g.w === y.w)).slice(0, 2 - good.length))
+    for (const x of scored.filter((y) => !harm(y) && y.w.score >= 56 && !good.some((g) => g.w === y.w)).slice(0, 2 - good.length))
       good.push({ w: x.w, why: '내 운이 좋은 달 — 마음의 여유가 있어 대화가 차분해지기 쉬워요.' });
+  good.sort(byTime);
   const avoid = scored
-    .filter((x) => x.h.bad)
+    .filter((x) => harm(x) > 0)
+    .sort((x, y) => harm(y) - harm(x) || byTime(x, y))
     .slice(0, 3)
-    .map((x) => ({ w: x.w, why: `관계 자리를 흔드는 달(${x.h.bad}) — 연락하면 지난 갈등이 되살아나기 쉬워요.` }));
+    .sort(byTime)
+    .map((x) => ({ w: x.w, why: avoidWhy(x) }));
 
   const actions = [
     br && !br.shaken
