@@ -8,15 +8,19 @@
  * 시험·합격은 풀이 리포트에 섹션이 없어 연도별 신호부터 여기서 계산한다.
  */
 import { pillarHanja, type SajuAnalysis, type Seun, type Wolun } from '../engine/index.ts';
+import { josa } from '../engine/josa.ts';
 import { isMunchangBranch, isNobleBranch, twelveSinsal } from '../engine/sinsal.ts';
 import { groupOf, type TenGodGroup } from '../engine/tenGods.ts';
-import type { ConcernId } from './concernList.ts';
+import { TIMING, type ConcernId } from './concernList.ts';
 import { concernGaeun, type ConcernGaeun } from './gaeun.ts';
 import type { Report, ReportSection, Statement, Tone, YearSignal } from './generate.ts';
 import { analyzeJob } from './job.ts';
 import { ELEMENT_JOBS } from './kb.ts';
 import { readLuck } from './luckReading.ts';
+import { seasonOf } from './season.ts';
 import type { StoryPara } from './story.ts';
+import { DECADE_THEME } from './storyKb.ts';
+import { ttiOf, type TtiYear } from './tti.ts';
 
 // ---------------------------------------------------------------------------
 // 모양
@@ -84,6 +88,16 @@ const S = (text: string, tone: Tone, evidence?: string): Statement => ({ text, t
 const sectionOf = (r: Report, id: string): ReportSection | undefined => r.sections.find((s) => s.id === id);
 const blockOf = (sec: ReportSection | undefined, heading: string): Statement[] => sec?.blocks.find((b) => b.heading.startsWith(heading))?.items ?? [];
 const powerWord = (score: number) => (score >= 60 ? '운의 힘도 좋은 편' : score >= 45 ? '운의 힘은 보통' : '운의 힘은 약한 편');
+
+/**
+ * 때를 읽는 풀이 — 무료 풀이 리포트의 이야기에서 빼 둔 '시기' 문단만 상세(유료)에 싣는다.
+ * 나머지 이야기는 무료에 그대로 있으므로 상세에 다시 넣지 않는다 (산 사람이 '본 내용'이라고 느끼지 않게).
+ */
+function timingStory(sec: ReportSection, desc: string): ConcernReport['detail']['story'] {
+  const t = TIMING[sec.id];
+  const paras = (sec.story ?? []).filter((p) => p.title === t?.para);
+  return paras.length ? { title: '때를 읽는 풀이', desc, paras } : undefined;
+}
 
 /** 연도별 신호의 메모 → 쉬운 말. 셋째 값은 그 신호가 반가운지(+) 조심할 것인지(-) (표의 순서가 우선순위) */
 type Plain = [RegExp, string, '+' | '-'];
@@ -269,7 +283,7 @@ function careerReport(a: SajuAnalysis, report: Report, months: Wolun[]): Concern
     free: { title: '나에게 맞는 일', note, items: [aptitude[1], style[0], aptitude[2]].filter(Boolean) },
     detail: {
       title: '이직·진로 상세 리포트',
-      items: ['앞으로 12개월 — 좋은 달과 피할 달', '일이 풀리는 개운법 — 면접 날의 색, 잘 맞는 분야, 도와줄 사람', '앞으로 10년 이직 신호', '지금 회사에 남는다면 할 일', '옮긴다면 이것부터 (체크리스트)', '직장에서 반복되기 쉬운 문제', '이야기로 읽는 긴 풀이'],
+      items: ['앞으로 12개월 — 좋은 달과 피할 달', '일이 풀리는 개운법 — 면접 날의 색, 잘 맞는 분야, 도와줄 사람', '앞으로 10년 이직 신호와 때를 읽는 풀이', '지금 회사에 남는다면 할 일', '옮긴다면 이것부터 (체크리스트)'],
       months: {
         title: '앞으로 12개월',
         desc: '면접·제안·협상을 언제 하면 좋은지, 언제 미뤄야 하는지예요.',
@@ -299,8 +313,8 @@ function careerReport(a: SajuAnalysis, report: Report, months: Wolun[]): Concern
         { title: '지금 회사에 남는다면', items: stay.slice(0, 3) },
         { title: '옮긴다면 이것부터', items: move, numbered: true },
       ],
-      statements: [{ title: '직장에서 반복되기 쉬운 문제', items: style.slice(1) }],
-      story: sec.story?.length ? { title: '이야기로 읽기', desc: '직업과 일에 대한 긴 풀이예요.', paras: sec.story.slice(0, 4) } : undefined,
+      statements: [],
+      story: timingStory(sec, '옮기기 좋은 해와 버틸 해를 이야기로 풀었어요.'),
     },
   };
 }
@@ -349,7 +363,6 @@ function loveReport(a: SajuAnalysis, report: Report, months: Wolun[], status: Lo
 
   const style = blockOf(sec, '연애 스타일');
   const palace = blockOf(sec, '배우자 자리');
-  const bond = blockOf(sec, '배우자 인연');
   const gp = a.elements.groupPercent;
   const noDohwa = !a.sinsal.some((x) => x.name === '도화살' || x.name === '홍염살');
   const spouseNone = gp[spouseGroup] < 5;
@@ -387,10 +400,8 @@ function loveReport(a: SajuAnalysis, report: Report, months: Wolun[], status: Lo
       items: [
         '앞으로 12개월 — 좋은 달과 조심할 달',
         status === 'single' ? '인연을 위한 개운법 — 만남의 장소, 잘 맞는 띠, 데이트 색' : `${status === 'dating' ? '관계를 다지는' : '부부를 위한'} 개운법 — 데이트 장소와 색, 함께 할 습관`,
-        '앞으로 10년 연애·결혼 신호',
+        '앞으로 10년 연애·결혼 신호와 때를 읽는 풀이',
         '지금 할 일',
-        '배우자 인연과 배우자 자리 풀이',
-        '이야기로 읽는 긴 풀이',
       ],
       months: {
         title: '앞으로 12개월',
@@ -419,11 +430,8 @@ function loveReport(a: SajuAnalysis, report: Report, months: Wolun[], status: Lo
       },
       timeline: { title: '앞으로 10년 연애·결혼 신호', desc: '배우자를 뜻하는 기운, 배우자 자리의 합과 충, 끌림의 별을 함께 봤어요.', items: tl },
       lists: [{ title: '지금 할 일', items: todo.slice(0, 3) }],
-      statements: [
-        { title: '배우자 인연', items: bond },
-        { title: '배우자 자리', items: palace.slice(1) },
-      ].filter((x) => x.items.length),
-      story: sec.story?.length ? { title: '이야기로 읽기', desc: '연애와 결혼에 대한 긴 풀이예요.', paras: sec.story.slice(0, 4) } : undefined,
+      statements: [],
+      story: timingStory(sec, '인연이 강한 해와 흔들리는 해를 이야기로 풀었어요.'),
     },
   };
 }
@@ -463,7 +471,6 @@ function moneyReport(a: SajuAnalysis, report: Report, months: Wolun[]): ConcernR
 
   const vessel = blockOf(sec, '재물 그릇');
   const route = blockOf(sec, '돈이 들어오는 방식');
-  const leak = blockOf(sec, '돈이 새는 길');
   const todo = [
     [
       '좋은 해에 들어온 돈은 30%를 바로 떼어 두세요. 다음에 올 조이는 해의 방패가 돼요.',
@@ -489,7 +496,7 @@ function moneyReport(a: SajuAnalysis, report: Report, months: Wolun[]): ConcernR
     free: { title: '돈이 들어오는 방식', items: [vessel[0], ...route.slice(0, 2)].filter(Boolean) },
     detail: {
       title: '돈 상세 리포트',
-      items: ['앞으로 12개월 — 돈이 들어오는 달과 새기 쉬운 달', '돈이 머무는 개운법 — 나에게 맞는 돈 버는 길, 지갑 색, 자동이체 날짜', '앞으로 10년 재물 흐름', '올해 돈 관리 할 일', '돈이 새는 길과 투자 성향', '이야기로 읽는 긴 풀이'],
+      items: ['앞으로 12개월 — 돈이 들어오는 달과 새기 쉬운 달', '돈이 머무는 개운법 — 나에게 맞는 돈 버는 길, 지갑 색, 자동이체 날짜', '앞으로 10년 재물 흐름과 때를 읽는 풀이', '올해 돈 관리 할 일'],
       months: {
         title: '앞으로 12개월',
         desc: '정산·협상·판매를 하기 좋은 달과 큰 지출을 미뤄야 할 달이에요.',
@@ -510,11 +517,8 @@ function moneyReport(a: SajuAnalysis, report: Report, months: Wolun[]): ConcernR
       },
       timeline: { title: '앞으로 10년 재물 흐름', desc: '돈의 기운(재성)과 경쟁·지출의 기운(비겁), 재능의 기운(식상)을 함께 봤어요.', items: tl },
       lists: [{ title: '올해 돈 관리 할 일', items: todo.slice(0, 4) }],
-      statements: [
-        { title: '재물 그릇', items: vessel.slice(1) },
-        { title: '돈이 새는 길과 투자 성향', items: leak },
-      ].filter((x) => x.items.length),
-      story: sec.story?.length ? { title: '이야기로 읽기', desc: '돈에 대한 긴 풀이예요.', paras: sec.story.slice(0, 4) } : undefined,
+      statements: [],
+      story: timingStory(sec, '돈이 들어오는 해와 새는 해를 이야기로 풀었어요.'),
     },
     notice: '사주는 돈의 흐름을 보는 참고일 뿐, 투자 판단을 대신하지 않아요. 큰돈이 드는 결정은 꼭 전문가와 상의하세요.',
   };
@@ -733,7 +737,10 @@ function examReport(a: SajuAnalysis, months: Wolun[]): ConcernReport {
 }
 
 // ---------------------------------------------------------------------------
-// 올해 운세 — 사주의 한 해는 입춘(2월 4일 무렵)에 바뀐다
+// 올해 운세 · 신년운세 — 사주의 한 해는 입춘(2월 4일 무렵)에 바뀐다.
+// 10월부터 다음 해 입춘 전까지는 다음 해 신년운세로 바뀐다 (report/season.ts) — 1년 중 가장 큰 대목.
+//  - 무료: 그해 한 줄, 이유, 신호, 좋아요·조심 한 줄씩, 띠·삼재, 힘이 가장 실리는 달 하나
+//  - 상세: 열두 달, 기회의 달·조심할 달 셋씩, 분야별, 그해 개운법, 대운 속 위치
 // ---------------------------------------------------------------------------
 export const YEAR_STANCES = ['기회의 해', '무난한 해', '다지는 해', '조심하는 해'];
 
@@ -743,14 +750,45 @@ function seunSignal(a: SajuAnalysis, s: Seun): YearSignal {
   return { year: s.year, pillar: pillarHanja(s.pillar), score: s.combined, verdict, tone, notes: [r.headline] };
 }
 
+/** 사주의 달 하나를 날짜로 (예: 2027년 5월 5일 ~ 6월 4일) — 절기에 바뀌므로 양력 1일이 아니다 */
+function monthSpan(a: SajuAnalysis, w: Wolun): string {
+  const ymd = (ms: number) => {
+    const d = new Date(ms + 9 * 3600_000);
+    return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() };
+  };
+  const s = ymd(w.startMs);
+  const next = a.wolun[a.wolun.indexOf(w) + 1];
+  if (!next) return `${s.y}년 ${s.m}월 ${s.d}일부터`;
+  const e = ymd(next.startMs - 86400_000);
+  return `${s.y}년 ${s.m}월 ${s.d}일 ~ ${e.y !== s.y ? `${e.y}년 ` : ''}${e.m}월 ${e.d}일`;
+}
+
+/** 그해 띠·삼재 한 줄 (고민 리포트는 해요체) */
+function ttiSentence(t: TtiYear, me: string): { text: string; tone: Tone } {
+  const parts: string[] = [];
+  if (t.samjae)
+    parts.push(
+      `${t.year}년은 ${me}의 ${t.samjae}예요. 삼재는 민간 풍습이라 겁낼 일은 아니지만, ${t.samjae === '들삼재' ? '새로 벌이는 큰일은 한 번 더 점검하세요' : t.samjae === '눌삼재' ? '무리하게 넓히기보다 지키는 쪽이 나아요' : '마무리를 깔끔하게 하면 돼요'}.`,
+    );
+  if (t.relation === '충') parts.push(`${t.year}년의 ${t.animal}와 ${me}가 정면으로 부딪히는(충) 해라, 이사·이직 같은 큰 변화는 서두르지 마세요.`);
+  if (t.relation === '원진') parts.push(`내 ${me}는 ${t.year}년의 ${t.animal}와 원진(괜히 서운하고 어긋나기 쉬운 사이)이라, 가까운 사람과의 말을 조심하면 좋아요.`);
+  if (t.relation === '육합') parts.push(`내 ${me}가 ${t.year}년의 ${t.animal}와 육합(짝이 맞는 사이)이라, 귀인과 협력의 기회가 생기기 쉬워요.`);
+  if (t.relation === '삼합') parts.push(`내 ${me}가 ${t.year}년의 ${t.animal}와 삼합(같은 무리)이라, 하는 일에 힘이 실리기 쉬워요.`);
+  if (t.relation === '같은 띠') parts.push(`${t.year}년은 내 띠의 해라, 스스로를 돌아보고 새 판을 짜기 좋은 해로 봐요.`);
+  if (!parts.length) parts.push(`내 ${me}는 ${t.year}년의 ${t.animal}와 특별히 부딪히거나 합하는 관계가 없어 무난해요.`);
+  return { text: parts.join(' '), tone: t.tone === 'good' ? 'positive' : t.tone === 'bad' ? 'caution' : 'neutral' };
+}
+
 function yearReport(a: SajuAnalysis, report: Report): ConcernReport | null {
-  const cur = a.seun.find((s) => s.year === a.currentSajuYear);
-  const nxt = a.seun.find((s) => s.year === a.currentSajuYear + 1);
-  if (!cur) return null;
+  const season = seasonOf(a);
+  const { year, newYear, word } = season;
+  const cur = a.seun.find((s) => s.year === year);
+  const nxt = a.seun.find((s) => s.year === year + 1);
+  const yearWolun = a.wolun.filter((w) => w.sajuYear === year);
+  if (!cur || !yearWolun.length) return null;
   const r = readLuck(a, cur, '해', cur.combined);
   const stance = cur.combined >= 62 ? 0 : cur.combined >= 52 ? 1 : cur.combined >= 42 ? 2 : 3;
-  const thisWolun = a.wolun.filter((w) => w.sajuYear === a.currentSajuYear);
-  const nowIdx = thisWolun.reduce((acc, w, i) => (w.startMs <= a.now ? i : acc), -1);
+  const nowIdx = yearWolun.reduce((acc, w, i) => (w.startMs <= a.now ? i : acc), -1);
   const g1 = groupOf(cur.stemTenGod);
   const g2 = groupOf(cur.branchTenGod);
   const THEME: Record<TenGodGroup, string> = {
@@ -761,53 +799,103 @@ function yearReport(a: SajuAnalysis, report: Report): ConcernReport | null {
     인성: '배움과 문서의 기운(인성)',
   };
   const why = {
-    text: `올해는 ${THEME[g1]}${g2 !== g1 ? `과 ${THEME[g2]}` : ''}이 들어오는 해예요. ${cur.combined >= 52 ? '이 사주에는 반가운 쪽으로 작용해요.' : '이 사주에는 부담이 되는 쪽으로 작용하기 쉬워요.'} ${powerWord(cur.combined)}이에요.`,
+    text: `${josa(word, '은/는')} ${THEME[g1]}${g2 !== g1 ? `과 ${THEME[g2]}` : ''}이 들어오는 해예요. ${cur.combined >= 52 ? '이 사주에는 반가운 쪽으로 작용해요.' : '이 사주에는 부담이 되는 쪽으로 작용하기 쉬워요.'} ${powerWord(cur.combined)}이에요.`,
     basis: `${cur.year}년 ${pillarHanja(cur.pillar)} · ${cur.stemTenGod}·${cur.branchTenGod} · 운의 힘 ${cur.combined}`,
   };
   const field = (id: string, label: string) => {
-    const y = sectionOf(report, id)?.timeline?.items[0];
+    const y = sectionOf(report, id)?.timeline?.items.find((t) => t.year === year);
     return y ? { label, y } : null;
   };
-  const rows = thisWolun.map((w, i): MonthRow => {
+  const rows = yearWolun.map((w, i): MonthRow => {
     const m = readLuck(a, w, '달');
     const [tag, tone]: [string, Tone] = w.score >= 58 ? ['좋은 달', 'positive'] : w.score <= 42 ? ['조심할 달', 'negative'] : ['보통', 'neutral'];
     return { w, tag, tone, text: m.headline, now: i === nowIdx, past: i < nowIdx };
   });
-  const late = nowIdx >= 7;
+  // 기회의 달 · 조심할 달 — 남은 달 가운데 셋씩 (겹치지 않게 기준을 둔다)
+  const ahead = rows.filter((x) => !x.past);
+  const go = [...ahead]
+    .sort((x, y) => y.w.score - x.w.score)
+    .filter((x) => x.w.score >= 55)
+    .slice(0, 3);
+  const avoid = [...ahead]
+    .sort((x, y) => x.w.score - y.w.score)
+    .filter((x) => x.w.score <= 47)
+    .slice(0, 3);
+  const best = [...ahead].sort((x, y) => y.w.score - x.w.score)[0];
+  const late = !newYear && nowIdx >= 7;
   const nr = nxt ? readLuck(a, nxt, '해', nxt.combined) : null;
+  const tti = ttiOf(a);
+  const tt = ttiSentence(newYear ? tti.nextYear : tti.thisYear, tti.name);
+  // 대운 속 위치
+  const d = a.daeun.list.find((x) => x.startYear <= year && year <= x.endYear);
+  const k = d ? year - d.startYear + 1 : 0;
+  const daeunLine = d
+    ? S(
+        `${year}년은 ${DECADE_THEME[groupOf(d.stemTenGod)].label}의 10년(${d.startYear}~${d.endYear}년) 가운데 ${k}번째 해예요. ${k <= 3 ? '새 10년의 흐름이 자리를 잡는 초입이라, 방향을 정하고 씨를 뿌리기 좋아요.' : k >= 8 ? '10년의 흐름이 마무리로 가는 때라, 정리하고 다음 10년을 준비하기 좋아요.' : '10년 흐름의 한가운데라, 하던 일을 키우고 다지기 좋아요.'}`,
+        'neutral',
+        `${pillarHanja(d.pillar)} 대운 · ${d.stemTenGod}`,
+      )
+    : null;
+  const title = newYear ? `${year}년` : '올해';
 
   return {
     id: 'year',
-    gaeun: concernGaeun('year', a),
-    ask: '올해 무엇을 조심할까?',
-    answer: `올해는 ${r.headline}예요`,
+    gaeun: concernGaeun('year', a, { year }),
+    ask: season.ask,
+    answer: `${josa(word, '은/는')} ${r.headline}예요`,
     stances: YEAR_STANCES,
     stance,
     why,
-    signals: [{ label: '올해', y: seunSignal(a, cur) }, ...(nxt ? [{ label: '내년', y: seunSignal(a, nxt) }] : [])],
-    teaser: `달마다 좋은 달과 조심할 달, 연애·일·돈·건강 분야별 올해 흐름은 상세 리포트에서 볼 수 있어요.${late && nxt ? ` ${nxt.year}년 미리보기도 함께 있어요.` : ''}`,
+    signals: [{ label: newYear ? `${year}년` : '올해', y: seunSignal(a, cur) }, ...(nxt ? [{ label: newYear ? `${year + 1}년` : '내년', y: seunSignal(a, nxt) }] : [])],
+    teaser: best
+      ? `${newYear ? `${year}년에` : '남은 달 가운데'} 힘이 가장 실리는 달은 ${monthSpan(a, best.w)}이에요. 조심할 달과 열두 달 흐름, 분야별 ${title}은 상세 리포트에서 볼 수 있어요.`
+      : `조심할 달과 열두 달 흐름, 분야별 ${title}은 상세 리포트에서 볼 수 있어요.`,
     free: {
-      title: '올해 한눈에',
+      title: `${title} 한눈에`,
       note: `사주의 한 해는 입춘에 바뀌어요 — ${cur.year}년 2월 4일 무렵부터 ${cur.year + 1}년 2월 3일 무렵까지`,
-      items: [S(r.good[0] ?? '큰 흐름을 바꾸기보다 하던 일을 꾸준히 이어 가세요.', 'positive'), S(r.caution[0] ?? '무리한 확장과 큰 결정은 한 번 더 확인하세요.', 'negative')],
-      labels: ['좋아요', '조심'],
+      items: [
+        S(r.good[0] ?? '큰 흐름을 바꾸기보다 하던 일을 꾸준히 이어 가세요.', 'positive'),
+        S(r.caution[0] ?? '무리한 확장과 큰 결정은 한 번 더 확인하세요.', 'negative'),
+        S(tt.text, tt.tone, `${tti.name} · ${(newYear ? tti.nextYear : tti.thisYear).line}`),
+      ],
+      labels: ['좋아요', '조심', '띠·삼재'],
     },
     detail: {
-      title: '올해 운세 상세 리포트',
-      items: ['올해 열두 달 — 달마다 한 줄', '분야별 올해 — 연애·일·돈·건강', '올해의 개운법 — 가까이할 것·멀리할 것과 3주 루틴', '올해 더 해 두면 좋은 것과 피할 것', `${nxt?.year ?? '내'}년 미리보기`],
-      calendar: { title: '올해 열두 달', desc: '사주의 달은 절기에 바뀌어요. 지난 달은 흐리게 보여요.', rows },
+      title: newYear ? `${year} 신년운세 상세 리포트` : '올해 운세 상세 리포트',
+      items: [
+        `${title} 열두 달 — 달마다 흐름과 좋은 일·조심할 일`,
+        '기회의 달과 조심할 달 — 셋씩 골라서',
+        `분야별 ${title} — 연애·일·돈·건강`,
+        `${year}년 개운법 — 그해에 맞춘 가까이할 것·멀리할 것과 3주 루틴`,
+        `대운 속 ${title} — 10년 흐름에서 어디쯤인지`,
+        ...(late && nxt ? [`${nxt.year}년 미리보기`] : []),
+      ],
+      calendar: {
+        title: `${title} 열두 달`,
+        desc: newYear ? '사주의 달은 절기(입춘·경칩 등)에 바뀌어요. 날짜는 그 기준이에요.' : '사주의 달은 절기에 바뀌어요. 지난 달은 흐리게 보여요.',
+        rows,
+      },
+      months: {
+        title: '기회의 달과 조심할 달',
+        desc: `${newYear ? '열두 달' : '남은 달'} 가운데 힘이 실리는 달과 몸을 사릴 달을 셋씩 골랐어요.`,
+        goLabel: '기회의 달',
+        avoidLabel: '조심할 달',
+        list: [...go.map((x): MonthSign => ({ w: x.w, kind: 'go', why: x.text })), ...avoid.map((x): MonthSign => ({ w: x.w, kind: 'avoid', why: x.text }))],
+        noGo: '두드러지게 힘이 실리는 달은 없어요. 고른 흐름이라 꾸준함이 이기는 해예요.',
+        noAvoid: '크게 몸을 사릴 달은 없어요.',
+      },
       fields: {
-        title: '분야별 올해',
-        desc: '풀이 리포트의 분야별 연도 신호 중 올해만 모았어요.',
+        title: `분야별 ${title}`,
+        desc: '연애·일·돈·건강의 그해 신호를 모았어요.',
         rows: [field('love', '연애'), field('career', '일'), field('wealth', '돈'), field('health', '건강')].filter((x): x is { label: string; y: YearSignal } => !!x),
       },
       lists: [
         // 첫 줄은 무료 부분에 이미 나와서 둘째 줄부터
-        { title: '올해 더 해 두면 좋은 것', items: r.good.slice(1, 4) },
-        { title: '올해 더 피할 것', items: r.caution.slice(1, 4) },
-        ...(nr && nxt ? [{ title: `${nxt.year}년 미리보기 — ${nr.headline}`, items: [nr.good[0], nr.caution[0]].filter(Boolean) }] : []),
+        { title: `${title} 더 해 두면 좋은 것`, items: r.good.slice(1, 4) },
+        { title: `${title} 더 피할 것`, items: r.caution.slice(1, 4) },
+        ...(late && nr && nxt ? [{ title: `${nxt.year}년 미리보기 — ${nr.headline}`, items: [nr.good[0], nr.caution[0]].filter(Boolean) }] : []),
       ],
-      statements: [],
+      statements: daeunLine ? [{ title: `대운 속 ${title}`, items: [daeunLine] }] : [],
     },
   };
 }

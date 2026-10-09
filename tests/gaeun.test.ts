@@ -25,7 +25,7 @@ function randomInputs(n: number, seed0: number): BirthInput[] {
   }) as BirthInput);
 }
 
-const BAD = /undefined|NaN|\{who\}|을을|를를|은는|는은|이가|가이|과와|와과|나무\(木\)을|쇠\(金\)을|불\(火\)를|물\(水\)를|흙\(土\)를|나무\(木\)은|쇠\(金\)은|불\(火\)는|물\(水\)는|흙\(土\)는|\s{2,}/;
+const BAD = /undefined|NaN|\$\{|\{who\}|을을|를를|은는|는은|이가|가이|과와|와과|나무\(木\)을|쇠\(金\)을|불\(火\)를|물\(水\)를|흙\(土\)를|나무\(木\)은|쇠\(金\)은|불\(火\)는|물\(水\)는|흙\(土\)는|\s{2,}/;
 
 const people = randomInputs(400, 7).map((input) => analyze(input, NOW));
 

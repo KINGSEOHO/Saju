@@ -225,7 +225,8 @@ function ctxOf(a: SajuAnalysis) {
   };
 }
 
-export function buildGaeun(a: SajuAnalysis): { data: GaeunData; story: StoryPara[]; headline: string } {
+/** forYear — 개운 포인트를 볼 해 (기본은 지금의 사주 해, 신년운세 시즌에는 다음 해) */
+export function buildGaeun(a: SajuAnalysis, forYear = a.currentSajuYear): { data: GaeunData; story: StoryPara[]; headline: string } {
   const { Y, need, help, avoid, K, H, G, gp, strongest, weakest, fillG, cutG, fillBasis, cutBasis, strong, strengthBasis, has, yBasis } = ctxOf(a);
   const mb = a.pillars.month.branch;
   const winterCold = [11, 0, 1].includes(mb) && a.elements.percent.fire < 15;
@@ -273,8 +274,9 @@ export function buildGaeun(a: SajuAnalysis): { data: GaeunData; story: StoryPara
   if (has('도화') || has('홍염')) away.push({ key: 'romance', icon: '花', label: '구설', value: '충동적인 만남과 이성 관계의 구설 — 매력이 큰 만큼 선을 분명히', basis: '도화·홍염' });
 
   // 올해의 개운 포인트
-  const y = a.seun.find((s) => s.year === a.currentSajuYear) ?? null;
+  const y = a.seun.find((s) => s.year === forYear) ?? null;
   const tti = ttiOf(a);
+  const ty = forYear === a.currentSajuYear + 1 ? tti.nextYear : tti.thisYear;
   let year: GaeunData['year'] = null;
   if (y) {
     const yEls = [STEMS[y.pillar.stem].element, STEMS[mainStemOf(y.pillar.branch)].element];
@@ -292,14 +294,14 @@ export function buildGaeun(a: SajuAnalysis): { data: GaeunData; story: StoryPara
           ? `${y.year}년은 부담되는 ${pick(badRole, avoid)} 기운이 강한 해예요. 위의 ‘가까이할 것’을 평소보다 더 챙기세요.`
           : `${y.year}년은 좋고 나쁜 기운이 섞인 해예요. 큰 변화보다 생활의 균형을 지키는 것이 개운이에요.`,
     ];
-    const { samjae, relation } = tti.thisYear;
+    const { samjae, relation } = ty;
     const helped = relation === '육합' || relation === '삼합';
-    if (samjae && helped) parts.push(`띠로 보면 ${samjae}지만 올해 띠와 ${josa(relation, '이/가')} 받쳐 주는 해라, 큰 계약·보증만 한 번 더 확인하면 돼요.`);
+    if (samjae && helped) parts.push(`띠로 보면 ${samjae}지만 ${y.year}년 띠와 ${josa(relation, '이/가')} 받쳐 주는 해라, 큰 계약·보증만 한 번 더 확인하면 돼요.`);
     else if (samjae) parts.push(`띠로 보면 ${josa(samjae, '이라/라')} 큰 계약·보증은 한 번 더 확인하세요.`);
-    else if (relation === '충') parts.push('띠로 보면 올해 띠와 충이 되는 해라 이사·이직 같은 큰 변화는 서두르지 마세요.');
-    else if (relation === '원진') parts.push('띠로 보면 올해 띠와 원진이라 가까운 사람과의 말을 조심하면 좋아요.');
-    else if (helped) parts.push(`띠로도 올해 띠와 ${josa(relation, '이라/라')} 사람의 도움을 받기 좋아요.`);
-    year = { title: `${y.year}년의 개운 포인트`, text: parts.join(' '), tone, basis: `${y.year}년 세운 ${y.stemTenGod}(${y.stemRole})·${y.branchTenGod}(${y.branchRole}) · ${tti.name} ${tti.thisYear.line}` };
+    else if (relation === '충') parts.push(`띠로 보면 ${y.year}년 띠와 충이 되는 해라 이사·이직 같은 큰 변화는 서두르지 마세요.`);
+    else if (relation === '원진') parts.push(`띠로 보면 ${y.year}년 띠와 원진이라 가까운 사람과의 말을 조심하면 좋아요.`);
+    else if (helped) parts.push(`띠로도 ${y.year}년 띠와 ${josa(relation, '이라/라')} 사람의 도움을 받기 좋아요.`);
+    year = { title: `${y.year}년의 개운 포인트`, text: parts.join(' '), tone, basis: `${y.year}년 세운 ${y.stemTenGod}(${y.stemRole})·${y.branchTenGod}(${y.branchRole}) · ${tti.name} ${ty.line}` };
   }
 
   // 오늘부터 하는 세 가지
@@ -573,7 +575,8 @@ function balanceRoutine(strong: boolean, before: { text: string }[], basis: stri
 const stuckOrOver = (strong: boolean, basis: string, stuck: string, over: string): GaeunItem =>
   strong ? { key: 'stuck', icon: '滯', label: '혼자 버티기', value: stuck, basis } : { key: 'over', icon: '勞', label: '무리', value: over, basis };
 
-export function concernGaeun(id: GaeunConcern, a: SajuAnalysis, opt: { love?: Status } = {}): ConcernGaeun {
+/** opt.year — 올해 운세·신년운세가 보는 해 (report/season.ts) */
+export function concernGaeun(id: GaeunConcern, a: SajuAnalysis, opt: { love?: Status; year?: number } = {}): ConcernGaeun {
   const c = ctxOf(a);
   const { need, avoid, K, H, gp, fillG, cutG, fillBasis, cutBasis, strong, strengthBasis, has, yBasis, who } = c;
   const needBasis = `용신 ${elKo(need)}`;
@@ -583,9 +586,9 @@ export function concernGaeun(id: GaeunConcern, a: SajuAnalysis, opt: { love?: St
   const pick = (list: GaeunItem[], key: string) => list.find((x) => x.key === key) ?? list[0];
 
   if (id === 'year') {
-    const { data } = buildGaeun(a);
+    const { data } = buildGaeun(a, opt.year);
     return {
-      title: '올해의 개운법',
+      title: opt.year && opt.year !== a.currentSajuYear ? `${opt.year}년 개운법` : '올해의 개운법',
       why: data.why.replace(/필요합니다\.$/, '필요해요.'),
       taste: { key: 'routine', icon: '習', label: '오늘부터 한 가지', value: data.routine[0].text, basis: data.routine[0].basis },
       close: data.close,

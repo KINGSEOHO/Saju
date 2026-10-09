@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { analyze, type BirthInput, type SajuAnalysis } from '../src/engine/index.ts';
 import { concernReport, examMonthOf, examTimeline, type ConcernReport, type LoveStatus } from '../src/report/concern.ts';
-import type { ConcernId } from '../src/report/concernList.ts';
+import { concernsFor, TIMING, type ConcernId } from '../src/report/concernList.ts';
+import { seasonOf } from '../src/report/season.ts';
 import { generateReport } from '../src/report/generate.ts';
 
 const NOW = Date.UTC(2026, 9, 8);
@@ -66,7 +67,7 @@ describe('고민 리포트 다섯 개', () => {
           expect(avoid.length).toBeLessThanOrEqual(3);
           for (const g of go) expect(avoid.some((x) => x.w === g.w)).toBe(false);
         }
-        expect(JSON.stringify(c)).not.toMatch(/undefined|NaN|\((가|를|는|이|은|을)\)/);
+        expect(JSON.stringify(c)).not.toMatch(/undefined|NaN|\$\{|\((가|를|는|이|은|을)\)/);
       }
     }
   });
@@ -115,11 +116,65 @@ describe('고민 리포트 다섯 개', () => {
     }
   });
 
-  it('올해 운세는 사주의 한 해(입춘~입춘) 열두 달을 모두 보여 준다', () => {
-    for (const { by } of all.slice(0, 10)) {
-      expect(by.year.detail.calendar!.rows).toHaveLength(12);
-      expect(by.year.detail.calendar!.rows.filter((r) => r.now)).toHaveLength(1);
-      expect(by.year.free.note).toContain('입춘');
+  it('10월에는 올해 운세 칸이 다음 해 신년운세가 된다 — 사주의 한 해(입춘~입춘) 열두 달 전부', () => {
+    for (const { a, by } of all.slice(0, 10)) {
+      expect(seasonOf(a)).toMatchObject({ year: 2027, newYear: true, title: '2027 신년운세' });
+      expect(by.year.answer.startsWith('2027년은 ')).toBe(true);
+      expect(by.year.detail.title).toBe('2027 신년운세 상세 리포트');
+      const rows = by.year.detail.calendar!.rows;
+      expect(rows).toHaveLength(12);
+      expect(rows.every((r) => r.w.sajuYear === 2027 && !r.now && !r.past)).toBe(true);
+      expect(by.year.free.note).toContain('2027년 2월 4일');
+      // 무료: 띠·삼재 한 줄과 힘이 실리는 달 하나 / 상세: 기회의 달·조심할 달, 그해 개운법
+      expect(by.year.free.labels).toEqual(['좋아요', '조심', '띠·삼재']);
+      expect(by.year.teaser).toMatch(/2027년에 힘이 가장 실리는 달은|조심할 달과 열두 달 흐름/);
+      expect(by.year.detail.items[0]).toContain('열두 달');
+      expect(by.year.gaeun?.title).toBe('2027년 개운법');
+      expect(by.year.gaeun?.year?.title).toBe('2027년의 개운 포인트');
+      const go = by.year.detail.months!.list.filter((m) => m.kind === 'go');
+      const avoid = by.year.detail.months!.list.filter((m) => m.kind === 'avoid');
+      expect(go.length).toBeLessThanOrEqual(3);
+      expect(avoid.length).toBeLessThanOrEqual(3);
+      for (const g of go) expect(avoid.some((x) => x.w === g.w)).toBe(false);
+    }
+    // 신년운세 시즌에는 고민 리포트 맨 앞에
+    expect(concernsFor(all[0].a)[0]).toMatchObject({ id: 'year', title: '2027 신년운세' });
+  });
+
+  it('시즌은 10월에 시작해 입춘 전까지 — 입춘이 지나면 같은 해의 올해 운세로 이어진다', () => {
+    const at = (iso: string) => seasonOf(analyze({ ...all[0].a.input }, Date.parse(iso)));
+    expect(at('2026-09-30T12:00:00+09:00')).toMatchObject({ year: 2026, newYear: false, title: '올해 운세' });
+    expect(at('2026-10-01T12:00:00+09:00')).toMatchObject({ year: 2027, newYear: true });
+    expect(at('2027-01-20T12:00:00+09:00')).toMatchObject({ year: 2027, newYear: true });
+    expect(at('2027-02-10T12:00:00+09:00')).toMatchObject({ year: 2027, newYear: false, title: '올해 운세' });
+  });
+
+  it('시즌이 아닐 때 올해 운세는 지금 달을 표시한다', () => {
+    const a = analyze({ ...all[0].a.input }, Date.parse('2026-05-10T12:00:00+09:00'));
+    const months = upcoming(a);
+    const c = concernReport('year', a, generateReport(a), months)!;
+    expect(c.answer.startsWith('올해는 ')).toBe(true);
+    expect(c.detail.calendar!.rows.filter((r) => r.now)).toHaveLength(1);
+    expect(c.gaeun?.title).toBe('올해의 개운법');
+  });
+});
+
+describe('무료와 유료가 겹치지 않는다', () => {
+  it('연애·일·돈의 \'때\'(이야기 한 문단)는 상세에만 — 상세의 이야기는 그 문단뿐이다', () => {
+    for (const { report, by } of all.slice(0, 20)) {
+      for (const [id, sec] of [['love', 'love'], ['career', 'career'], ['money', 'wealth']] as const) {
+        const t = TIMING[sec]!;
+        const story = report.sections.find((s) => s.id === sec)!.story ?? [];
+        // 풀이 리포트(무료)는 이 제목의 문단을 빼고 보여 준다 — 제목이 바뀌면 걸러지지 않으므로 늘 있어야 한다
+        expect(story.some((p) => p.title === t.para), `${sec} ${t.para}`).toBe(true);
+        const paid = by[id].detail.story;
+        expect(paid?.paras.every((p) => p.title === t.para)).toBe(true);
+        // 상세에 무료 카드(블록)를 다시 싣지 않는다
+        expect(by[id].detail.statements).toEqual([]);
+      }
+      // 카드 보기에서 빼는 '때' 묶음도 늘 있어야 한다
+      expect(report.sections.find((s) => s.id === 'love')!.blocks.some((b) => b.heading === TIMING.love!.block)).toBe(true);
+      expect(report.sections.find((s) => s.id === 'career')!.blocks.some((b) => b.heading === TIMING.career!.block)).toBe(true);
     }
   });
 });

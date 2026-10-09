@@ -5,13 +5,14 @@
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
-import { PAYWALL_DEMO } from '../config/plans.ts';
+import { PAYWALL_DEMO, PRICES } from '../config/plans.ts';
 import { resetDemo } from '../lib/account.ts';
 import { formatYm } from '../lib/partnerDraft.ts';
 import { concernOffers, isOpen, purchaseLabel, sajuKey } from '../lib/entitlements.ts';
 import { concernReport, examMonthOf, LOVE_STATUS_LABEL, type ConcernReport, type LoveStatus, type MonthRow, type MonthSign } from '../report/concern.ts';
-import { CONCERNS, type ConcernId } from '../report/concernList.ts';
+import { concernMeta, type ConcernId } from '../report/concernList.ts';
 import type { Report, Statement, YearSignal } from '../report/generate.ts';
+import { seasonKey } from '../report/season.ts';
 import { Gloss, Lead, TONE_STYLE } from './common.tsx';
 import { GaeunDetail, GaeunTaste } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
@@ -259,7 +260,7 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
   const [love, setLove] = useTabState<LoveStatus>('mg_love_status', 'single');
   const c = useMemo(() => concernReport(id, a, report, months, { love }), [id, a, report, months, love]);
   if (!c) return <p className="text-ui text-sub">이 고민의 풀이를 만들지 못했어요.</p>;
-  const title = CONCERNS.find((x) => x.id === id)?.title ?? '';
+  const title = concernMeta(id, a).title;
   return (
     <>
       {id === 'love' && (
@@ -393,12 +394,11 @@ function CodeBox({ u }: { u: Unlock }) {
 
 /** 시안 전용 — 지금까지 연 것과 처음부터 다시 */
 function DemoBox({ u }: { u: Unlock }) {
-  const free = u.ent.free ? CONCERNS.find((c) => c.id === u.ent.free)?.title : null;
   return (
     <div className="mb-4 rounded-xl border border-dashed border-line-strong px-4 py-3">
       <p className="text-cap font-semibold text-sub">시안 · 결제 흐름 체험 (실제로 결제되지 않아요)</p>
       <p className="mt-1 text-label text-ink-2">
-        무료 {free ? `‘${free}’에 사용` : '1개 남음'} · 고민에 낸 돈 {u.ent.spent.toLocaleString('ko-KR')}원 · 기록 {u.purchases.length}건
+        이번 묶음에 낸 돈 {u.ent.spent.toLocaleString('ko-KR')}원 · 기록 {u.purchases.length}건 · 전부 열기 {PRICES.all.toLocaleString('ko-KR')}원까지만
       </p>
       {u.purchases.length > 0 && (
         <ul className="mt-2 border-t border-line text-label">
@@ -419,13 +419,13 @@ function DemoBox({ u }: { u: Unlock }) {
 
 /** 고민 하나 — 고민 리포트 칸의 줄을 펼치면 보인다 */
 export function ConcernBody({ a, report, id }: { a: SajuAnalysis; report: Report; id: ConcernId }) {
-  const u = useUnlock(sajuKey(a.input));
+  const u = useUnlock(sajuKey(a.input), seasonKey(a));
   return <ConcernView a={a} report={report} id={id} u={u} />;
 }
 
 /** 고민 리포트 칸 맨 위 — 내 구매 코드(산 것이 있을 때)와 시안 체험 상자. 궁합·재회에서 산 것도 같은 코드에 쌓인다 */
 export function ConcernTop({ a }: { a: SajuAnalysis }) {
-  const u = useUnlock(sajuKey(a.input));
+  const u = useUnlock(sajuKey(a.input), seasonKey(a));
   return (
     <>
       {PAYWALL_DEMO && <DemoBox u={u} />}

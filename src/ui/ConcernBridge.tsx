@@ -6,8 +6,9 @@
 import { useEffect, useState } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
 import type { LoveStatus } from '../report/concern.ts';
-import { CONCERNS, type ConcernId } from '../report/concernList.ts';
+import { concernMeta, type ConcernId } from '../report/concernList.ts';
 import type { Report } from '../report/generate.ts';
+import { seasonOf } from '../report/season.ts';
 import { upcomingMonths } from './Luck.tsx';
 
 const SUB: Record<ConcernId, string> = {
@@ -15,7 +16,7 @@ const SUB: Record<ConcernId, string> = {
   love: '인연이 강한 해와 달, 지금 상태에 맞는 할 일을 알려 드려요.',
   money: '돈이 들어오는 달과 새기 쉬운 달, 올해 돈 관리법을 알려 드려요.',
   exam: '나에게 맞는 공부법과 시험이 있는 달의 기운을 알려 드려요.',
-  year: '올해 열두 달을 한 줄씩, 연애·일·돈·건강 분야별로 알려 드려요.',
+  year: '',
   match: '상대 생년월일만 넣으면 사주·띠·MBTI로 함께 비교해요. 헤어진 사이라면 다시 연락하기 좋은 때도 알려 드려요.',
 };
 
@@ -59,7 +60,8 @@ export function ConcernBridge({ a, report, id, lead, peek = true, onGo }: { a: S
       alive = false;
     };
   }, [id, a, report, love, peek]);
-  const c = CONCERNS.find((x) => x.id === id)!;
+  const c = concernMeta(id, a);
+  const sub = id === 'year' ? `${seasonOf(a).word} 열두 달 흐름과 기회의 달·조심할 달, 연애·일·돈·건강 분야별로 알려 드려요.` : SUB[id];
   return (
     <aside className="no-print panel mt-12" aria-label={`${c.title} 고민 리포트로 가기`}>
       <p className="kicker">고민 리포트 · {c.title}</p>
@@ -70,7 +72,7 @@ export function ConcernBridge({ a, report, id, lead, peek = true, onGo }: { a: S
           <span className="font-semibold">{answer}</span>
         </p>
       )}
-      <p className="mt-3 text-label text-sub">{SUB[id]}</p>
+      <p className="mt-3 text-label text-sub">{sub}</p>
       <button type="button" className="btn-primary mt-4 w-full" onClick={() => onGo(id)}>
         {id === 'match' ? '궁합·재회 보기' : `${c.title} 고민 보기`}
       </button>

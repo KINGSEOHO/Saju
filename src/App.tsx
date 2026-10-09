@@ -5,11 +5,12 @@ import { groupOf } from './engine/tenGods.ts';
 import { flushQueue, send, sessionId } from './lib/api.ts';
 import { clearDraft, inputToDraft, saveDraft } from './lib/birthDraft.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
-import { CONCERNS, type ConcernId } from './report/concernList.ts';
+import { concernsFor, type ConcernId } from './report/concernList.ts';
 import { crossReport } from './report/cross.ts';
 import { generateReport, type Report } from './report/generate.ts';
 import { AXES, sajuAxes } from './report/mbti.ts';
 import { readLuck } from './report/luckReading.ts';
+import { seasonOf } from './report/season.ts';
 import { elWord, LEVEL_PLAIN } from './report/plain.ts';
 import { DECADE_THEME } from './report/storyKb.ts';
 import { Admin } from './ui/Admin.tsx';
@@ -192,11 +193,11 @@ type Sec = 'report' | 'luck' | 'cross' | 'mbti' | 'job' | 'webtoon' | 'chart' | 
 /** 펼치는 줄 — 세부 풀이의 칸이거나 고민 리포트의 고민 하나. 한 번에 하나만 펼친다 */
 type RowId = Sec | ConcernId;
 const DETAILS: { id: Sec; title: string; desc: string }[] = [
-  { id: 'report', title: '풀이 리포트', desc: '종합 · 성향 · 연애 · 직업 · 재물 · 건강' },
+  { id: 'report', title: '풀이 리포트', desc: '나는 어떤 사람인지 — 성향 · 연애 · 일 · 돈 · 건강' },
   { id: 'luck', title: '운의 흐름', desc: '이번 달 · 올해 · 10년 대운' },
   { id: 'cross', title: '교차 검증', desc: '사주·운·띠·MBTI·직업이 함께 가리키는 것' },
   { id: 'mbti', title: 'MBTI × 사주', desc: '겉(MBTI)과 속(사주)이 같은 점과 다른 점' },
-  { id: 'job', title: '직업 × 운', desc: '지금 하는 일과의 궁합, 지금 준비할 것' },
+  { id: 'job', title: '지금 하는 일과 나', desc: '지금 하는 일과의 궁합, 지금 준비할 것' },
   { id: 'webtoon', title: '인생 웹툰', desc: '내 사주로 그린 개그 웹툰 4화' },
   { id: 'chart', title: '만세력', desc: '원국 상세표 · 시간 보정 내역 · 용어 사전' },
   { id: 'detail', title: '전문 분석', desc: '다섯 기운 · 힘의 세기 · 필요한 기운 · 신살' },
@@ -215,7 +216,7 @@ function DetailContent({ id, a, report, onConcern }: { id: Sec; a: SajuAnalysis;
       return (
         <>
           <LuckPanel a={a} />
-          <ConcernBridge a={a} report={report} id="year" lead="올해 남은 달은 어떻게 보내면 좋을까요?" onGo={onConcern} />
+          <ConcernBridge a={a} report={report} id="year" lead={seasonOf(a).newYear ? `${seasonOf(a).year}년은 어떤 해일까요?` : '올해 남은 달은 어떻게 보내면 좋을까요?'} onGo={onConcern} />
         </>
       );
     case 'cross':
@@ -292,6 +293,31 @@ function Row({ id, title, desc, open, onToggle, children }: { id: RowId; title: 
         </div>
       )}
     </li>
+  );
+}
+
+/** 결론 바로 아래의 고민 리포트 지름길 — 누르면 아래 고민 리포트 칸에서 그 고민이 열리고 그 자리로 간다 */
+function ConcernShortcuts({ a, onPick }: { a: SajuAnalysis; onPick: (id: ConcernId) => void }) {
+  const season = seasonOf(a);
+  return (
+    <nav className="no-print mt-6" aria-label="고민 리포트 바로 가기">
+      <p className="text-label font-semibold text-ink">지금 고민이 있다면</p>
+      <div className="mt-2.5 flex flex-wrap gap-2">
+        {concernsFor(a).map((c) => {
+          const hero = c.id === 'year' && season.newYear;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onPick(c.id)}
+              className={`h-10 rounded-full border px-4 text-label font-semibold transition-colors ${hero ? 'border-accent bg-accent text-on-accent' : 'border-line text-ink active:bg-fill'}`}
+            >
+              {c.title}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
@@ -434,6 +460,8 @@ function Result({ input }: { input: BirthInput }) {
         </button>
       </section>
 
+      <ConcernShortcuts a={a} onPick={openSection} />
+
       <div className="mt-10">
         <PillarTable a={a} />
       </div>
@@ -572,7 +600,7 @@ function Result({ input }: { input: BirthInput }) {
           </div>
         )}
         <ul className="mt-4 border-t border-line">
-          {CONCERNS.map((c) => (
+          {concernsFor(a).map((c) => (
             <Row key={c.id} id={c.id} title={c.title} desc={c.ask} open={open === c.id} onToggle={() => toggle(c.id)}>
               <ConcernContent id={c.id} a={a} report={report} />
             </Row>

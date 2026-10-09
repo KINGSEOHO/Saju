@@ -20,12 +20,22 @@ export const PREMIUM_SECTIONS: SectionId[] = ['love', 'career', 'wealth', 'healt
  */
 
 /**
- * 고민 리포트 가격 (궁합·재회 빼고 5개) — 하나는 무료로 고르고, 하나 더 열 때마다 single, 나머지 전부는 합계 all.
- * 하나씩 사도 '지금까지 낸 금액'과의 차액만 받고, 합계가 all을 넘지 않게 한다 (lib/entitlements.ts).
+ * 가격 (원) — 2026년 10월 다른 사주 서비스 가격을 보고 정했다 (docs/MONETIZATION.md 0절).
+ *  - 웹 사주 리포트는 한 건 9,900원대가 많고, 신년운세 상품권은 8,800~18,700원, 궁합은 5천 원 안팎.
+ *  - 처음 보는 사이트라 그보다 낮게 두고, '전부 열기'를 시장의 기준값인 9,900원에 맞춰 가장 이득으로 보이게 한다.
+ * 무료로 통째로 열어 주는 고민은 없다 (가장 궁금한 고민을 공짜로 풀면 살 이유가 사라진다).
+ * 대신 고민마다 한 줄 답·이유·신호·개운법 한 가지는 늘 무료다.
  */
-export const CONCERN_PRICING = { single: 990, all: 2490 };
-/** 궁합·재회 상세 — 첫 상대는 무료, 그다음부터 한 명마다 */
-export const PARTNER_PRICE = 990;
+export const PRICES = {
+  /** 고민 하나 상세 — 이직·진로, 연애·결혼, 돈, 시험·합격 */
+  concern: 3900,
+  /** 그해 신년운세(입춘이 지나면 '올해 운세') 상세 — 해마다 따로 산다 */
+  year: 6900,
+  /** 전부 열기 — 고민 4개 + 그해 신년운세. 하나씩 산 금액은 빼 준다 */
+  all: 9900,
+  /** 궁합·재회 상세 — 상대 한 명마다 (그 사람과의 궁합·재회가 함께 열린다) */
+  partner: 4900,
+};
 /** 미리보기에서만 결제 흐름을 흉내 낸다 (node scripts/preview-artifact.mjs --paywall) */
 export const PAYWALL_DEMO = import.meta.env.VITE_PAYWALL_DEMO === '1';
 

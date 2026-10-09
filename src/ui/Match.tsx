@@ -18,6 +18,7 @@ import { monthTitle, upcomingMonths } from './Luck.tsx';
 import { Premium, useUnlock } from './Premium.tsx';
 import { PAYWALL_DEMO } from '../config/plans.ts';
 import { partnerKey, partnerOffers, partnerOpen, sajuKey } from '../lib/entitlements.ts';
+import { seasonKey } from '../report/season.ts';
 
 // ---------------------------------------------------------------------------
 // 상대 정보 입력
@@ -359,7 +360,7 @@ function CompatDetail({ r }: { r: CompatReport }) {
 
 /** 궁합·재회 상세는 상대 한 명마다 따로 연다 */
 function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
-  const u = useUnlock(sajuKey(a.input));
+  const u = useUnlock(sajuKey(a.input), seasonKey(a));
   const pk = partnerKey(b.input);
   return {
     locked: PAYWALL_DEMO ? !partnerOpen(u.ent, pk) : undefined,

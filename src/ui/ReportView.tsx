@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { BETA_FREE, PREMIUM_SECTIONS } from '../config/plans.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
-import type { ConcernId } from '../report/concernList.ts';
+import { josa } from '../engine/josa.ts';
+import { TIMING, type ConcernId } from '../report/concernList.ts';
 import { generateReport, type ReportSection, type SectionId, type Statement } from '../report/generate.ts';
+import { seasonOf } from '../report/season.ts';
 import type { StoryPara } from '../report/story.ts';
 import { DivergingBars } from './Charts.tsx';
 import { ConcernBridge } from './ConcernBridge.tsx';
@@ -11,15 +13,18 @@ import { SectionRating } from './Feedback.tsx';
 
 const TAB_ORDER: SectionId[] = ['summary', 'personality', 'love', 'career', 'wealth', 'health'];
 
-/** 풀이를 다 읽은 뒤 '그래서 언제, 어떻게?'로 이어 갈 고민 */
-const NEXT: Record<SectionId, { id: ConcernId; lead: string; peek?: false }> = {
-  summary: { id: 'year', lead: '그럼 올해는 어떻게 보내면 좋을까요?' },
+/** 풀이를 다 읽은 뒤 '그래서 언제, 어떻게?'로 이어 갈 고민. w — '올해' 또는 신년운세 시즌의 '2027년' */
+const NEXT = (w: string): Record<SectionId, { id: ConcernId; lead: string; peek?: false }> => ({
+  summary: { id: 'year', lead: `그럼 ${josa(w, '은/는')} 어떻게 보내면 좋을까요?` },
   personality: { id: 'exam', lead: '내 성향에 맞는 공부법은 뭘까요?', peek: false },
   love: { id: 'love', lead: '그래서 인연은 언제 올까요?' },
   career: { id: 'career', lead: '그래서 지금 옮겨도 될까요?' },
   wealth: { id: 'money', lead: '그래서 돈은 언제 모일까요?' },
-  health: { id: 'year', lead: '올해 건강은 언제 특히 조심해야 할까요?', peek: false },
-};
+  health: { id: 'year', lead: `${w} 건강은 언제 특히 조심해야 할까요?`, peek: false },
+});
+
+/** 탭 이름 — 풀이 리포트는 '나는 어떤 사람인지'를 다룬다 (언제·어떻게는 고민 리포트) */
+const TAB_LABEL: Record<SectionId, string> = { summary: '종합', personality: '성향', love: '연애 스타일', career: '일 스타일', wealth: '돈 그릇', health: '건강 체질' };
 
 function Evidence({ text, show }: { text?: string; show: boolean }) {
   if (!show || !text) return null;
@@ -96,9 +101,10 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
   const locked = !BETA_FREE && PREMIUM_SECTIONS.includes(sec.id);
   const [mode, setMode] = useState<'story' | 'cards'>('story');
   const thisYear = new Date(a.now).getUTCFullYear();
+  const timing = TIMING[sec.id];
   return (
     <div>
-      <p className="kicker">{sec.title} 한 줄 요약</p>
+      <p className="kicker">{TAB_LABEL[sec.id]} 한 줄 요약</p>
       <p className="mt-2 font-serif text-title2 font-bold text-ink">
         <Gloss text={sec.headline} />
       </p>
@@ -124,19 +130,21 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
           <p className="panel text-center text-ui text-sub">이 부분은 상세 리포트에 들어 있어요.</p>
         ) : (
           <div className="space-y-12">
-            {mode === 'story' && sec.story && <StoryView story={sec.story} showEvidence={showEvidence} />}
+            {mode === 'story' && sec.story && <StoryView story={sec.story.filter((p) => p.title !== timing?.para)} showEvidence={showEvidence} />}
             {mode === 'cards' &&
-              sec.blocks.map((b) => (
-                <div key={b.heading}>
-                  <h3 className="text-title3 text-ink">{b.heading}</h3>
-                  <ul className="mt-2 border-t border-line">
-                    {b.items.map((s, i) => (
-                      <StatementItem key={i} s={s} showEvidence={showEvidence} />
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            {sec.timeline && (
+              sec.blocks
+                .filter((b) => b.heading !== timing?.block)
+                .map((b) => (
+                  <div key={b.heading}>
+                    <h3 className="text-title3 text-ink">{b.heading}</h3>
+                    <ul className="mt-2 border-t border-line">
+                      {b.items.map((s, i) => (
+                        <StatementItem key={i} s={s} showEvidence={showEvidence} />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+            {sec.timeline && !timing && (
               <div>
                 <h3 className="mb-5 text-title3 text-ink">{sec.timeline.title}</h3>
                 <DivergingBars
@@ -205,14 +213,11 @@ export function ReportView({ a, onConcern }: { a: SajuAnalysis; onConcern?: (id:
         </div>
       )}
       <div className="tabs" role="tablist" aria-label="풀이 주제">
-        {TAB_ORDER.map((id) => {
-          const s = report.sections.find((x) => x.id === id)!;
-          return (
-            <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`tab ${tab === id ? 'tab-on' : ''}`}>
-              {s.title}
-            </button>
-          );
-        })}
+        {TAB_ORDER.map((id) => (
+          <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`tab ${tab === id ? 'tab-on' : ''}`}>
+            {TAB_LABEL[id]}
+          </button>
+        ))}
       </div>
       <label className="mt-4 flex w-fit cursor-pointer items-center gap-2 text-label text-sub">
         <input type="checkbox" className="size-4 accent-accent" checked={showEvidence} onChange={(e) => setShowEvidence(e.target.checked)} />
@@ -220,7 +225,7 @@ export function ReportView({ a, onConcern }: { a: SajuAnalysis; onConcern?: (id:
       </label>
       <div className="mt-8">
         <SectionBody a={a} sec={sec} showEvidence={showEvidence} />
-        {onConcern && <ConcernBridge key={tab} a={a} report={report} {...NEXT[tab]} onGo={onConcern} />}
+        {onConcern && <ConcernBridge key={tab} a={a} report={report} {...NEXT(seasonOf(a).word)[tab]} onGo={onConcern} />}
       </div>
     </section>
   );

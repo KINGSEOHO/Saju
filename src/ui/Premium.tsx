@@ -7,16 +7,16 @@
 import { useState, type ReactNode } from 'react';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
 import { useAccount, type RedeemResult } from '../lib/account.ts';
-import { entOf, purchaseOf, type Offer } from '../lib/entitlements.ts';
+import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
 import type { ConcernId } from '../report/concernList.ts';
 
-/** 이 사주의 이용권 + 로그인 + 구매 — 고민 리포트와 궁합·재회가 함께 쓴다 */
-export function useUnlock(saju: string) {
+/** 이 사주의 이용권 + 구매 기록 — 고민 리포트와 궁합·재회가 함께 쓴다. season: 신년운세(올해 운세)를 보는 해 */
+export function useUnlock(saju: string, season: SeasonKey) {
   const acct = useAccount();
   return {
     ...acct,
-    ent: entOf(acct.purchases, saju),
-    buy: (o: Offer, id: ConcernId | null, pk?: string) => acct.record(purchaseOf(o, saju, id, pk)),
+    ent: entOf(acct.purchases, saju, season),
+    buy: (o: Offer, id: ConcernId | null, pk?: string) => acct.record(purchaseOf(o, saju, id, pk, season.year)),
   };
 }
 

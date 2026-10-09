@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { BRANCHES, STEMS, pillarHanja, pillarKo, type LuckPillar, type SajuAnalysis, type Wolun } from '../engine/index.ts';
 import { groupOf } from '../engine/tenGods.ts';
 import { readLuck, type LuckReading } from '../report/luckReading.ts';
+import { seasonOf } from '../report/season.ts';
 import { DECADE_THEME } from '../report/storyKb.ts';
 import { DivergingBars, ScorePill } from './Charts.tsx';
 import { Chevron, Gloss, SectionTitle } from './common.tsx';
@@ -95,6 +96,7 @@ export function FeaturedReading({
   score,
   r,
   footer,
+  compact,
 }: {
   label: string;
   sub: string;
@@ -102,6 +104,8 @@ export function FeaturedReading({
   score: number;
   r: LuckReading;
   footer?: ReactNode;
+  /** 한 줄과 점수만 — 좋은 일·조심할 일 목록은 고민 리포트(올해 운세·신년운세) 상세에 있다 */
+  compact?: string;
 }) {
   return (
     <div className="panel">
@@ -115,12 +119,18 @@ export function FeaturedReading({
         </div>
       </div>
       <h3 className="mt-3 text-title2 text-ink">{r.headline}</h3>
-      <div className="mt-6">
-        <ReadingLists r={r} />
-      </div>
-      <p className="mt-6 text-cap text-sub">
-        <Gloss text={`근거 · ${r.evidence}`} />
-      </p>
+      {compact ? (
+        <p className="mt-3 text-label text-sub">{compact}</p>
+      ) : (
+        <>
+          <div className="mt-6">
+            <ReadingLists r={r} />
+          </div>
+          <p className="mt-6 text-cap text-sub">
+            <Gloss text={`근거 · ${r.evidence}`} />
+          </p>
+        </>
+      )}
       {footer}
     </div>
   );
@@ -196,6 +206,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
   const thisMonth = months[0];
   const thisYear = a.seun.find((s) => s.year === a.currentSajuYear);
   const nextYear = a.seun.find((s) => s.year === a.currentSajuYear + 1);
+  const season = seasonOf(a);
   const tabBtn = (id: typeof tab, label: string) => (
     <button type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`tab ${tab === id ? 'tab-on' : ''}`}>
       {label}
@@ -227,23 +238,38 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
             r={readLuck(a, thisMonth, '달')}
             footer={<SwitchNote a={a} w={thisMonth} />}
           />
-          <h3 className="mt-12 text-title3 text-ink">앞으로 11개월</h3>
+          <h3 className="mt-12 text-title3 text-ink">다음 달</h3>
           <p className="mt-1 text-label text-sub">사주의 달은 양력 1일이 아니라 절기(입춘·경칩 등)가 들어오는 날 바뀌어요. 날짜는 그 기준이에요.</p>
           <ul className="mt-3 border-t border-line">
-            {months.slice(1).map((w) => (
+            {months.slice(1, 2).map((w) => (
               <MonthRow key={w.startMs} a={a} w={w} />
             ))}
           </ul>
+          <p className="mt-4 text-label text-sub">그다음 달부터의 흐름과 기회의 달·조심할 달은 고민 리포트 ‘{season.title}’에 있어요.</p>
         </div>
       )}
 
       {tab === 'seun' && (
         <div className="space-y-12">
           {thisYear && (
-            <FeaturedReading label="올해" sub={`${thisYear.year}년 · 대운 합산 ${thisYear.combined}점`} pillar={thisYear.pillar} score={thisYear.combined} r={readLuck(a, thisYear, '해', thisYear.combined)} />
+            <FeaturedReading
+              label="올해"
+              sub={`${thisYear.year}년 · 대운 합산 ${thisYear.combined}점`}
+              pillar={thisYear.pillar}
+              score={thisYear.combined}
+              r={readLuck(a, thisYear, '해', thisYear.combined)}
+              compact={season.newYear ? undefined : `좋은 일·조심할 일과 열두 달 흐름은 고민 리포트 ‘${season.title}’에 있어요.`}
+            />
           )}
           {nextYear && (
-            <FeaturedReading label="내년" sub={`${nextYear.year}년 · 대운 합산 ${nextYear.combined}점`} pillar={nextYear.pillar} score={nextYear.combined} r={readLuck(a, nextYear, '해', nextYear.combined)} />
+            <FeaturedReading
+              label="내년"
+              sub={`${nextYear.year}년 · 대운 합산 ${nextYear.combined}점`}
+              pillar={nextYear.pillar}
+              score={nextYear.combined}
+              r={readLuck(a, nextYear, '해', nextYear.combined)}
+              compact={season.newYear ? `좋은 일·조심할 일과 열두 달 흐름은 고민 리포트 ‘${season.title}’에 있어요.` : '내년 이야기는 10월부터 신년운세로 열려요.'}
+            />
           )}
           <div>
             <h3 className="mb-5 text-title3 text-ink">연도별 흐름</h3>
