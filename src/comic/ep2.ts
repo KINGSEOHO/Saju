@@ -138,7 +138,7 @@ const STRAIN: Record<TenGodGroup, { title: string; gags: (c: Ctx, k: Kind) => Ga
       },
       { s: { bg: 'room', shot: 'bust', cast: [c.mirror(160, 'smug', 'point'), c.me(440, 'nervous', 'fist', { dir: -1 })], talk: [say(0, '따라 해 봐. ‘그건 제가 했습니다!’'), whisper(1, '그건… 제가… 했…')] } },
     ],
-    note: '이 일은 혼자 버티고 경쟁하는 힘이 필요한데, 사주상 자기 주장을 밀어붙이는 기운이 약합니다. 성과의 공을 분명히 남기고, 내 몫을 요구하는 연습이 필요합니다.',
+    note: '이 일은 혼자 버티고 경쟁하는 힘이 필요한데, 사주상 자기 주장을 밀어붙이는 기운이 약해요. 성과의 공을 분명히 남기고, 내 몫을 요구하는 연습이 필요해요.',
   },
   식상: {
     title: '실력만큼 드러내지 못한다',
@@ -152,7 +152,7 @@ const STRAIN: Record<TenGodGroup, { title: string; gags: (c: Ctx, k: Kind) => Ga
       },
       { s: { bg: 'white', shot: 'bust', cast: [c.mirror(160, 'smug'), c.me(440, 'blank', 'stand', { dir: -1 })], talk: [say(0, '머릿속은 4K인데 입은 240p야.'), say(1, '…화질 개선 부탁드려요.')] } },
     ],
-    note: '이 일은 생각을 밖으로 표현하는 힘이 많이 필요한데, 사주상 그 기운이 약해 실력만큼 인정받지 못할 수 있습니다. 보고서와 발표를 정해 둔 틀에 맞춰 미리 준비해 두면 보완됩니다.',
+    note: '이 일은 생각을 밖으로 표현하는 힘이 많이 필요한데, 사주상 그 기운이 약해 실력만큼 인정받지 못할 수 있어요. 보고서와 발표를 정해 둔 틀에 맞춰 미리 준비해 두면 보완돼요.',
   },
   재성: {
     title: '숫자·돈 감각이 약하다',
@@ -162,7 +162,7 @@ const STRAIN: Record<TenGodGroup, { title: string; gags: (c: Ctx, k: Kind) => Ga
         : { s: { bg: 'room', cast: [c.me(300, 'nervous', 'hold', { held: 'wallet', fx: ['drops'] })], talk: [think(0, k === 'study' ? '(용돈 계산이 또 안 맞아…)' : '(이번 달 카드값… 계산이 안 맞아.)')] } },
       { s: { bg: 'room', shot: 'bust', cast: [c.mirror(160, 'smile', 'point'), c.me(440, 'nervous', 'stand', { dir: -1 })], talk: [say(0, '체크리스트랑 계산기를 친구로 만들자.'), say(1, '계산기가… 친구…')] } },
     ],
-    note: '성과와 돈을 다뤄야 하는 일인데, 사주상 현실 계산과 재물 감각이 약한 편입니다. 내 성과를 수치로 기록하고, 돈이 걸린 판단은 체크리스트로 하세요.',
+    note: '성과와 돈을 다뤄야 하는 일인데, 사주상 현실 계산과 재물 감각이 약한 편이에요. 내 성과를 수치로 기록하고, 돈이 걸린 판단은 체크리스트로 하세요.',
   },
   관성: {
     title: '규칙과 위계가 버겁다',
@@ -176,7 +176,7 @@ const STRAIN: Record<TenGodGroup, { title: string; gags: (c: Ctx, k: Kind) => Ga
       },
       { s: { bg: 'white', cast: [c.me(300, 'cry', 'stand', { scale: 0.78 }), c.mirror(500, 'plain', 'stand', { dir: -1 })], talk: [say(1, '틀을 ‘내 루틴’으로 바꾸면 덜 답답해.')], props: [{ kind: 'cage', x: 300, label: k === 'work' ? '결재 라인' : k === 'study' ? '교칙' : '약속 시간' }] } },
     ],
-    note: '규칙과 위계가 분명한 일인데, 사주상 통제를 견디는 기운이 약합니다. 스스로 정한 마감과 루틴으로 조직의 규칙을 ‘내 것’으로 만드는 것이 열쇠입니다.',
+    note: '규칙과 위계가 분명한 일인데, 사주상 통제를 견디는 기운이 약해요. 스스로 정한 마감과 루틴으로 조직의 규칙을 ‘내 것’으로 만드는 것이 열쇠예요.',
   },
   인성: {
     title: '공부와 쉼이 밀리기 쉽다',
@@ -185,7 +185,7 @@ const STRAIN: Record<TenGodGroup, { title: string; gags: (c: Ctx, k: Kind) => Ga
       later('한 달 후…'),
       { s: { bg: 'room', cast: [c.me(300, 'tired', 'stand', { acc: ['cobweb'] }), c.mirror(500, 'smug', 'stand', { dir: -1 })], talk: [say(1, '달력이 한 달째 ‘내일’이야.')], props: [{ kind: 'books', x: 480 }, { kind: 'calendar', x: 120, y: 170, label: '내일' }] } },
     ],
-    note: '꾸준히 공부하고 자격을 갖춰야 하는 일인데, 사주상 배우고 쉬어 가는 기운이 약합니다. 공부 시간을 일정에 고정해 두지 않으면 금방 밀립니다.',
+    note: '꾸준히 공부하고 자격을 갖춰야 하는 일인데, 사주상 배우고 쉬어 가는 기운이 약해요. 공부 시간을 일정에 고정해 두지 않으면 금방 밀려요.',
   },
 };
 
@@ -331,7 +331,7 @@ export function workEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
       props: [{ kind: 'score', x: 420, y: 70, label: '사주 궁합', label2: fit ? `${fit.score}점` : '??점', color: fit && fit.score < 50 ? '#ff8a8a' : '#7cf29a' }],
     }, {
       basis: fit?.basis,
-      note: fit ? fit.text : '직업을 입력하면 그 일이 쓰는 힘과 사주를 비교해 궁합을 그려 드립니다.',
+      note: fit ? fit.text : '직업을 입력하면 그 일이 쓰는 힘과 사주를 비교해 궁합을 그려 드려요.',
     }),
   );
   if (fit) {
@@ -347,13 +347,13 @@ export function workEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
   // 무기 ①②
   push('무기 ①', STRENGTH[top](c, k).map((g, i) => (i === 0 && isGag(g) ? { ...g, cap: `무기 ① ${STRENGTH_TITLE[top]}` } : g)), {
     basis: `${top} ${pct(gp[top])}`,
-    note: job?.strengths[0]?.text ?? `사주에서 가장 강한 기운은 ${top}(${pct(gp[top])})입니다. 일에서는 ‘${STRENGTH_TITLE[top]}’으로 드러납니다.`,
+    note: job?.strengths[0]?.text ?? `사주에서 가장 강한 기운은 ${josa(`${top}(${pct(gp[top])})`, '이에요/예요')}. 일에서는 ‘${STRENGTH_TITLE[top]}’으로 드러나요.`,
     tone: 'good',
   });
   beats.push(
     cut(c, '무기 ②', `무기 ② ${STRENGTH_TITLE[second]}`, { bg: 'sparkle', shot: 'bust', cast: [c.me(300, 'proud', 'hips', { front: true, sym: 'flare' })], talk: [think(0, STRENGTH2[second])], sfx: [{ text: '필살기!', x: 500, y: 330, size: 40, color: '#ffb000' }] }, {
       basis: `${second} ${pct(gp[second])}`,
-      note: job?.strengths[1]?.text ?? `두 번째로 강한 기운은 ${second}(${pct(gp[second])})입니다.`,
+      note: job?.strengths[1]?.text ?? `두 번째로 강한 기운은 ${josa(`${second}(${pct(gp[second])})`, '이에요/예요')}.`,
     }),
   );
 
@@ -384,7 +384,7 @@ export function workEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
   beats.push(
     cut(c, '상태창', '[시스템] 현재 상태를 확인합니다.', { bg: 'map', cast: [c.me(120, 'smug', 'hips')], talk: [], props: [{ kind: 'status', x: 400, y: 70, w: 340, label: '상태창', rows }] }, {
       basis: d ? `${pillarHanja(d.pillar)} 대운 · ${d.stemTenGod}(${d.stemRole}) · ${d.score}점` : '대운 시작 전',
-      note: job?.now.text ?? `대운은 10년 단위의 큰 흐름입니다. 지금은 ${P.g}의 10년으로, ‘${phaseNow.title}’입니다.`,
+      note: job?.now.text ?? `대운은 10년 단위의 큰 흐름이에요. 지금은 ${P.g}의 10년으로, ${josa(`‘${phaseNow.title}’`, '이에요/예요')}.`,
     }),
   );
   const mirrorLines = [say(0, P.switching && P.next && P.ng !== P.g ? `곧 ${P.next.startYear}년부터는 ‘${PH[P.ng].title}’야!` : hey(c, `지금은 ${phaseNow.title}야.`)), say(0, PH[phaseG][P.switching ? P.ntone : P.tone])];
@@ -416,7 +416,7 @@ export function workEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
       tRows.length
         ? { bg: 'room', cast: [c.me(120, 'smug', 'point')], talk: [say(0, '달력에 동그라미 쳐 놨다.')], props: [{ kind: 'board', x: 400, y: 50, w: 300, label: '내 인생 달력', rows: tRows }] }
         : { bg: c.work.bg, shot: 'bust', cast: [c.me(300, P.tone === 'bad' ? 'proud' : 'grin', 'fist', { front: true })], talk: [say(0, '좋아, 차근차근 해 보자!')] },
-      { note: t?.text ?? '직업을 입력하면 이직·승진에 유리한 해와 버텨야 할 해를 함께 알려 드립니다.' },
+      { note: t?.text ?? '직업을 입력하면 이직·승진에 유리한 해와 버텨야 할 해를 함께 알려 드려요.' },
     ),
   );
 

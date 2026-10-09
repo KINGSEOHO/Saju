@@ -70,7 +70,9 @@ function FunnelView({ f }: { f: Funnel }) {
   return (
     <section>
       <h2 className="text-title2 text-ink">결제까지 가는 길</h2>
-      <p className="mt-1 text-cap text-sub">{f.since}부터 · 사람 수는 기기 기준 · 이름·생년월일 없이 단계만 세요</p>
+      <p className="mt-1 text-cap text-sub">
+        {f.since}부터 · 사람 수는 기기 기준 · 이름·생년월일 없이 단계만 세요{f.friends ? ` · 지인 리뷰 링크로 온 ${f.friends}명은 뺐어요` : ''}
+      </p>
       <ol className="mt-4 border-t border-line">
         {f.steps.map((s, i) => (
           <li key={s.key} className="border-b border-line py-3">
@@ -223,10 +225,16 @@ export function Admin() {
             <h2 className="text-title2 text-ink">유료화 판단 지표</h2>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <Stat label="분석 실행" value={stats.totals.analyses} />
-              <Stat label="리뷰" value={stats.totals.reviews} />
-              <Stat label="평균 정확도 (5점)" value={f(stats.overall.avgAccuracy)} />
-              <Stat label="유료 의향 비율" value={stats.decision.wtpPaidShare === null ? '-' : `${Math.round(stats.decision.wtpPaidShare * 100)}%`} />
+              <Stat label={`리뷰${stats.split.friend.n ? ` (지인 ${stats.split.friend.n})` : ''}`} value={stats.totals.reviews} />
+              <Stat label="평균 정확도 · 지인 제외 (5점)" value={f(stats.split.other.avgAccuracy)} />
+              <Stat label="유료 의향 · 지인 제외" value={stats.decision.wtpPaidShare === null ? '-' : `${Math.round(stats.decision.wtpPaidShare * 100)}%`} />
             </div>
+            {stats.split.friend.n > 0 && (
+              <p className="mt-3 text-label text-ink-2">
+                지인 리뷰 {stats.split.friend.n}건 · 평균 정확도 {f(stats.split.friend.avgAccuracy)} · 유료 의향{' '}
+                {stats.split.friend.wtpPaidShare === null ? '-' : `${Math.round(stats.split.friend.wtpPaidShare * 100)}%`}
+              </p>
+            )}
             <div className="mt-4 border-l-2 border-accent pl-4 text-label text-ink-2">
               <b className="text-ink">{stats.decision.ready ? '유료 전환 검토 가능' : '아직 데이터 수집 단계'}</b>
               {stats.decision.medianPrice && <span> · 지불 의향 중앙값: {PRICE_KO[stats.decision.medianPrice] ?? stats.decision.medianPrice}</span>}
@@ -269,6 +277,7 @@ export function Admin() {
               {stats.recentReviews.map((r, i) => (
                 <li key={i} className="border-b border-line py-3">
                   <div className="text-cap text-sub">
+                    {r.meta?.from === 'friend' && <span className="tag-mute mr-1.5">지인</span>}
                     {r.created_at} · 만족 {r.overall} · 정확 {r.accuracy} · {r.price ? PRICE_KO[r.price] : '가격 미응답'} · {String(r.meta?.strength ?? '')} {String(r.meta?.gyeokguk ?? '')}
                   </div>
                   {r.text && <p className="mt-1 text-ink-2">{r.text}</p>}

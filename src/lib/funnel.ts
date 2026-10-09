@@ -9,6 +9,7 @@
  */
 import { PAYWALL_DEMO } from '../config/plans.ts';
 import { send, sessionId } from './api.ts';
+import { sourceMeta } from './source.ts';
 
 export type Step = 'visit' | 'analyze' | 'concern_open' | 'match_result' | 'detail_view' | 'lock_view' | 'pay_click' | 'paid';
 /** 서버·시트가 받는 이벤트 종류 (docs/google-apps-script.gs, server/index.mjs와 같게) */
@@ -64,7 +65,7 @@ export function track(step: Step, meta: FunnelMeta = {}, once = true): void {
     window.dispatchEvent(new Event('mg-funnel'));
     return;
   }
-  void send('events', { sessionId: sessionId(), type: step, meta });
+  void send('events', { sessionId: sessionId(), type: step, meta: { ...meta, ...sourceMeta() } });
 }
 
 /** 시안 전용 — 이 기기에서 남긴 단계 (보내지 않은 것) */

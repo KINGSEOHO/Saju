@@ -227,7 +227,7 @@ export function analyzeStrength(n: NatalChars, el: ElementAnalysis): StrengthAna
   if (roots.length === 0 && score < 56 && level !== '극약') {
     const order: StrengthLevel[] = ['극약', '태약', '신약', '중화신약', '중화신강', '신강', '태강', '극왕'];
     level = order[Math.max(0, order.indexOf(level) - 1)];
-    reasoning.push('지지에 일간의 뿌리(통근)가 없어 실제 힘은 수치보다 약하게 봅니다.');
+    reasoning.push('지지에 일간의 뿌리(통근)가 없어 실제 힘은 수치보다 약하게 봐요.');
   }
 
   reasoning.unshift(
@@ -441,7 +441,7 @@ export function analyzeYongsin(n: NatalChars, el: ElementAnalysis, st: StrengthA
   }
   if (st.score >= 43 && st.score < 54) {
     confidence = '낮음';
-    reasoning.push('신강·신약 경계(중화)에 가까워 억부용신의 효과 차이가 크지 않습니다. 운의 흐름에서 체감이 약할 수 있습니다.');
+    reasoning.push('신강·신약 경계(중화)에 가까워 억부용신의 효과 차이가 크지 않아요. 운의 흐름에서 체감이 약할 수 있어요.');
   }
   reasoning.push(`억부용신: ${ELEMENT_KO[eokbu]} — ${eokbuReason}`);
 
@@ -481,7 +481,7 @@ export function analyzeYongsin(n: NatalChars, el: ElementAnalysis, st: StrengthA
     yongsin = E(g);
     confidence = '낮음';
     reasoning.push(
-      `일간이 극히 약하고(${st.score.toFixed(0)}%) 뿌리·인성이 없어 ${special} 가능성이 있습니다. 이 경우 약한 일간을 돕지 않고 가장 강한 ${g}의 흐름을 따르는 것이 용신입니다. 특수격은 판정이 까다로워 전문가 대면 확인을 권합니다.`,
+      `일간이 극히 약하고(${st.score.toFixed(0)}%) 뿌리·인성이 없어 ${special} 가능성이 있어요. 이 경우 약한 일간을 돕지 않고 가장 강한 ${g}의 흐름을 따르는 것이 용신이에요. 특수격은 판정이 까다로워 전문가 대면 확인을 권해요.`,
     );
   } else if (st.supportExcl >= 85 && gp['관성'] < 5 && gp['재성'] < 6) {
     special = gp['인성'] > gp['비겁'] ? '종강격' : '종왕격';
@@ -489,7 +489,7 @@ export function analyzeYongsin(n: NatalChars, el: ElementAnalysis, st: StrengthA
     yongsin = gp['인성'] > gp['비겁'] ? E('인성') : E('비겁');
     confidence = '낮음';
     reasoning.push(
-      `일간을 돕는 세력이 압도적이고(${st.score.toFixed(0)}%) 극하는 기운이 거의 없어 ${special} 가능성이 있습니다. 이 경우 강한 기운을 거스르지 않는 ${josa(ELEMENT_KO[yongsin], '이/가')} 용신입니다.`,
+      `일간을 돕는 세력이 압도적이고(${st.score.toFixed(0)}%) 극하는 기운이 거의 없어 ${special} 가능성이 있어요. 이 경우 강한 기운을 거스르지 않는 ${josa(ELEMENT_KO[yongsin], '이/가')} 용신이에요.`,
     );
   } else if (urgent && johuEl && johuEl !== eokbu) {
     const conflict = controls(johuEl, eokbu) || controls(eokbu, johuEl);
@@ -500,18 +500,18 @@ export function analyzeYongsin(n: NatalChars, el: ElementAnalysis, st: StrengthA
       secondary = conflict ? eokbu : null;
       reasoning.push(
         conflict
-          ? `계절 편중이 극심해(${winter ? '한랭' : '조열'}) 조후 ${josa(ELEMENT_KO[johuEl], '을/를')} 최종 용신으로 봅니다. 다만 억부용신 ${josa(ELEMENT_KO[eokbu], '과/와')} 서로 극하는 관계라, 운 평가는 조후 60%·억부 40%로 혼합했습니다.`
-          : `계절 편중이 심해 조후를 우선합니다. 최종 용신 ${ELEMENT_KO[johuEl]}, 억부용신 ${josa(ELEMENT_KO[eokbu], '은/는')} 보조로 봅니다.`,
+          ? `계절 편중이 극심해(${winter ? '한랭' : '조열'}) 조후 ${josa(ELEMENT_KO[johuEl], '을/를')} 최종 용신으로 봐요. 다만 억부용신 ${josa(ELEMENT_KO[eokbu], '과/와')} 서로 극하는 관계라, 운 평가는 조후 60%·억부 40%로 혼합했어요.`
+          : `계절 편중이 심해 조후를 우선해요. 최종 용신 ${ELEMENT_KO[johuEl]}, 억부용신 ${josa(ELEMENT_KO[eokbu], '은/는')} 보조로 봐요.`,
       );
     } else {
       secondary = johuEl;
       reasoning.push(
-        `조후(${ELEMENT_KO[johuEl]})와 억부(${ELEMENT_KO[eokbu]})가 서로 극하는 관계입니다. 편중이 극단적이지 않아 억부를 우선하고, 운 평가는 억부 60%·조후 40%로 혼합했습니다.`,
+        `조후(${ELEMENT_KO[johuEl]})와 억부(${ELEMENT_KO[eokbu]})가 서로 극하는 관계예요. 편중이 극단적이지 않아 억부를 우선하고, 운 평가는 억부 60%·조후 40%로 혼합했어요.`,
       );
     }
     if (conflict) confidence = '낮음';
   } else {
-    reasoning.push(`최종 용신은 억부용신 ${josa(ELEMENT_KO[eokbu], '을/를')} 씁니다.`);
+    reasoning.push(`최종 용신은 억부용신 ${josa(ELEMENT_KO[eokbu], '을/를')} 써요.`);
     if (confidence !== '낮음' && (st.score < 36 || st.score > 62)) confidence = '높음';
   }
 

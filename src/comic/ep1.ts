@@ -48,7 +48,7 @@ const DM: Record<number, DayMaster> = {
   0: {
     image: '하늘로 곧게 뻗는 큰 나무',
     tag: '직진밖에 모르는 사람',
-    note: '갑목은 스스로 방향을 정하고 앞장서는 기질입니다. 모임에서 자연스럽게 결정을 맡게 되는 일이 많지만, 한번 정한 방향은 잘 바꾸지 않습니다.',
+    note: '갑목은 스스로 방향을 정하고 앞장서는 기질이에요. 모임에서 자연스럽게 결정을 맡게 되는 일이 많지만, 한번 정한 방향은 잘 바꾸지 않아요.',
     gags: (c) => [
       {
         cap: '갑목(甲木) — 하늘로 곧게 뻗는 큰 나무.',
@@ -63,7 +63,7 @@ const DM: Record<number, DayMaster> = {
   1: {
     image: '휘어도 꺾이지 않는 덩굴',
     tag: '분위기를 읽고 사람을 잇는 사람',
-    note: '을목은 상대에게 맞추는 능력이 뛰어나 사람과 사람을 잘 잇지만, 그만큼 속으로 신경을 많이 쓰는 기질입니다.',
+    note: '을목은 상대에게 맞추는 능력이 뛰어나 사람과 사람을 잘 잇지만, 그만큼 속으로 신경을 많이 쓰는 기질이에요.',
     gags: (c) => [
       {
         cap: '을목(乙木) — 휘어도 꺾이지 않는 덩굴. 사람과 사람을 잇는다.',
@@ -80,7 +80,7 @@ const DM: Record<number, DayMaster> = {
   2: {
     image: '하늘 한가운데 뜬 태양',
     tag: '등장만으로 분위기를 밝히는 사람',
-    note: '병화는 감정과 생각이 그대로 드러나고, 주목받는 자리에서 에너지가 오르는 기질입니다. 대신 뜨겁게 시작한 일이 금방 식기도 합니다.',
+    note: '병화는 감정과 생각이 그대로 드러나고, 주목받는 자리에서 에너지가 오르는 기질이에요. 대신 뜨겁게 시작한 일이 금방 식기도 해요.',
     gags: (c) => [
       {
         cap: '병화(丙火) — 하늘의 태양. 등장부터 밝다.',
@@ -95,7 +95,7 @@ const DM: Record<number, DayMaster> = {
   3: {
     image: '어둠을 밝히는 촛불',
     tag: '한 사람을 끝까지 비추는 사람',
-    note: '정화는 넓게 비추기보다 가까운 사람을 따뜻하게 지키는 기질입니다. 대신 한번 서운하면 오래 기억합니다.',
+    note: '정화는 넓게 비추기보다 가까운 사람을 따뜻하게 지키는 기질이에요. 대신 한번 서운하면 오래 기억해요.',
     gags: (c) => [
       {
         cap: '정화(丁火) — 어둠을 밝히는 촛불. 한 사람을 끝까지 비춘다.',
@@ -110,7 +110,7 @@ const DM: Record<number, DayMaster> = {
   4: {
     image: '묵직한 큰 산',
     tag: '웬만해선 안 흔들리는 사람',
-    note: '무토는 위기에도 표정이 크게 흔들리지 않아 주변의 기둥이 되는 기질입니다. 대신 변화에는 느린 편입니다.',
+    note: '무토는 위기에도 표정이 크게 흔들리지 않아 주변의 기둥이 되는 기질이에요. 대신 변화에는 느린 편이에요.',
     gags: (c) => [
       {
         cap: '무토(戊土) — 묵직한 큰 산. 웬만해선 안 흔들린다.',
@@ -122,7 +122,7 @@ const DM: Record<number, DayMaster> = {
   5: {
     image: '곡식을 길러 내는 밭',
     tag: '일단 먹이고 보는 사람',
-    note: '기토는 주변 사람을 세심하게 챙기고 길러 내는 기질입니다. 대신 걱정이 많고 속마음을 잘 드러내지 않습니다.',
+    note: '기토는 주변 사람을 세심하게 챙기고 길러 내는 기질이에요. 대신 걱정이 많고 속마음을 잘 드러내지 않아요.',
     gags: (c) => [
       {
         cap: '기토(己土) — 곡식을 길러 내는 밭. 일단 먹이고 본다.',
@@ -135,7 +135,7 @@ const DM: Record<number, DayMaster> = {
   6: {
     image: '단련될수록 강해지는 쇠',
     tag: '결론부터 말하는 사람',
-    note: '경금은 판단이 빠르고 원칙이 분명한 기질입니다. 돌려 말하지 않아 신뢰를 얻지만, 말이 날카롭게 들릴 때가 있습니다.',
+    note: '경금은 판단이 빠르고 원칙이 분명한 기질이에요. 돌려 말하지 않아 신뢰를 얻지만, 말이 날카롭게 들릴 때가 있어요.',
     gags: (c) => [
       {
         cap: '경금(庚金) — 단련된 쇠. 돌려 말하기 기능 없음.',
@@ -159,7 +159,7 @@ const DM: Record<number, DayMaster> = {
   7: {
     image: '정교하게 다듬어진 보석',
     tag: '1픽셀도 놓치지 않는 사람',
-    note: '신금은 섬세한 감각과 높은 기준을 가진 기질입니다. 완성도가 높지만 스스로와 남에게 엄격해지기 쉽습니다.',
+    note: '신금은 섬세한 감각과 높은 기준을 가진 기질이에요. 완성도가 높지만 스스로와 남에게 엄격해지기 쉬워요.',
     gags: (c) => [
       {
         cap: '신금(辛金) — 정교한 보석. 디테일 탐지기 내장.',
@@ -174,7 +174,7 @@ const DM: Record<number, DayMaster> = {
   8: {
     image: '끝없이 흐르는 큰 바다',
     tag: '꿈의 스케일이 바다급인 사람',
-    note: '임수는 아이디어와 활동 범위가 넓은 기질입니다. 시야가 크지만 한곳에 오래 머무르기 어려워합니다.',
+    note: '임수는 아이디어와 활동 범위가 넓은 기질이에요. 시야가 크지만 한곳에 오래 머무르기 어려워해요.',
     gags: (c) => [
       {
         cap: '임수(壬水) — 끝없는 바다. 꿈의 스케일도 바다급.',
@@ -194,7 +194,7 @@ const DM: Record<number, DayMaster> = {
   9: {
     image: '조용히 스며드는 빗물',
     tag: '말 안 해도 다 아는 사람',
-    note: '계수는 직관과 공감 능력이 뛰어난 기질입니다. 대신 생각이 많아 혼자 걱정을 키우기 쉽습니다.',
+    note: '계수는 직관과 공감 능력이 뛰어난 기질이에요. 대신 생각이 많아 혼자 걱정을 키우기 쉬워요.',
     gags: (c) => [
       {
         cap: '계수(癸水) — 조용히 스며드는 빗물. 마음에도 스며든다.',
@@ -255,7 +255,7 @@ const INNER: Record<TenGod, { tag: string; half: (c: Ctx) => Omit<Half, 'label'>
 const STRONG: Record<TenGodGroup, { title: string; gags: GagFn; note: string }> = {
   비겁: {
     title: '혼자 해내는 힘',
-    note: '비겁이 강하면 스스로 해내려는 힘과 경쟁심이 큽니다. 독립·창업에 유리하지만 고집과 지출도 함께 커집니다.',
+    note: '비겁이 강하면 스스로 해내려는 힘과 경쟁심이 커요. 독립·창업에 유리하지만 고집과 지출도 함께 커져요.',
     gags: (c) => [
       { s: { bg: 'gym', cast: [c.me(220, 'rage', 'lift', { held: 'barbell', fx: ['aura', 'shake'], sym: 'flare' }), c.other('friend', 480, 'surprised', 'stand', { dir: -1 })], talk: [say(1, '도와줄까?'), shout(0, '필요 없어! 내 힘으로 한다!')] } },
       { s: { bg: 'gym', cast: [c.me(300, 'dead', 'lie', { held: 'barbell', fx: ['stars'] })], talk: [whisper(0, '…쬐끔만 도와줘.')], sfx: [{ text: '쿵!', x: 480, y: 170, size: 64 }] } },
@@ -263,7 +263,7 @@ const STRONG: Record<TenGodGroup, { title: string; gags: GagFn; note: string }> 
   },
   식상: {
     title: '아이디어와 표현력',
-    note: '식상이 강하면 아이디어와 표현력이 넘칩니다. 만들고 말하는 일에서 빛나지만 마무리가 약해지기 쉽습니다.',
+    note: '식상이 강하면 아이디어와 표현력이 넘쳐요. 만들고 말하는 일에서 빛나지만 마무리가 약해지기 쉬워요.',
     gags: (c) => [
       { s: { bg: 'cafe', cast: [c.me(200, 'star', 'cheer', { fx: ['bulbs'], sym: 'jump' }), c.other('friend', 470, 'tired', 'stand', { dir: -1 })], talk: [shout(0, '아이디어 떠올랐어!'), say(1, '오늘만 열한 번째야.')], sfx: [{ text: '팡! 팡!', x: 360, y: 120, size: 36, color: '#ffb000' }] } },
       { s: { bg: 'room', cast: [c.me(160, 'grin', 'shrug'), c.mirror(470, 'smug', 'point', { dir: -1 })], talk: [say(1, '그래서, 실행한 건 몇 개?'), say(0, '…그건 다음 아이디어로 해결할게.')], props: [{ kind: 'bulbpile', x: 300 }] } },
@@ -271,7 +271,7 @@ const STRONG: Record<TenGodGroup, { title: string; gags: GagFn; note: string }> 
   },
   재성: {
     title: '돈과 기회를 보는 눈',
-    note: '재성이 강하면 돈의 흐름과 현실 감각이 빠릅니다. 기회를 잘 잡지만, 욕심이 앞서면 무리한 투자를 하기 쉽습니다.',
+    note: '재성이 강하면 돈의 흐름과 현실 감각이 빨라요. 기회를 잘 잡지만, 욕심이 앞서면 무리한 투자를 하기 쉬워요.',
     gags: (c) => [
       { s: { bg: 'street', cast: [c.me(170, 'money', 'hold', { held: 'calculator' }), c.other('friend', 440, 'plain', 'stand', { dir: -1 })], talk: [think(0, '(저거 사서 되팔면 30% 남겠는데?)'), say(1, '우리 그냥 산책 나온 거잖아.')] } },
       { s: { bg: 'street', shot: 'bust', cast: [c.mirror(160, 'smug'), c.me(440, 'money', 'stand', { fx: ['sparkle'], dir: -1 })], talk: [say(0, '인간 계산기 켜졌네.'), say(1, '세상이 다 견적으로 보여.')], props: [{ kind: 'cloudcoin', x: 300, y: 330 }] } },
@@ -279,7 +279,7 @@ const STRONG: Record<TenGodGroup, { title: string; gags: GagFn; note: string }> 
   },
   관성: {
     title: '책임감과 원칙',
-    note: '관성이 강하면 책임감과 규범 의식이 뚜렷해 조직에서 인정받기 쉽습니다. 대신 압박과 스트레스도 크게 받습니다.',
+    note: '관성이 강하면 책임감과 규범 의식이 뚜렷해 조직에서 인정받기 쉬워요. 대신 압박과 스트레스도 크게 받아요.',
     gags: (c) => [
       {
         s: { bg: 'office', cast: [c.other('boss', 170, 'smile', 'hold', { held: 'document' }), c.me(440, 'proud', 'stand', { dir: -1 })], talk: [say(0, '이것도 좀 부탁해도 되겠나?', 'say', { young: '이것도 부탁해도 될까?', senior: '이것도 부탁해도 될까요?' }), say(1, '맡겨 주십시오!', 'say', { young: '맡겨 주세요!' })] },
@@ -289,7 +289,7 @@ const STRONG: Record<TenGodGroup, { title: string; gags: GagFn; note: string }> 
   },
   인성: {
     title: '배우고 이해하는 힘',
-    note: '인성이 강하면 배우고 이해하는 힘이 큽니다. 자격·전문성으로 인정받지만 생각이 많아 실행이 늦어지기 쉽습니다.',
+    note: '인성이 강하면 배우고 이해하는 힘이 커요. 자격·전문성으로 인정받지만 생각이 많아 실행이 늦어지기 쉬워요.',
     gags: (c) => [
       { s: { bg: 'library', cast: [c.me(300, 'think', 'hold', { held: 'book' })], talk: [say(0, '제대로 알고 시작해야지.')] } },
       later('3년 후…'),
@@ -299,16 +299,16 @@ const STRONG: Record<TenGodGroup, { title: string; gags: GagFn; note: string }> 
 };
 
 const DOMINANT_NOTE: Record<TenGod, string> = {
-  비견: '그중에서도 비견이 두드러져, 대등한 관계와 자기 방식을 중시합니다.',
-  겁재: '그중에서도 겁재가 두드러져, 승부욕이 강하고 돈이 나가는 일도 잦습니다.',
-  식신: '그중에서도 식신이 두드러져, 한 분야를 꾸준히 파고드는 장인 기질이 있습니다.',
-  상관: '그중에서도 상관이 두드러져, 틀을 깨는 말과 재치가 강점이자 구설의 원인이 됩니다.',
-  편재: '그중에서도 편재가 두드러져, 크게 벌고 크게 쓰는 활동형 재물 감각이 있습니다.',
-  정재: '그중에서도 정재가 두드러져, 꼼꼼하게 모으고 관리하는 안정형 재물 감각이 있습니다.',
-  편관: '그중에서도 편관이 두드러져, 압박 속에서 강해지지만 스트레스도 큽니다.',
-  정관: '그중에서도 정관이 두드러져, 원칙과 신뢰로 인정받는 모범생 기질이 있습니다.',
-  편인: '그중에서도 편인이 두드러져, 남다른 직관과 특수한 분야에 대한 관심이 큽니다.',
-  정인: '그중에서도 정인이 두드러져, 배움과 보살핌, 자격과 문서 운이 강합니다.',
+  비견: '그중에서도 비견이 두드러져, 대등한 관계와 자기 방식을 중시해요.',
+  겁재: '그중에서도 겁재가 두드러져, 승부욕이 강하고 돈이 나가는 일도 잦아요.',
+  식신: '그중에서도 식신이 두드러져, 한 분야를 꾸준히 파고드는 장인 기질이 있어요.',
+  상관: '그중에서도 상관이 두드러져, 틀을 깨는 말과 재치가 강점이자 구설의 원인이 돼요.',
+  편재: '그중에서도 편재가 두드러져, 크게 벌고 크게 쓰는 활동형 재물 감각이 있어요.',
+  정재: '그중에서도 정재가 두드러져, 꼼꼼하게 모으고 관리하는 안정형 재물 감각이 있어요.',
+  편관: '그중에서도 편관이 두드러져, 압박 속에서 강해지지만 스트레스도 커요.',
+  정관: '그중에서도 정관이 두드러져, 원칙과 신뢰로 인정받는 모범생 기질이 있어요.',
+  편인: '그중에서도 편인이 두드러져, 남다른 직관과 특수한 분야에 대한 관심이 커요.',
+  정인: '그중에서도 정인이 두드러져, 배움과 보살핌, 자격과 문서 운이 강해요.',
 };
 
 // ---------------------------------------------------------------------------
@@ -334,7 +334,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       },
     ],
     basis: (a) => `상관 ${a.elements.tenGodCount['상관']}개 · 정관 ${a.elements.tenGodCount['정관']}개 (상관견관)`,
-    note: '상관과 정관이 함께 있으면 재능과 비판 정신이 규칙·윗사람과 부딪히기 쉽습니다. 말의 내용보다 “때와 방식”을 고르는 것이 손해를 줄이는 방법입니다.',
+    note: '상관과 정관이 함께 있으면 재능과 비판 정신이 규칙·윗사람과 부딪히기 쉬워요. 말의 내용보다 “때와 방식”을 고르는 것이 손해를 줄이는 방법이에요.',
   },
   {
     test: (a) => wealthCapacity(a) === '작음',
@@ -360,7 +360,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       },
     ],
     basis: (a) => `재성 ${gpOf(a, '재성')}`,
-    note: '재성이 약하면 돈에 대한 감각이 무디고 새는 돈을 알아차리기 어렵습니다. 의지보다 자동이체·통장 쪼개기 같은 구조가 효과적입니다.',
+    note: '재성이 약하면 돈에 대한 감각이 무디고 새는 돈을 알아차리기 어려워요. 의지보다 자동이체·통장 쪼개기 같은 구조가 효과적이에요.',
   },
   {
     test: (a) => wealthCapacity(a) === '부담',
@@ -370,7 +370,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       { s: { bg: 'street', cast: [c.me(260, 'dead', 'lie', { held: 'moneybag', fx: ['stars'] }), c.mirror(490, 'smug', 'stand', { dir: -1 })], talk: [say(1, '돈이 너보다 큰 사주야. 같이 들 사람을 구해.')], sfx: [{ text: '쿵!', x: 110, y: 170, size: 60 }] } },
     ],
     basis: (a) => `신약 ${pct(a.strength.score)} · 재성 ${gpOf(a, '재성')} (재다신약)`,
-    note: '재물의 기운은 많은데 나를 돕는 힘이 약한 구조(재다신약)입니다. 기회는 많아도 감당할 체력과 사람이 부족하면 손에 쥐는 것이 적습니다. 욕심을 줄이고 함께할 사람을 구하세요.',
+    note: '재물의 기운은 많은데 나를 돕는 힘이 약한 구조(재다신약)예요. 기회는 많아도 감당할 체력과 사람이 부족하면 손에 쥐는 것이 적어요. 욕심을 줄이고 함께할 사람을 구하세요.',
   },
   {
     test: (a) => a.elements.groupPercent['비겁'] >= 30,
@@ -386,7 +386,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       { s: { bg: 'cafe', shot: 'bust', cast: [c.me(200, 'soul', 'hold', { held: 'wallet', fx: ['moths'] }), c.mirror(470, 'smug', 'stand', { dir: -1 })], talk: [think(0, '(이번이 몇 번째더라…)'), say(1, '의리는 만렙, 통장은 1렙.')] } },
     ],
     basis: (a) => `비겁 ${gpOf(a, '비겁')}`,
-    note: '비겁이 많으면 의리가 강하고 사람을 잘 챙기지만, 나눠 가질 사람도 많아 돈이 모이기 어렵습니다. 빌려줄 돈은 “돌려받지 못해도 괜찮은 만큼”만 정하세요.',
+    note: '비겁이 많으면 의리가 강하고 사람을 잘 챙기지만, 나눠 가질 사람도 많아 돈이 모이기 어려워요. 빌려줄 돈은 “돌려받지 못해도 괜찮은 만큼”만 정하세요.',
   },
   {
     test: (a) => a.elements.groupPercent['관성'] >= 35,
@@ -396,7 +396,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       { s: { bg: 'officeNight', shot: 'bust', cast: [c.mirror(160, 'plain'), c.me(440, 'shock', 'stand', { dir: -1 })], talk: [say(0, '그거 원래 팀 거야.', 'say', { young: '그거 원래 모둠 거야.' }), shout(1, '…진짜?')] } },
     ],
     basis: (a) => `관성 ${gpOf(a, '관성')}`,
-    note: '관성이 많으면 책임감이 강한 만큼 스트레스를 몸으로 받기 쉽습니다. 일을 나누는 연습과 퇴근 후의 확실한 휴식이 필요합니다.',
+    note: '관성이 많으면 책임감이 강한 만큼 스트레스를 몸으로 받기 쉬워요. 일을 나누는 연습과 퇴근 후의 확실한 휴식이 필요해요.',
   },
   {
     test: (a) => a.elements.groupPercent['인성'] >= 35,
@@ -407,7 +407,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       { s: { bg: 'bedroom', cast: [c.me(220, 'think', 'think', { acc: ['cobweb'] }), c.mirror(470, 'smug', 'stand', { dir: -1 })], talk: [say(1, '70%만 준비되면 출발. 그게 처방이야.'), say(0, '…다음 달부터.')] } },
     ],
     basis: (a) => `인성 ${gpOf(a, '인성')}`,
-    note: '인성이 많으면 신중하고 배우는 힘이 크지만, 준비만 하다 기회를 놓치기 쉽습니다. “70% 준비되면 시작”을 원칙으로 삼으세요.',
+    note: '인성이 많으면 신중하고 배우는 힘이 크지만, 준비만 하다 기회를 놓치기 쉬워요. “70% 준비되면 시작”을 원칙으로 삼으세요.',
   },
   {
     test: (a) => a.elements.groupPercent['식상'] >= 35,
@@ -417,7 +417,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       { s: { bg: 'room', cast: [c.me(170, 'blank', 'stand'), c.mirror(470, 'smug', 'stand', { dir: -1 })], talk: [say(1, '그래서 끝낸 건 몇 개?'), say(0, '…0개.')], props: [{ kind: 'boxes', x: 330, label: '기타', label2: '요가' }], sfx: [{ text: '와르르', x: 330, y: 230, size: 40 }] } },
     ],
     basis: (a) => `식상 ${gpOf(a, '식상')}`,
-    note: '식상이 많으면 재능과 아이디어가 넘치지만 에너지가 흩어지기 쉽고, 말이 앞서 구설도 생깁니다. 동시에 진행하는 일을 두세 개로 제한하세요.',
+    note: '식상이 많으면 재능과 아이디어가 넘치지만 에너지가 흩어지기 쉽고, 말이 앞서 구설도 생겨요. 동시에 진행하는 일을 두세 개로 제한하세요.',
   },
   {
     test: (a) => a.elements.groupPercent['관성'] < 4,
@@ -429,7 +429,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       { s: { bg: 'park', cast: [c.other('boss', 130, 'shock', 'point'), c.me(390, 'happy', 'cheer', { acc: ['wings'], lift: 70 })], talk: [shout(0, '어딜 가!'), shout(1, '자유다~!')], sfx: [{ text: '푸드덕', x: 520, y: 330, size: 36 }] } },
     ],
     basis: (a) => `관성 ${gpOf(a, '관성')}`,
-    note: '관성이 거의 없으면 자유롭고 독립적이지만, 정해진 규칙과 상하 관계를 견디기 어렵습니다. 스스로 정한 마감과 루틴이 그 빈자리를 채워 줍니다.',
+    note: '관성이 거의 없으면 자유롭고 독립적이지만, 정해진 규칙과 상하 관계를 견디기 어려워요. 스스로 정한 마감과 루틴이 그 빈자리를 채워 줘요.',
   },
   {
     test: (a) => a.elements.groupPercent['인성'] < 4,
@@ -439,7 +439,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       { cap: '그리고 전원이 꺼졌다.', s: { bg: 'officeNight', cast: [c.me(230, 'dead', 'flat'), c.mirror(500, 'smug', 'stand', { dir: -1 })], talk: [say(1, '충전 안 한 폰은 결국 꺼져.')], props: [{ kind: 'battery', x: 330, y: 130, values: [0] }], sfx: [{ text: '픽', x: 120, y: 260, size: 44, color: '#8a8f99' }] } },
     ],
     basis: (a) => `인성 ${gpOf(a, '인성')}`,
-    note: '인성이 거의 없으면 배우고 쉬는 데 서툴러, 에너지를 채우지 못한 채 쓰기만 하기 쉽습니다. 일정에 “쉬는 시간”을 먼저 넣으세요.',
+    note: '인성이 거의 없으면 배우고 쉬는 데 서툴러, 에너지를 채우지 못한 채 쓰기만 하기 쉬워요. 일정에 “쉬는 시간”을 먼저 넣으세요.',
   },
   {
     test: (a) => a.elements.groupPercent['식상'] < 4,
@@ -449,7 +449,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       { s: { bg: 'cafe', shot: 'bust', cast: [c.me(160, 'plain', 'stand'), c.mirror(480, 'smug', 'stand', { dir: -1 })], talk: [think(0, '(사실 그때 네가 약속을 세 번 미뤘고, 그 전에도…)'), say(1, '속으로만 장편소설 쓰는 중.')] } },
     ],
     basis: (a) => `식상 ${gpOf(a, '식상')}`,
-    note: '식상이 거의 없으면 실력이 있어도 드러내지 못하고, 감정을 표현하지 못해 관계가 오해로 꼬이기 쉽습니다. 작게라도 말로 꺼내는 연습이 필요합니다.',
+    note: '식상이 거의 없으면 실력이 있어도 드러내지 못하고, 감정을 표현하지 못해 관계가 오해로 꼬이기 쉬워요. 작게라도 말로 꺼내는 연습이 필요해요.',
   },
   {
     test: (a) => a.elements.groupPercent['비겁'] < 4,
@@ -465,7 +465,7 @@ const WEAKNESS: (Weak & { test: (a: SajuAnalysis) => boolean })[] = [
       { s: { bg: 'cafe', shot: 'bust', cast: [c.me(200, 'cry', 'hold', { held: 'noodle', fx: ['fire'] }), c.mirror(480, 'plain', 'stand', { dir: -1 })], talk: [think(0, '(나 매운 거 못 먹는데…)'), say(1, '의견은 말해야 생겨.')] } },
     ],
     basis: (a) => `비겁 ${gpOf(a, '비겁')}`,
-    note: '비겁이 거의 없으면 협조적이지만 내 몫과 내 의견을 지키는 힘이 약합니다. 중요한 결정은 하루 미루고 혼자 생각해 보는 습관이 도움이 됩니다.',
+    note: '비겁이 거의 없으면 협조적이지만 내 몫과 내 의견을 지키는 힘이 약해요. 중요한 결정은 하루 미루고 혼자 생각해 보는 습관이 도움이 돼요.',
   },
 ];
 
@@ -477,7 +477,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       { s: { bg: 'room', cast: [c.other('friend', 170, 'sad', 'stand'), c.me(440, 'plain', 'cross', { dir: -1 })], talk: [say(0, '그냥 미안하다고 하면 되잖아.'), think(1, '(내가 왜 먼저…?)')] } },
       { cap: '새벽 2시.', s: { bg: 'bedroom', cast: [c.me(170, 'nervous', 'phone', { held: 'phone' })], talk: [think(0, '(보낼까… 말까…)')], props: [{ kind: 'phonebig', x: 450, y: 40, label: '메시지', rows: ['미안…', '(삭제)', '미안해', '(삭제)'] }] } },
     ],
-    note: '갑목의 곧은 기질은 자존심이 걸린 순간 고집이 됩니다. 관계를 지키는 쪽은 결국 먼저 손을 내미는 사람입니다.',
+    note: '갑목의 곧은 기질은 자존심이 걸린 순간 고집이 돼요. 관계를 지키는 쪽은 결국 먼저 손을 내미는 사람이에요.',
   },
   1: {
     title: '거절을 못 해 남의 일까지 떠안는다',
@@ -485,7 +485,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       { s: { bg: 'office', cast: [c.other('coworker', 170, 'smile', 'hold', { held: 'document' }), c.me(440, 'smile', 'stand', { dir: -1 })], talk: [say(0, '이것도 부탁해도 될까?'), say(1, '아… 네! 할게요!', 'say', { young: '아… 응! 할게!' })] } },
       { s: { bg: 'officeNight', cast: [c.me(300, 'soul', 'lift', { held: 'docs', fx: ['soul'] })], talk: [think(0, '(또 ‘네’라고 했다…)')] } },
     ],
-    note: '을목은 맞춰 주는 능력이 큰 만큼 거절이 어렵습니다. 속으로 쌓인 서운함이 한 번에 터지기 전에, 작은 거절부터 연습하세요.',
+    note: '을목은 맞춰 주는 능력이 큰 만큼 거절이 어려워요. 속으로 쌓인 서운함이 한 번에 터지기 전에, 작은 거절부터 연습하세요.',
   },
   2: {
     title: '시작은 뜨겁지만 뒷심이 약하다',
@@ -494,7 +494,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       later('3일 후…'),
       { s: { bg: 'gloom', cast: [c.me(220, 'tired', 'stand', { sym: 'off' }), c.mirror(470, 'smug', 'stand', { dir: -1 })], talk: [think(0, '(…불이 꺼졌다.)'), say(1, '3일 천하.')] } },
     ],
-    note: '병화는 시작하는 힘이 누구보다 크지만, 반복되는 일에서 금방 흥미를 잃습니다. 마무리를 맡아 줄 꼼꼼한 파트너가 필요합니다.',
+    note: '병화는 시작하는 힘이 누구보다 크지만, 반복되는 일에서 금방 흥미를 잃어요. 마무리를 맡아 줄 꼼꼼한 파트너가 필요해요.',
   },
   3: {
     title: '서운한 일을 오래 기억한다',
@@ -502,7 +502,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       { s: { bg: 'cafe', cast: [c.other('friend', 170, 'surprised', 'stand'), c.me(440, 'serious', 'cross', { dir: -1 })], talk: [say(0, '내가 그런 말을 했다고?'), say(1, '2019년 3월 14일 오후 2시 17분.')] } },
       { s: { bg: 'cafe', shot: 'bust', cast: [c.mirror(160, 'shock'), c.me(440, 'plain', 'cross', { dir: -1 })], talk: [say(0, '기억력이 서운함 한정으로 무한대야.'), say(1, '잊으면 지는 거야.')] } },
     ],
-    note: '정화는 마음이 깊은 만큼 서운함도 오래갑니다. 혼자 삭이다 한 번에 터지기 전에, 그때그때 짧게 말하는 편이 관계를 지킵니다.',
+    note: '정화는 마음이 깊은 만큼 서운함도 오래가요. 혼자 삭이다 한 번에 터지기 전에, 그때그때 짧게 말하는 편이 관계를 지켜요.',
   },
   4: {
     title: '변화를 미루다 타이밍을 놓친다',
@@ -511,7 +511,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       later('10년 후…'),
       { s: { bg: 'park', cast: [c.me(200, 'plain', 'cross', { acc: ['roots', 'nest'] }), c.mirror(470, 'shock', 'stand', { dir: -1 })], talk: [think(0, '(…다음에 생각하자.)'), shout(1, '머리에 새가 둥지를 틀었어!')] } },
     ],
-    note: '무토의 묵직함은 안정감을 주지만, 바꿔야 할 때도 버티게 만듭니다. 결정을 미루는 것도 하나의 선택이라는 점을 기억하세요.',
+    note: '무토의 묵직함은 안정감을 주지만, 바꿔야 할 때도 버티게 만들어요. 결정을 미루는 것도 하나의 선택이라는 점을 기억하세요.',
   },
   5: {
     title: '걱정과 생각이 많아 혼자 마음고생',
@@ -519,7 +519,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       { s: { bg: 'bedroom', cast: [c.me(300, 'nervous', 'think', { fx: ['drops'] })], talk: [think(0, '(아까 그 말, 괜히 했나…?)')] } },
       { s: { bg: 'gloom', cast: [c.me(200, 'soul', 'stand', { fx: ['cloud'] }), c.mirror(470, 'smug', 'stand', { dir: -1 })], talk: [say(1, '걱정 공장 24시간 가동 중이네.'), think(0, '(야근 수당도 없어…)')] } },
     ],
-    note: '기토는 세심한 만큼 걱정이 많습니다. 머릿속에서 돌리는 대신 종이에 적어 보면 생각보다 별일 아닌 경우가 많습니다.',
+    note: '기토는 세심한 만큼 걱정이 많아요. 머릿속에서 돌리는 대신 종이에 적어 보면 생각보다 별일 아닌 경우가 많아요.',
   },
   6: {
     title: '맞는 말을 너무 날카롭게 한다',
@@ -527,7 +527,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       { s: { bg: 'office', cast: [c.me(170, 'plain', 'cross'), c.other('coworker', 440, 'cry', 'stand', { dir: -1 })], talk: [say(0, '틀린 걸 틀렸다고 한 것뿐인데?'), say(1, '말을 꼭 그렇게 해야 돼요?', 'say', { young: '말을 꼭 그렇게 해야 돼?' })] } },
       { s: { bg: 'office', shot: 'bust', cast: [c.mirror(160, 'smug', 'point'), c.me(440, 'nervous', 'stand', { dir: -1 })], talk: [say(0, '말에 칼날이 달렸어. 앞에 쿠션 한 장 깔자.'), say(1, '쿠션… 어디서 팔아?')] } },
     ],
-    note: '경금의 직설은 신뢰를 주지만, 같은 말도 날이 서면 사람을 잃습니다. 결론 앞에 한 문장의 배려를 붙여 보세요.',
+    note: '경금의 직설은 신뢰를 주지만, 같은 말도 날이 서면 사람을 잃어요. 결론 앞에 한 문장의 배려를 붙여 보세요.',
   },
   7: {
     title: '기준이 높아 스스로를 지치게 만든다',
@@ -535,7 +535,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       { s: { bg: 'studio', cast: [c.me(300, 'angry', 'hold', { held: 'paper' })], talk: [say(0, '이것도 별로, 저것도 별로…')], props: [{ kind: 'crumpled', x: 300 }] } },
       { s: { bg: 'studio', cast: [c.me(230, 'dead', 'lie'), c.mirror(490, 'plain', 'stand', { dir: -1 })], talk: [say(1, '완벽은 퇴근이 없어.')], props: [{ kind: 'crumpled', x: 260 }, { kind: 'trash', x: 520 }] } },
     ],
-    note: '신금의 높은 기준은 완성도를 만들지만, 끝없이 고치다 지치기 쉽습니다. “여기까지면 충분하다”는 선을 미리 정해 두세요.',
+    note: '신금의 높은 기준은 완성도를 만들지만, 끝없이 고치다 지치기 쉬워요. “여기까지면 충분하다”는 선을 미리 정해 두세요.',
   },
   8: {
     title: '관심사가 자주 바뀌어 뿌리내리기 어렵다',
@@ -543,7 +543,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       { s: { bg: 'room', cast: [c.me(200, 'star', 'hold', { held: 'box' })], talk: [shout(0, '이번 건 진짜야! 베이킹!')], props: [{ kind: 'boxes', x: 450, label: '기타', label2: '요가' }] } },
       { s: { bg: 'room', shot: 'bust', cast: [c.mirror(160, 'smug'), c.me(440, 'blush', 'stand', { dir: -1 })], talk: [say(0, '그 말, 이번 달에만 네 번째야.'), say(1, '바다는 원래 출렁이는 거야.')] } },
     ],
-    note: '임수는 흐르는 물처럼 새로운 곳을 향하지만, 한곳에 머물러야 쌓이는 것들을 놓치기 쉽습니다. 하나만은 끝까지 해 보는 경험이 필요합니다.',
+    note: '임수는 흐르는 물처럼 새로운 곳을 향하지만, 한곳에 머물러야 쌓이는 것들을 놓치기 쉬워요. 하나만은 끝까지 해 보는 경험이 필요해요.',
   },
   9: {
     title: '생각이 꼬리를 물어 불안을 키운다',
@@ -551,7 +551,7 @@ const DM_SHADOW: Record<number, Omit<Weak, 'basis'>> = {
       { s: { bg: 'space', cast: [c.me(240, 'shock', 'phone', { held: 'phone', fx: ['lightning'] })], talk: [think(0, '(답장이 없네… 나한테 화났나? 절교? 이민?)')] } },
       { s: { bg: 'room', cast: [c.me(170, 'blank', 'phone', { held: 'phone' })], talk: [], props: [{ kind: 'phonebig', x: 440, y: 50, label: '친구', rows: ['ㅋㅋ 미안 자다 깼어'] }], marks: [{ text: '걱정한 시간: 3시간', x: 170, y: 70 }] } },
     ],
-    note: '계수는 예민한 직관 덕분에 남의 마음을 잘 읽지만, 그만큼 걱정도 잘 만듭니다. 확인되지 않은 걱정은 일단 내려놓는 연습이 필요합니다.',
+    note: '계수는 예민한 직관 덕분에 남의 마음을 잘 읽지만, 그만큼 걱정도 잘 만들어요. 확인되지 않은 걱정은 일단 내려놓는 연습이 필요해요.',
   },
 };
 
@@ -563,31 +563,31 @@ const YONGSIN: Record<Element, { rx: [string, string]; oops: (c: Ctx) => Scene; 
     rx: ['복용법: 아침 산책 30분', '추가: 배우기·식물 키우기'],
     oops: (c) => ({ bg: 'park', cast: [c.me(250, 'love', 'hold', { fx: ['hearts'] })], talk: [say(0, '나무랑 친해지라는 거지?')], props: [{ kind: 'tree', x: 360 }] }),
     real: '아침에 걷고, 새로 배우라고!',
-    note: '목(木) 기운은 성장과 시작의 힘입니다. 아침 시간에 새로 배우고, 식물을 키우고, 숲길을 걷는 습관이 부족한 기운을 채워 줍니다.',
+    note: '목(木) 기운은 성장과 시작의 힘이에요. 아침 시간에 새로 배우고, 식물을 키우고, 숲길을 걷는 습관이 부족한 기운을 채워 줘요.',
   },
   fire: {
     rx: ['복용법: 햇빛 하루 20분', '추가: 사람 만나기·땀 흘리기'],
     oops: (c) => ({ bg: 'kitchen', cast: [c.me(260, 'cry', 'hold', { held: 'noodle', fx: ['fire', 'drops'] })], talk: [shout(0, '불맛을 보라는 거지?! 으아 매워!')] }),
     real: '햇빛 보고, 사람 만나고, 땀 흘리라고!',
-    note: '화(火) 기운은 열정과 표현의 힘입니다. 햇빛을 충분히 쬐고, 사람을 만나 이야기하고, 땀이 날 만큼 움직이는 습관이 도움이 됩니다.',
+    note: '화(火) 기운은 열정과 표현의 힘이에요. 햇빛을 충분히 쬐고, 사람을 만나 이야기하고, 땀이 날 만큼 움직이는 습관이 도움이 돼요.',
   },
   earth: {
     rx: ['복용법: 같은 시간에 밥·잠', '추가: 약속 지키기'],
     oops: (c) => ({ bg: 'beach', cast: [c.me(260, 'happy', 'hold', { held: 'shovel' })], talk: [say(0, '흙이랑 가까워지라는 거지? 모래찜질!')] }),
     real: '같은 시간에 먹고 자고, 약속 지키라고!',
-    note: '토(土) 기운은 중심과 안정의 힘입니다. 먹고 자는 시간을 일정하게 지키고, 약속과 신용을 지키는 습관이 흔들리는 기운을 잡아 줍니다.',
+    note: '토(土) 기운은 중심과 안정의 힘이에요. 먹고 자는 시간을 일정하게 지키고, 약속과 신용을 지키는 습관이 흔들리는 기운을 잡아 줘요.',
   },
   metal: {
     rx: ['복용법: 하루 한 번 정리', '추가: 안 쓰는 것 덜어 내기'],
     oops: (c) => ({ bg: 'room', cast: [c.me(270, 'proud', 'hips', { wear: 'armor', fx: ['sparkle'] })], talk: [say(0, '쇠를 가까이하라는 거지? 갑옷 장착!')], sfx: [{ text: '철컹', x: 470, y: 200, size: 44, color: '#8a9bb8' }] }),
     real: '안 쓰는 거 정리하고 덜어 내라고!',
-    note: '금(金) 기운은 결단과 정리의 힘입니다. 주변의 물건과 관계를 덜어 내고, 스스로 규칙을 세우는 습관이 흐트러진 기운을 모아 줍니다.',
+    note: '금(金) 기운은 결단과 정리의 힘이에요. 주변의 물건과 관계를 덜어 내고, 스스로 규칙을 세우는 습관이 흐트러진 기운을 모아 줘요.',
   },
   water: {
     rx: ['복용법: 하루 7시간 숙면', '추가: 혼자 생각하는 시간'],
     oops: (c) => ({ bg: 'room', cast: [c.me(270, 'happy', 'hold', { held: 'water', fx: ['drops'] })], talk: [say(0, '물 마시라는 거지? 2리터 원샷!')], sfx: [{ text: '벌컥벌컥', x: 470, y: 220, size: 40, color: '#3b82f6' }] }),
     real: '그 물 말고! 푹 자고 혼자 생각하라고!',
-    note: '수(水) 기운은 휴식과 지혜의 힘입니다. 충분히 자고 쉬며, 혼자 생각하고 기록하는 시간을 따로 두는 습관이 과열된 기운을 식혀 줍니다.',
+    note: '수(水) 기운은 휴식과 지혜의 힘이에요. 충분히 자고 쉬며, 혼자 생각하고 기록하는 시간을 따로 두는 습관이 과열된 기운을 식혀 줘요.',
   },
 };
 
@@ -635,13 +635,13 @@ export function personaEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
   );
   beats.push(
     cut(c, '해부 예고', '', { bg: 'room', shot: 'bust', cast: [c.mirror(160, 'smug', 'point'), c.me(440, 'nervous', 'stand', { fx: ['sweat'], dir: -1 })], talk: [say(0, hey(c, '오늘 네 사주, 탈탈 털어 줄게.')), say(1, '그런 건 동의한 적 없는데요…')] }, {
-      note: '이 웹툰은 사주의 구조를 개그로 옮긴 것입니다. 웃긴 장면의 뼈대는 모두 내 사주의 글자에서 나왔고, 컷 왼쪽 아래에 근거를 적어 두었습니다.',
+      note: '이 웹툰은 사주의 구조를 개그로 옮긴 거예요. 웃긴 장면의 뼈대는 모두 내 사주의 글자에서 나왔고, 컷 왼쪽 아래에 근거를 적어 두었어요.',
     }),
   );
 
   // 1. 타고난 기질 (일간)
   beats.push(chapter('제1장', '타고난 기질', { basis: `${pillarHanja(a.pillars.day)}일주 · 일간 ${STEMS[ds].hanja}` }));
-  pushGags(beats, c, '타고난 기질', D.gags(c), { basis: `일간 ${STEMS[ds].hanja} · ${pillarHanja(a.pillars.day)}일주`, note: `일간(태어난 날의 천간)은 사주에서 “나 자신”을 뜻하는 글자입니다. ${dm}은 ${D.image}에 비유합니다. ${D.note}`, tone: 'neutral' });
+  pushGags(beats, c, '타고난 기질', D.gags(c), { basis: `일간 ${STEMS[ds].hanja} · ${pillarHanja(a.pillars.day)}일주`, note: `일간(태어난 날의 천간)은 사주에서 “나 자신”을 뜻하는 글자예요. ${dm}은 ${D.image}에 비유해요. ${D.note}`, tone: 'neutral' });
 
   // 2. 겉과 속
   beats.push(chapter('제2장', '겉과 속'));
@@ -656,7 +656,7 @@ export function personaEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
       ],
     }, {
       basis: `월간 ${STEMS[month.pillar.stem].hanja}(${outerTg}) · 일지 ${pillarHanja(a.pillars.day).slice(1)}(${day.branchTenGod})`,
-      note: `태어난 달의 천간(월간)은 사회에서 드러나는 얼굴, 태어난 날의 지지(일지)는 가까운 사람에게만 보이는 속마음의 자리입니다. 밖에서는 ‘${O.tag}’(${outerTg})으로 보이지만, 속에는 ‘${I.tag}’(${day.branchTenGod})이 있습니다. 겉과 속이 다를수록 남들이 모르는 피로가 쌓입니다.`,
+      note: `태어난 달의 천간(월간)은 사회에서 드러나는 얼굴, 태어난 날의 지지(일지)는 가까운 사람에게만 보이는 속마음의 자리예요. 밖에서는 ‘${O.tag}’(${outerTg})으로 보이지만, 속에는 ‘${I.tag}’(${day.branchTenGod})이 있어요. 겉과 속이 다를수록 남들이 모르는 피로가 쌓여요.`,
     }),
   );
   const same = groupOf(outerTg) === groupOf(day.branchTenGod);
@@ -704,7 +704,7 @@ export function personaEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
       props: [{ kind: 'rx', x: 405, y: 60, w: 300, rows: [`용신: ${el}`, Y.rx[0], Y.rx[1]] }],
     }, {
       basis: `용신 ${ELEMENT_KO[ys]}(${ELEMENT_HANJA[ys]}) · ${a.yongsin.method}`,
-      note: `용신은 사주의 치우친 기운을 바로잡아 주는 오행입니다. ${c.who}의 사주는 ${a.strength.level}이고, ${a.yongsin.method}의 방법으로 ${ELEMENT_KO[ys]}(${ELEMENT_HANJA[ys]})을 용신으로 봅니다.`,
+      note: `용신은 사주의 치우친 기운을 바로잡아 주는 오행이에요. ${c.who}의 사주는 ${a.strength.level}이고, ${a.yongsin.method}의 방법으로 ${ELEMENT_KO[ys]}(${ELEMENT_HANJA[ys]})을 용신으로 봐요.`,
       tone: 'good',
     }),
   );
@@ -715,14 +715,14 @@ export function personaEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
       shot: 'bust',
       cast: [c.mirror(160, 'angry', 'point'), c.me(440, 'shock', 'stand', { dir: -1 })],
       talk: [shout(0, '그거 말고!!'), say(0, Y.real)],
-    }, { note: `${Y.note} 내 고민에 맞는 색·장소·습관(개운법)은 고민 리포트에 나눠 담았습니다.` }),
+    }, { note: `${Y.note} 내 고민에 맞는 색·장소·습관(개운법)은 고민 리포트에 나눠 담았어요.` }),
   );
 
   // 마무리
   const headline = x?.card.headline ?? D.tag;
   beats.push(
     cut(c, '마무리', `결론: 나는 ‘${headline}’.`, { bg: 'sparkle', shot: 'bust', cast: [c.me(170, 'proud', 'hips'), c.mirror(440, 'smug', 'stand', { dir: -1 })], talk: [say(1, '요약하니까 꽤 멀쩡한 사람 같네?'), shout(0, '원래 멀쩡하거든?!')] }, {
-      note: x ? '마지막 한 줄은 사주·운·띠·MBTI·직업을 교차 검증한 ‘정체성 한 줄’에서 가져왔습니다.' : '마지막 한 줄은 일간의 기질을 요약한 것입니다.',
+      note: x ? '마지막 한 줄은 사주·운·띠·MBTI·직업을 교차 검증한 ‘정체성 한 줄’에서 가져왔어요.' : '마지막 한 줄은 일간의 기질을 요약한 거예요.',
     }),
   );
   beats.push(text(`다음 화 예고 — 2화 「${workTitle(c)}」\n${c.young ? '학교는 왜 매일 가야 하는가' : c.senior ? '은퇴했는데 왜 더 바쁜가' : '월급은 왜 스쳐 지나가는가'}`, 'soft'));

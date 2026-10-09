@@ -46,7 +46,7 @@ export async function comicToPng(comic: Comic, els: SVGSVGElement[], site: strin
 <text x="${M}" y="78" font-size="29" font-weight="700" fill="#1e1d1b" font-family="${escXml(SVG_SERIF)}">${escXml(`${comic.no}화 · ${comic.title}`)}</text>
 <text x="${M}" y="106" font-size="16" fill="#6a6966">${escXml(comic.subtitle)}</text>
 ${body}
-<text x="${W / 2}" y="${H - 54}" font-size="14" fill="#6a6966" text-anchor="middle">사주에 나타난 경향을 그린 만화이며, 실제 사건을 예언하지 않습니다.</text>
+<text x="${W / 2}" y="${H - 54}" font-size="14" fill="#6a6966" text-anchor="middle">사주에 나타난 경향을 그린 만화이며, 실제 사건을 예언하지 않아요.</text>
 <text x="${W / 2}" y="${H - 28}" font-size="16" font-weight="600" fill="#33574d" text-anchor="middle">${escXml(site)}</text>
 </svg>`;
   // 아이폰 캔버스 한도(약 1,670만 화소) 안에서 가장 선명하게

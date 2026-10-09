@@ -7,6 +7,7 @@ import { SHEET_URL } from '../config/backend.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { matchJob } from '../report/job.ts';
 import { parseMbti } from '../report/mbti.ts';
+import { sourceMeta } from './source.ts';
 import { computeFunnel, computeStats, type RawData, type Stats } from './stats.ts';
 
 const QUEUE_KEY = 'mg_pending_v1';
@@ -43,6 +44,8 @@ export function chartMeta(a: SajuAnalysis) {
     // 교차 분석 정확도를 유형별로 보기 위한 값 (직업은 분야 이름만, 입력한 직업명은 보내지 않는다)
     mbti: parseMbti(a.input.mbti) ?? '',
     jobCat: a.input.job ? matchJob(a.input.job).id : '',
+    // 지인 리뷰 링크로 들어온 기기면 표시 (관리 화면에서 따로 본다)
+    ...sourceMeta(),
   };
 }
 
@@ -165,11 +168,11 @@ export async function fetchStats(token: string): Promise<Stats> {
     const r = await fetch(`${SHEET_URL}?token=${encodeURIComponent(token)}`);
     if (!r.ok) throw new Error(`스프레드시트 연결 오류 (${r.status})`);
     const raw = (await r.json()) as RawData & { error?: string };
-    if (raw.error) throw new Error(raw.error === 'unauthorized' ? '관리자 토큰이 올바르지 않습니다.' : raw.error);
+    if (raw.error) throw new Error(raw.error === 'unauthorized' ? '관리자 토큰이 올바르지 않아요.' : raw.error);
     return computeStats(raw);
   }
   const r = await fetch('/api/stats', { headers: { Authorization: `Bearer ${token}` } });
-  if (!r.ok) throw new Error(r.status === 401 ? '관리자 토큰이 올바르지 않습니다.' : `서버 오류 (${r.status})`);
+  if (!r.ok) throw new Error(r.status === 401 ? '관리자 토큰이 올바르지 않아요.' : `서버 오류 (${r.status})`);
   // 자체 서버는 단계별 측정의 원본(최근 90일)만 넘기고, 계산은 시트와 같은 함수로 한다
   const { funnelEvents, ...rest } = (await r.json()) as Omit<Stats, 'funnel'> & { funnelEvents?: RawData['events'] };
   return { ...rest, funnel: computeFunnel(funnelEvents ?? []) };

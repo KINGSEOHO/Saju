@@ -170,7 +170,7 @@ function koreaWallToUtc(y: number, mo: number, d: number, h: number, mi: number)
     standardOffsetMinutes: std,
     dst,
     ambiguous,
-    note: ambiguous ? '서머타임 전환 시점 부근의 시각이라 실제 시각이 1시간 다를 수 있습니다.' : undefined,
+    note: ambiguous ? '서머타임 전환 시점 부근의 시각이라 실제 시각이 1시간 다를 수 있어요.' : undefined,
   };
 }
 
@@ -214,7 +214,7 @@ function intlWallToUtc(y: number, mo: number, d: number, h: number, mi: number, 
     standardOffsetMinutes: std,
     dst: finalOffset > std,
     ambiguous,
-    note: ambiguous ? '서머타임 전환 시점 부근의 시각이라 실제 시각이 1시간 다를 수 있습니다.' : undefined,
+    note: ambiguous ? '서머타임 전환 시점 부근의 시각이라 실제 시각이 1시간 다를 수 있어요.' : undefined,
   };
 }
 

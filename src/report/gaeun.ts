@@ -235,11 +235,11 @@ export function buildGaeun(a: SajuAnalysis, forYear = a.currentSajuYear): { data
   // 왜 이 기운이 필요한가
   let why: string;
   if (Y.method === '조후') {
-    why = `${BRANCHES[mb].hanja}월(${[11, 0, 1].includes(mb) ? '한겨울' : [5, 6, 7].includes(mb) ? '한여름' : '환절기'}) 태생이라 계절의 ${[11, 0, 1].includes(mb) ? '차가움' : '뜨거움'}을 먼저 풀어 줄 ${el(need)} 기운이 필요합니다.`;
+    why = `${BRANCHES[mb].hanja}월(${[11, 0, 1].includes(mb) ? '한겨울' : [5, 6, 7].includes(mb) ? '한여름' : '환절기'}) 태생이라 계절의 ${[11, 0, 1].includes(mb) ? '차가움' : '뜨거움'}을 먼저 풀어 줄 ${el(need)} 기운이 필요해요.`;
   } else if (Y.method === '억부') {
-    why = `사주가 ${a.strength.level}이라 ${strong ? '넘치는 힘을 밖으로 써 줄' : '부족한 힘을 채워 줄'} ${el(need)} 기운이 필요합니다.`;
+    why = `사주가 ${a.strength.level}이라 ${strong ? '넘치는 힘을 밖으로 써 줄' : '부족한 힘을 채워 줄'} ${el(need)} 기운이 필요해요.`;
   } else {
-    why = `한쪽 기운이 매우 강한 특수한 구조라, 그 흐름을 거스르지 않는 ${el(need)} 기운이 필요합니다.`;
+    why = `한쪽 기운이 매우 강한 특수한 구조라, 그 흐름을 거스르지 않는 ${el(need)} 기운이 필요해요.`;
   }
   const whyBasis = Y.method === '조후' ? Y.johu.reason : Y.method === '억부' ? Y.eokbuReason : (Y.special ?? Y.method);
 
@@ -320,29 +320,29 @@ export function buildGaeun(a: SajuAnalysis, forYear = a.currentSajuYear): { data
   const story: StoryPara[] = [
     {
       title: '내 사주에 필요한 기운',
-      text: `${why} 개운법은 부적이나 비싼 물건이 아니라, 매일의 작은 선택으로 부족한 기운을 채우고 넘치는 기운을 덜어 내는 생활 습관입니다. ${who}에게는 ${josa(el(need), '이/가')} 가장 필요하고, ${josa(el(help), '이/가')} 그 기운을 도우며, ${josa(el(avoid), '은/는')} 지나치면 균형을 무너뜨립니다.`,
+      text: `${why} 개운법은 부적이나 비싼 물건이 아니라, 매일의 작은 선택으로 부족한 기운을 채우고 넘치는 기운을 덜어 내는 생활 습관이에요. ${who}에게는 ${josa(el(need), '이/가')} 가장 필요하고, ${josa(el(help), '이/가')} 그 기운을 도우며, ${josa(el(avoid), '은/는')} 지나치면 균형을 무너뜨려요.`,
       basis: `${Y.method} · ${whyBasis}`,
     },
     {
       title: '가까이할 것',
-      text: `생활 공간에는 ${K.color} 계열을 한두 군데 들이고, ${K.items} 같은 물건을 곁에 두세요. 하루 중에는 ${K.time.split(' — ')[0]} 시간이 ${who}의 편입니다. 마음이 답답할 때는 ${josa(K.place, '을/를')} 찾아가 보세요. 식탁에는 ${josa(K.food, '이/가')} 잘 맞습니다. 습관으로는 ${josa(FILL[fillG].habit, '이/가')} 가장 효과적입니다. 필요한 ${el(need)} 기운이 ${who}에게는 ${fillG}, 곧 ‘${GROUP_MEAN[fillG]}’이기 때문입니다.${fillG === weakest ? ` 실제로 사주에서 ${fillG}(${p0(gp[fillG])})이 가장 약해, 채울수록 막힌 곳이 풀립니다.` : ''}`,
+      text: `생활 공간에는 ${K.color} 계열을 한두 군데 들이고, ${K.items} 같은 물건을 곁에 두세요. 하루 중에는 ${K.time.split(' — ')[0]} 시간이 ${who}의 편이에요. 마음이 답답할 때는 ${josa(K.place, '을/를')} 찾아가 보세요. 식탁에는 ${josa(K.food, '이/가')} 잘 맞아요. 습관으로는 ${josa(FILL[fillG].habit, '이/가')} 가장 효과적이에요. 필요한 ${el(need)} 기운이 ${who}에게는 ${fillG}, 곧 ‘${GROUP_MEAN[fillG]}’이기 때문이에요.${fillG === weakest ? ` 실제로 사주에서 ${fillG}(${p0(gp[fillG])})이 가장 약해, 채울수록 막힌 곳이 풀려요.` : ''}`,
       basis: `${yBasis} · ${fillBasis}`,
     },
     {
       title: '멀리할 것',
-      text: `${el(avoid)} 기운이 지나치면 균형이 무너지는 사주라, ${G.avoidPlace}에 오래 머물지 않는 것이 좋습니다. 음식은 ${josa(G.avoidFood, '을/를')} 조심하세요. 습관 중에는 ${josa(REDUCE[cutG].habit, '을/를')} 가장 경계해야 합니다. ${cutG === strongest ? `가장 강한 기운인 ${strongest}(${p0(gp[strongest])})이 넘칠 때` : `부담되는 ${el(avoid)} 기운이 ${who}에게는 ${cutG}에 해당해, 이 힘이 넘칠 때`} 생기기 쉬운 일이기 때문입니다. ${strong ? '힘이 센 사주는 쓰지 않고 쌓아 두면 고집과 답답함이 되니, 혼자 버티기보다 밖으로 움직이세요.' : '힘이 약한 사주는 무리할수록 손에 남는 것이 줄어드니, 감당할 만큼만 약속하세요.'}`,
+      text: `${el(avoid)} 기운이 지나치면 균형이 무너지는 사주라, ${G.avoidPlace}에 오래 머물지 않는 것이 좋아요. 음식은 ${josa(G.avoidFood, '을/를')} 조심하세요. 습관 중에는 ${josa(REDUCE[cutG].habit, '을/를')} 가장 경계해야 해요. ${cutG === strongest ? `가장 강한 기운인 ${strongest}(${p0(gp[strongest])})이 넘칠 때` : `부담되는 ${el(avoid)} 기운이 ${who}에게는 ${cutG}에 해당해, 이 힘이 넘칠 때`} 생기기 쉬운 일이기 때문이에요. ${strong ? '힘이 센 사주는 쓰지 않고 쌓아 두면 고집과 답답함이 되니, 혼자 버티기보다 밖으로 움직이세요.' : '힘이 약한 사주는 무리할수록 손에 남는 것이 줄어드니, 감당할 만큼만 약속하세요.'}`,
       basis: `기신 ${elKo(avoid)} · ${cutBasis} · ${a.strength.level}`,
     },
     {
       title: '사람으로 여는 운',
-      text: `곁에 두면 좋은 사람은 ${FILL[fillG].people}, 그리고 ${K.people}입니다. 반대로 ${josa(REDUCE[cutG].people, '과/와')}는 거리를 두세요. 띠로는 ${tti.best.join('·')}와 잘 맞고, ${tti.caution.join('·')}와는 부딪히기 쉬운 편입니다.${has('천을귀인') ? ' 사주에 천을귀인이 있어, 어려울 때 먼저 손을 내밀면 돕는 사람이 나타납니다.' : ''}`,
+      text: `곁에 두면 좋은 사람은 ${FILL[fillG].people}, 그리고 ${josa(K.people, '이에요/예요')}. 반대로 ${josa(REDUCE[cutG].people, '과/와')}는 거리를 두세요. 띠로는 ${tti.best.join('·')}와 잘 맞고, ${tti.caution.join('·')}와는 부딪히기 쉬운 편이에요.${has('천을귀인') ? ' 사주에 천을귀인이 있어, 어려울 때 먼저 손을 내밀면 돕는 사람이 나타나요.' : ''}`,
       basis: `${fillBasis} · ${cutBasis} · ${tti.name}`,
     },
   ];
   if (year) story.push({ title: year.title, text: year.text, basis: year.basis });
   story.push({
     title: '오늘부터 할 수 있는 네 가지',
-    text: routine.map((r, i) => `${i + 1}) ${r.text}`).join('. ') + '. 거창한 결심보다 이 작은 습관을 3주만 이어 가 보세요. 기운의 균형은 꾸준함에 비례합니다.',
+    text: routine.map((r, i) => `${i + 1}) ${r.text}`).join('. ') + '. 거창한 결심보다 이 작은 습관을 3주만 이어 가 보세요. 기운의 균형은 꾸준함에 비례해요.',
     basis: routine.map((r) => r.basis).join(' · '),
   });
 
@@ -589,7 +589,7 @@ export function concernGaeun(id: GaeunConcern, a: SajuAnalysis, opt: { love?: St
     const { data } = buildGaeun(a, opt.year);
     return {
       title: opt.year && opt.year !== a.currentSajuYear ? `${opt.year}년 개운법` : '올해의 개운법',
-      why: data.why.replace(/필요합니다\.$/, '필요해요.'),
+      why: data.why.replace(/필요해요\.$/, '필요해요.'),
       taste: { key: 'routine', icon: '習', label: '오늘부터 한 가지', value: data.routine[0].text, basis: data.routine[0].basis },
       close: data.close,
       away: data.away,

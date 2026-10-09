@@ -115,7 +115,7 @@ export function mbtiEpisode(a: SajuAnalysis, x: CrossReport): Comic | null {
             { label: `MBTI(겉): ${u}`, ...LETTER_HALF[u](c) },
             { label: `사주(속): ${lean}`, bg: I.bg, cast: [c.me(150, I.face, 'stand')], talk: [think(0, I.line)] },
           ],
-        }, { basis, note: `${round}: 겉으로는 ${u}(${KO[u]}), 사주는 ${lean}(${KO[lean]}) 쪽입니다. ${ax.text}` }),
+        }, { basis, note: `${round}: 겉으로는 ${u}(${KO[u]}), 사주는 ${lean}(${KO[lean]}) 쪽이에요. ${ax.text}` }),
       );
     } else {
       beats.push(cut(c, round, `${round} — ${u}(${KO[u]}), 사주로는 반반`, HALF_HALF[i % 4](c), { basis, note: ax.text }));
@@ -155,7 +155,7 @@ export function mbtiEpisode(a: SajuAnalysis, x: CrossReport): Comic | null {
       props: [{ kind: 'shelf', x: 240, y: 90, w: 440, rows: SHOP[ys], color: EL_COLOR[ys] }],
     }, {
       basis: `용신 ${ELEMENT_KO[ys]}(${ELEMENT_HANJA[ys]})`,
-      note: `진짜 개운 아이템은 물건이 아니라 습관 — ${m.gaeun.habits[0]}. 일·연애·돈·시험에 맞춘 개운법은 고민 리포트에 있습니다.`,
+      note: `진짜 개운 아이템은 물건이 아니라 습관 — ${m.gaeun.habits[0]}. 일·연애·돈·시험에 맞춘 개운법은 고민 리포트에 있어요.`,
       tone: 'good',
     }),
   );

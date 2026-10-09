@@ -20,18 +20,18 @@ interface AnimalTrait {
 }
 
 const TRAITS: AnimalTrait[] = [
-  { nick: '눈치 빠른 전략가', keywords: ['영리함', '눈치', '부지런함'], good: '상황 판단이 빠르고 기회를 놓치지 않는다', shadow: '계산과 걱정이 많아 마음이 쉬지 못한다', yes: ['mind', 'real', 'worry'], no: ['spend'] },
-  { nick: '묵묵한 완주자', keywords: ['성실', '끈기', '고집'], good: '한번 시작하면 끝까지 해낸다', shadow: '고집이 세고 속마음을 잘 말하지 않는다', yes: ['steady', 'order', 'feel'], no: ['move', 'spend'] },
-  { nick: '앞장서는 개척자', keywords: ['용맹', '리더십', '자존심'], good: '두려움 없이 먼저 나서서 길을 연다', shadow: '자존심이 상하면 쉽게 굽히지 못한다', yes: ['self', 'move'], no: ['worry'] },
-  { nick: '섬세한 평화주의자', keywords: ['온화함', '섬세함', '감각'], good: '분위기를 부드럽게 만들고 감각이 좋다', shadow: '갈등을 피하다 속앓이를 한다', yes: ['care', 'express', 'worry'], no: ['self'] },
-  { nick: '판을 키우는 야망가', keywords: ['야망', '카리스마', '자신감'], good: '큰 그림을 그리고 사람을 끌어당긴다', shadow: '기대가 높아 실망도 크다', yes: ['self', 'express', 'mind'], no: ['steady'] },
-  { nick: '속 깊은 전략가', keywords: ['지혜', '직관', '신중함'], good: '겉으로 드러내지 않고 깊이 꿰뚫어 본다', shadow: '속을 잘 보이지 않아 오해를 산다', yes: ['mind', 'feel'], no: ['move'] },
-  { nick: '자유로운 질주자', keywords: ['활동력', '자유', '열정'], good: '에너지가 넘치고 어디서든 분위기를 띄운다', shadow: '싫증을 잘 내고 충동적으로 움직인다', yes: ['move', 'express', 'self', 'spend'], no: ['steady', 'worry'] },
-  { nick: '다정한 예술가', keywords: ['온순함', '배려', '예술 감각'], good: '사람을 편하게 하고 아름다운 것을 알아본다', shadow: '마음이 여려 걱정과 눈치가 많다', yes: ['care', 'express', 'worry'], no: ['self'] },
-  { nick: '재주 많은 해결사', keywords: ['재치', '다재다능', '호기심'], good: '머리 회전이 빠르고 못 하는 게 없다', shadow: '관심이 금방 옮겨 가 마무리가 약하다', yes: ['express', 'move', 'real'], no: ['steady'] },
-  { nick: '꼼꼼한 완벽주의자', keywords: ['꼼꼼함', '부지런함', '직설'], good: '디테일을 놓치지 않고 계획대로 해낸다', shadow: '말이 직설적이고 스스로를 몰아붙인다', yes: ['order', 'steady', 'real'], no: ['spend'] },
-  { nick: '의리 있는 수호자', keywords: ['충직함', '정의감', '책임감'], good: '한번 믿은 사람은 끝까지 지킨다', shadow: '걱정이 많고 편을 가르기 쉽다', yes: ['order', 'care', 'steady', 'worry'], no: ['spend'] },
-  { nick: '복을 부르는 낙천가', keywords: ['너그러움', '솔직함', '복'], good: '마음이 넉넉해 주변에 사람과 복이 모인다', shadow: '마음이 약해 돈과 부탁에 쉽게 흔들린다', yes: ['care', 'real', 'spend'], no: ['worry'] },
+  { nick: '눈치 빠른 전략가', keywords: ['영리함', '눈치', '부지런함'], good: '상황 판단이 빠르고 기회를 놓치지 않아요', shadow: '계산과 걱정이 많아 마음이 쉬지 못해요', yes: ['mind', 'real', 'worry'], no: ['spend'] },
+  { nick: '묵묵한 완주자', keywords: ['성실', '끈기', '고집'], good: '한번 시작하면 끝까지 해내요', shadow: '고집이 세고 속마음을 잘 말하지 않아요', yes: ['steady', 'order', 'feel'], no: ['move', 'spend'] },
+  { nick: '앞장서는 개척자', keywords: ['용맹', '리더십', '자존심'], good: '두려움 없이 먼저 나서서 길을 열어요', shadow: '자존심이 상하면 쉽게 굽히지 못해요', yes: ['self', 'move'], no: ['worry'] },
+  { nick: '섬세한 평화주의자', keywords: ['온화함', '섬세함', '감각'], good: '분위기를 부드럽게 만들고 감각이 좋아요', shadow: '갈등을 피하다 속앓이를 해요', yes: ['care', 'express', 'worry'], no: ['self'] },
+  { nick: '판을 키우는 야망가', keywords: ['야망', '카리스마', '자신감'], good: '큰 그림을 그리고 사람을 끌어당겨요', shadow: '기대가 높아 실망도 커요', yes: ['self', 'express', 'mind'], no: ['steady'] },
+  { nick: '속 깊은 전략가', keywords: ['지혜', '직관', '신중함'], good: '겉으로 드러내지 않고 깊이 꿰뚫어 봐요', shadow: '속을 잘 보이지 않아 오해를 사요', yes: ['mind', 'feel'], no: ['move'] },
+  { nick: '자유로운 질주자', keywords: ['활동력', '자유', '열정'], good: '에너지가 넘치고 어디서든 분위기를 띄워요', shadow: '싫증을 잘 내고 충동적으로 움직여요', yes: ['move', 'express', 'self', 'spend'], no: ['steady', 'worry'] },
+  { nick: '다정한 예술가', keywords: ['온순함', '배려', '예술 감각'], good: '사람을 편하게 하고 아름다운 것을 알아봐요', shadow: '마음이 여려 걱정과 눈치가 많아요', yes: ['care', 'express', 'worry'], no: ['self'] },
+  { nick: '재주 많은 해결사', keywords: ['재치', '다재다능', '호기심'], good: '머리 회전이 빠르고 못 하는 게 없어요', shadow: '관심이 금방 옮겨 가 마무리가 약해요', yes: ['express', 'move', 'real'], no: ['steady'] },
+  { nick: '꼼꼼한 완벽주의자', keywords: ['꼼꼼함', '부지런함', '직설'], good: '디테일을 놓치지 않고 계획대로 해내요', shadow: '말이 직설적이고 스스로를 몰아붙여요', yes: ['order', 'steady', 'real'], no: ['spend'] },
+  { nick: '의리 있는 수호자', keywords: ['충직함', '정의감', '책임감'], good: '한번 믿은 사람은 끝까지 지켜요', shadow: '걱정이 많고 편을 가르기 쉬워요', yes: ['order', 'care', 'steady', 'worry'], no: ['spend'] },
+  { nick: '복을 부르는 낙천가', keywords: ['너그러움', '솔직함', '복'], good: '마음이 넉넉해 주변에 사람과 복이 모여요', shadow: '마음이 약해 돈과 부탁에 쉽게 흔들려요', yes: ['care', 'real', 'spend'], no: ['worry'] },
 ];
 
 /** 삼합 무리 (같은 무리끼리 잘 맞는다) */
@@ -99,13 +99,13 @@ function yearRelation(me: number, y: number, year: number, now: boolean): TtiYea
   else if (groupOfBranch(y) === gi) relation = '삼합';
   const yearAnimal = animalName(y);
   const parts: string[] = [];
-  if (samjae) parts.push(`${year}년은 ${samjae}입니다. 삼재는 세 해에 걸쳐 조심할 일이 많아진다는 민간 풍습이라, ${samjae === '들삼재' ? '새로 벌이는 큰일은 한 번 더 점검하세요' : samjae === '눌삼재' ? '무리한 확장보다 지키는 쪽이 낫습니다' : '마무리를 깔끔하게 하면 됩니다'}.`);
-  if (relation === '충') parts.push(`${when}의 ${yearAnimal}와 정면으로 부딪히는(충) 관계라 이동·변화가 많아지기 쉽습니다. 큰 결정은 서두르지 마세요.`);
-  if (relation === '원진') parts.push(`${when}의 ${yearAnimal}와는 원진(괜히 서운하고 어긋나기 쉬운 사이)이라 사람 사이의 말을 조심하면 좋습니다.`);
-  if (relation === '육합') parts.push(`${when}의 ${yearAnimal}와 육합(짝이 맞는 사이)이라 귀인과 협력의 기회가 생기기 쉽습니다.`);
-  if (relation === '삼합') parts.push(`${when}의 ${yearAnimal}와 삼합(같은 무리)이라 하는 일에 힘이 실리기 쉽습니다.`);
-  if (relation === '같은 띠') parts.push(`${josa(when, '은/는')} 내 띠의 해라 스스로를 돌아보고 새 판을 짜기 좋은 해로 봅니다.`);
-  if (!parts.length) parts.push(`${when}의 ${yearAnimal}와는 특별히 부딪히거나 합하는 관계가 없어 무난한 흐름입니다.`);
+  if (samjae) parts.push(`${year}년은 ${josa(samjae, '이에요/예요')}. 삼재는 세 해에 걸쳐 조심할 일이 많아진다는 민간 풍습이라, ${samjae === '들삼재' ? '새로 벌이는 큰일은 한 번 더 점검하세요' : samjae === '눌삼재' ? '무리한 확장보다 지키는 쪽이 나아요' : '마무리를 깔끔하게 하면 돼요'}.`);
+  if (relation === '충') parts.push(`${when}의 ${yearAnimal}와 정면으로 부딪히는(충) 관계라 이동·변화가 많아지기 쉬워요. 큰 결정은 서두르지 마세요.`);
+  if (relation === '원진') parts.push(`${when}의 ${yearAnimal}와는 원진(괜히 서운하고 어긋나기 쉬운 사이)이라 사람 사이의 말을 조심하면 좋아요.`);
+  if (relation === '육합') parts.push(`${when}의 ${yearAnimal}와 육합(짝이 맞는 사이)이라 귀인과 협력의 기회가 생기기 쉬워요.`);
+  if (relation === '삼합') parts.push(`${when}의 ${yearAnimal}와 삼합(같은 무리)이라 하는 일에 힘이 실리기 쉬워요.`);
+  if (relation === '같은 띠') parts.push(`${josa(when, '은/는')} 내 띠의 해라 스스로를 돌아보고 새 판을 짜기 좋은 해로 봐요.`);
+  if (!parts.length) parts.push(`${when}의 ${yearAnimal}와는 특별히 부딪히거나 합하는 관계가 없어 무난한 흐름이에요.`);
   const bad = !!samjae || relation === '충' || relation === '원진';
   const good = relation === '육합' || relation === '삼합';
   const tone: TtiYear['tone'] = good && !bad ? 'good' : bad && !good ? 'bad' : 'neutral';
@@ -124,7 +124,7 @@ export function ttiOf(a: SajuAnalysis): TtiInfo {
   const lunarBranch = (((a.pillars.lunarDate?.year ?? a.pillars.solarDate.year) - 4) % 12 + 12) % 12;
   const lunarNote =
     lunarBranch !== b
-      ? `설날 기준으로는 ${animalName(lunarBranch)}예요. 사주는 입춘(2월 4일 무렵)에 해가 바뀌어 ${animalName(b)}로 봅니다.`
+      ? `설날 기준으로는 ${animalName(lunarBranch)}예요. 사주는 입춘(2월 4일 무렵)에 해가 바뀌어 ${animalName(b)}로 봐요.`
       : null;
   return {
     branch: b,

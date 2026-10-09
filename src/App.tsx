@@ -4,6 +4,7 @@ import { analyze, pillarHanja, STEMS, type BirthInput, type SajuAnalysis } from 
 import { groupOf } from './engine/tenGods.ts';
 import { flushQueue } from './lib/api.ts';
 import { track } from './lib/funnel.ts';
+import { sourceTag } from './lib/source.ts';
 import { clearDraft, inputToDraft, saveDraft } from './lib/birthDraft.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
 import { CONCERNS, concernsFor, type ConcernId } from './report/concernList.ts';
@@ -145,7 +146,7 @@ export default function App() {
         <p className="wrap py-8 text-cap text-sub">
           명경사주(明鏡四柱) — 맑은 거울처럼 있는 그대로.
           <br />
-          사주 해석은 전통적 경향에 대한 참고 자료이며 의학·법률·투자 판단을 대신하지 않습니다.
+          사주 해석은 전통적 경향에 대한 참고 자료이며 의학·법률·투자 판단을 대신하지 않아요.
         </p>
       </footer>
       {route.name === 'home' && (
@@ -167,15 +168,36 @@ const FEATURES: [string, string][] = [
   ['내 사주로 그린 개그 웹툰', '결과 화면에서 4화까지 볼 수 있어요.'],
 ];
 
+/** 지인 리뷰 링크(?from=friend)로 들어온 사람에게만 보이는 안내 */
+function FriendNote({ where }: { where: 'home' | 'result' }) {
+  if (sourceTag() !== 'friend') return null;
+  return (
+    <div className="no-print panel mt-4" data-friend-note>
+      <p className="text-label font-bold text-ink">{where === 'home' ? '지인 리뷰 링크로 오셨어요' : '리뷰 부탁드려요'}</p>
+      <p className="mt-1 text-label text-sub">
+        {where === 'home'
+          ? '‘내 사주 보기’로 생년월일을 넣고 결과를 끝까지 본 뒤, 맨 아래에 리뷰를 남겨 주세요. 고칠 점을 찾는 게 목적이라 아쉬운 점을 솔직하게 적어 주시면 가장 큰 도움이 돼요.'
+          : '다 보신 뒤 맨 아래 ‘베타 리뷰 남기기’에 맞은 점·틀린 점, 얼마면 낼지 솔직하게 남겨 주세요. 생년월일은 저장되지 않아요.'}
+      </p>
+      {where === 'result' && (
+        <button type="button" className="link mt-2 text-label" onClick={() => document.getElementById('review')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+          리뷰 쓰러 가기
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Home() {
   return (
     <>
       <div className="wrap pt-12 pb-4">
+        <FriendNote where="home" />
         <p className="kicker">정밀 만세력 · 근거 있는 풀이</p>
         <h1 className="mt-3 text-display text-ink">
           정확하게 계산하고,
           <br />
-          있는 그대로 말합니다.
+          있는 그대로 말해요.
         </h1>
         <p className="mt-4 text-ui text-sub">좋은 말만 늘어놓지 않아요. 성향·연애·직업·재물·건강을 강점과 약점 모두, 왜 그렇게 보는지 근거와 함께 알려 드려요.</p>
         <dl className="mt-10 border-t border-line">
@@ -453,6 +475,7 @@ function Result({ input }: { input: BirthInput }) {
           </button>
         </div>
       </div>
+      <FriendNote where="result" />
 
       <section className="pt-8" aria-labelledby="conclusion">
         <p className="kicker">{input.name ? `${input.name}님의 사주` : '사주로 본 나'}</p>

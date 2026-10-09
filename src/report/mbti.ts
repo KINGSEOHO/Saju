@@ -8,6 +8,7 @@
  *  - 두 체계를 억지로 맞추지 않는다. 어긋나면 어긋난다고 말한다.
  */
 import { ELEMENT_HANJA, ELEMENT_KO, STEMS, type Element, type SajuAnalysis, type TenGod, type TenGodGroup } from '../engine/index.ts';
+import { josa } from '../engine/josa.ts';
 
 export type Mbti = string;
 export const MBTI_LIST = ['INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP', 'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP'] as const;
@@ -60,7 +61,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Ni', 'Te', 'Fi', 'Se'],
     strengths: ['멀리 내다보고 계획을 세우는 힘', '목표를 정하면 효율적으로 밀어붙이는 실행력', '남의 평가에 흔들리지 않는 독립성'],
     weaknesses: ['완벽한 계획이 나올 때까지 시작을 미루기 쉽다', '남의 감정을 비효율로 여겨 차갑게 보일 수 있다', '도움을 청하지 않고 혼자 짊어진다'],
-    stress: '스트레스가 극에 달하면 평소와 달리 먹고 사고 노는 감각적인 쾌락으로 도망치기 쉽습니다.',
+    stress: '스트레스가 극에 달하면 평소와 달리 먹고 사고 노는 감각적인 쾌락으로 도망치기 쉬워요.',
     growth: '계획이 70% 됐을 때 시작하고, 결론을 말하기 전에 상대의 마음을 한 번 묻는 연습',
   },
   INTP: {
@@ -69,7 +70,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Ti', 'Ne', 'Si', 'Fe'],
     strengths: ['복잡한 문제의 원리를 꿰뚫는 분석력', '틀에 얽매이지 않는 아이디어', '객관적이고 공정한 판단'],
     weaknesses: ['생각에 비해 실행과 마무리가 약하다', '관심 없는 일에는 집중하지 못한다', '감정 표현이 서툴러 무심해 보인다'],
-    stress: '스트레스가 쌓이면 갑자기 감정이 폭발하거나, 평소 신경 쓰지 않던 남의 평가에 과민해집니다.',
+    stress: '스트레스가 쌓이면 갑자기 감정이 폭발하거나, 평소 신경 쓰지 않던 남의 평가에 과민해져요.',
     growth: '아이디어를 작게라도 완성해 보는 습관, 고마움과 서운함을 말로 꺼내는 연습',
   },
   ENTJ: {
@@ -78,7 +79,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Te', 'Ni', 'Se', 'Fi'],
     strengths: ['결단력과 추진력', '조직을 체계적으로 이끄는 리더십', '어려운 목표에도 물러서지 않는 의지'],
     weaknesses: ['속도를 못 따라오는 사람에게 조급해진다', '감정보다 결과를 앞세워 관계를 놓친다', '쉬는 법을 잘 모른다'],
-    stress: '지치면 평소 미뤄 둔 감정이 한꺼번에 밀려와 “아무도 나를 이해하지 못한다”는 서운함에 빠집니다.',
+    stress: '지치면 평소 미뤄 둔 감정이 한꺼번에 밀려와 “아무도 나를 이해하지 못한다”는 서운함에 빠져요.',
     growth: '결과만큼 과정의 사람을 챙기고, 일정에 쉼을 먼저 넣는 연습',
   },
   ENTP: {
@@ -87,7 +88,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Ne', 'Ti', 'Fe', 'Si'],
     strengths: ['새로운 아이디어와 순발력', '논리적인 토론과 설득', '변화에 빠르게 적응하는 힘'],
     weaknesses: ['시작은 많고 마무리는 적다', '반박을 즐기다 상대를 지치게 한다', '반복되는 일상 업무를 견디기 어렵다'],
-    stress: '지치면 사소한 몸의 이상이나 과거의 실수에 집착하는 모습이 나옵니다.',
+    stress: '지치면 사소한 몸의 이상이나 과거의 실수에 집착하는 모습이 나와요.',
     growth: '하나를 끝낸 뒤 다음을 시작하는 규칙, 이기는 대화보다 남는 대화를 고르는 연습',
   },
   INFJ: {
@@ -96,7 +97,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Ni', 'Fe', 'Ti', 'Se'],
     strengths: ['사람과 상황을 꿰뚫는 통찰', '깊은 공감과 배려', '신념을 지키는 꾸준함'],
     weaknesses: ['마음속에 쌓아 두다 어느 날 갑자기 관계를 끊는다', '이상이 높아 현실에 쉽게 실망한다', '남을 챙기다 정작 자신은 지친다'],
-    stress: '한계에 이르면 폭식·충동구매처럼 감각에 빠지거나 사소한 것에 집착합니다.',
+    stress: '한계에 이르면 폭식·충동구매처럼 감각에 빠지거나 사소한 것에 집착해요.',
     growth: '서운함을 작을 때 말하고, 완벽하지 않은 사람과 현실을 받아들이는 연습',
   },
   INFP: {
@@ -105,7 +106,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Fi', 'Ne', 'Si', 'Te'],
     strengths: ['풍부한 감수성과 창의력', '진정성 있는 공감', '자기 가치를 지키는 힘'],
     weaknesses: ['현실적인 일 처리와 마감에 약하다', '상처를 오래 품는다', '결정을 미루다 기회를 놓친다'],
-    stress: '궁지에 몰리면 평소와 달리 날카롭게 남을 비판하고 통제하려 듭니다.',
+    stress: '궁지에 몰리면 평소와 달리 날카롭게 남을 비판하고 통제하려 들어요.',
     growth: '마감을 작은 목표로 쪼개고, 마음을 글이나 결과물로 꺼내는 연습',
   },
   ENFJ: {
@@ -114,7 +115,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Fe', 'Ni', 'Se', 'Ti'],
     strengths: ['사람의 마음을 움직이는 소통력', '공동체를 이끄는 책임감', '남의 가능성을 알아보는 눈'],
     weaknesses: ['남의 기대에 맞추느라 자신을 잃는다', '거절을 잘 못 한다', '갈등을 피하려다 문제를 키운다'],
-    stress: '지치면 갑자기 냉정해져 남의 논리적 허점을 날카롭게 공격하는 모습이 나옵니다.',
+    stress: '지치면 갑자기 냉정해져 남의 논리적 허점을 날카롭게 공격하는 모습이 나와요.',
     growth: '“아니요”를 말하는 연습, 내 일정과 감정을 남의 것보다 먼저 확인하기',
   },
   ENFP: {
@@ -123,7 +124,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Ne', 'Fi', 'Te', 'Si'],
     strengths: ['넘치는 에너지와 아이디어', '사람을 끌어당기는 친화력', '새로운 시작을 두려워하지 않는 용기'],
     weaknesses: ['흥미가 식으면 마무리가 약해진다', '감정 기복이 크다', '현실적인 계획과 돈 관리에 약하다'],
-    stress: '번아웃이 오면 몸 상태나 사소한 실수에 집착하며 우울해집니다.',
+    stress: '번아웃이 오면 몸 상태나 사소한 실수에 집착하며 우울해져요.',
     growth: '일을 시작할 때 끝낼 날짜를 함께 정하고, 고정 지출과 저축을 자동화하기',
   },
   ISTJ: {
@@ -132,7 +133,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Si', 'Te', 'Fi', 'Ne'],
     strengths: ['책임감과 신뢰', '꼼꼼한 일 처리', '경험에서 나온 현실적 판단'],
     weaknesses: ['변화와 예외를 불편해한다', '감정 표현이 적어 딱딱해 보인다', '새로운 방식을 시도하는 데 느리다'],
-    stress: '지치면 최악의 상황만 상상하며 불안에 빠집니다.',
+    stress: '지치면 최악의 상황만 상상하며 불안에 빠져요.',
     growth: '작은 변화를 실험처럼 시도해 보고, 칭찬과 고마움을 말로 표현하는 연습',
   },
   ISFJ: {
@@ -141,7 +142,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Si', 'Fe', 'Ti', 'Ne'],
     strengths: ['세심한 배려', '성실함과 인내', '구체적인 기억력과 실무 능력'],
     weaknesses: ['거절을 못 해 일을 떠안는다', '변화를 걱정부터 한다', '자기 필요를 늘 뒤로 미룬다'],
-    stress: '한계에 이르면 미래에 대한 막연한 불안과 최악의 시나리오에 사로잡힙니다.',
+    stress: '한계에 이르면 미래에 대한 막연한 불안과 최악의 시나리오에 사로잡혀요.',
     growth: '내 몫과 남의 몫을 구분하고, 나를 위한 시간을 일정에 고정하기',
   },
   ESTJ: {
@@ -150,7 +151,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Te', 'Si', 'Ne', 'Fi'],
     strengths: ['조직력과 실행력', '분명한 기준과 책임감', '현실적인 문제 해결'],
     weaknesses: ['자기 방식만 옳다고 여기기 쉽다', '감정을 비효율로 본다', '융통성이 부족해 보인다'],
-    stress: '지치면 평소와 달리 “아무도 나를 인정하지 않는다”는 서운함과 감정에 휩쓸립니다.',
+    stress: '지치면 평소와 달리 “아무도 나를 인정하지 않는다”는 서운함과 감정에 휩쓸려요.',
     growth: '결정 전에 다른 방식을 한 번 들어 보고, 사람의 기분을 일의 일부로 챙기기',
   },
   ESFJ: {
@@ -159,7 +160,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Fe', 'Si', 'Ne', 'Ti'],
     strengths: ['친화력과 배려', '모임을 꾸리는 조직력', '성실한 책임감'],
     weaknesses: ['남의 평가에 예민하다', '갈등을 견디기 힘들어한다', '남을 챙기다 자신을 잃는다'],
-    stress: '지치면 남의 말에서 논리적 허점을 찾아 날카롭게 따지는 모습이 나옵니다.',
+    stress: '지치면 남의 말에서 논리적 허점을 찾아 날카롭게 따지는 모습이 나와요.',
     growth: '모두를 만족시키려 하지 않고, 내 기준으로 결정하는 연습',
   },
   ISTP: {
@@ -168,7 +169,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Ti', 'Se', 'Ni', 'Fe'],
     strengths: ['위기 대처 능력', '손재주와 실용적인 기술', '침착하고 객관적인 태도'],
     weaknesses: ['감정 표현이 적어 무심해 보인다', '장기 계획과 약속에 약하다', '규칙에 얽매이는 것을 싫어한다'],
-    stress: '지치면 갑자기 감정이 북받치거나 남의 평가를 크게 신경 씁니다.',
+    stress: '지치면 갑자기 감정이 북받치거나 남의 평가를 크게 신경 써요.',
     growth: '가까운 사람에게 근황과 감정을 먼저 나누고, 6개월 이상 걸리는 목표를 하나 세우기',
   },
   ISFP: {
@@ -177,7 +178,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Fi', 'Se', 'Ni', 'Te'],
     strengths: ['감각적인 미적 감각', '따뜻하고 온화한 태도', '자기 가치에 충실함'],
     weaknesses: ['갈등을 피하다 속으로 삭인다', '장기 계획과 경쟁에 약하다', '자신을 낮게 평가한다'],
-    stress: '궁지에 몰리면 평소와 달리 남을 비판하고 효율만 따지는 모습이 나옵니다.',
+    stress: '궁지에 몰리면 평소와 달리 남을 비판하고 효율만 따지는 모습이 나와요.',
     growth: '작품과 결과물을 밖에 보여 주는 연습, 하고 싶은 것을 계획표로 옮기기',
   },
   ESTP: {
@@ -186,7 +187,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Se', 'Ti', 'Fe', 'Ni'],
     strengths: ['빠른 판단과 실행력', '위기에 강한 순발력', '사람을 사로잡는 화술'],
     weaknesses: ['충동적인 결정과 지출', '장기 계획에 약하다', '규칙과 반복을 지루해한다'],
-    stress: '지치면 근거 없는 불길한 예감에 사로잡힙니다.',
+    stress: '지치면 근거 없는 불길한 예감에 사로잡혀요.',
     growth: '큰 결정은 하루 미루고, 1년 단위 목표를 적어 두기',
   },
   ESFP: {
@@ -195,7 +196,7 @@ export const MBTI_PROFILE: Record<string, TypeProfile> = {
     fn: ['Se', 'Fi', 'Te', 'Ni'],
     strengths: ['밝은 에너지와 친화력', '현장 감각과 순발력', '사람을 기분 좋게 하는 표현력'],
     weaknesses: ['계획과 돈 관리에 약하다', '갈등과 비판을 피하려 한다', '지루한 일을 미룬다'],
-    stress: '지치면 앞날에 대한 막연한 불안과 비관에 빠집니다.',
+    stress: '지치면 앞날에 대한 막연한 불안과 비관에 빠져요.',
     growth: '재미있는 일에도 마감을 붙이고, 저축을 자동화하기',
   },
 };
@@ -363,26 +364,26 @@ const WHY: Record<string, string> = {
 };
 
 const AGREE: Record<string, string> = {
-  E: '사람 속에서 에너지를 얻는 것이 타고난 바탕이라, 혼자 오래 있으면 오히려 기운이 가라앉습니다. 사람을 만나고 말하는 일이 곧 충전입니다.',
-  I: '혼자 생각하고 회복하는 시간이 타고난 바탕입니다. 사람을 만나는 일도 잘 해내지만, 끝나고 나면 반드시 혼자만의 회복 시간이 필요합니다.',
-  S: '눈에 보이는 사실과 경험을 믿는 것이 타고난 바탕입니다. 막연한 이야기보다 숫자·사례·실물로 설명할 때 가장 설득력이 있습니다.',
-  N: '보이지 않는 가능성과 의미를 먼저 읽는 것이 타고난 바탕입니다. 반복 업무보다 새로운 기획·연구에서 진가가 드러납니다.',
-  T: '원칙과 논리로 판단하는 것이 타고난 바탕입니다. 공정하다는 신뢰를 얻는 대신, 말이 차갑게 들릴 수 있다는 점은 기억해 두세요.',
-  F: '사람과 마음을 먼저 헤아리는 것이 타고난 바탕입니다. 팀의 분위기를 지키는 힘이 크지만, 남의 감정을 떠안아 쉽게 지칠 수 있습니다.',
-  J: '계획하고 정리된 상태에서 가장 편안한 것이 타고난 바탕입니다. 일정과 규칙이 있는 환경에서 실력이 안정적으로 나옵니다.',
-  P: '상황에 맞춰 유연하게 움직이는 것이 타고난 바탕입니다. 변화가 많은 환경에서 빛나지만, 마감과 마무리는 장치로 보완하는 것이 좋습니다.',
+  E: '사람 속에서 에너지를 얻는 것이 타고난 바탕이라, 혼자 오래 있으면 오히려 기운이 가라앉아요. 사람을 만나고 말하는 일이 곧 충전이에요.',
+  I: '혼자 생각하고 회복하는 시간이 타고난 바탕이에요. 사람을 만나는 일도 잘 해내지만, 끝나고 나면 반드시 혼자만의 회복 시간이 필요해요.',
+  S: '눈에 보이는 사실과 경험을 믿는 것이 타고난 바탕이에요. 막연한 이야기보다 숫자·사례·실물로 설명할 때 가장 설득력이 있어요.',
+  N: '보이지 않는 가능성과 의미를 먼저 읽는 것이 타고난 바탕이에요. 반복 업무보다 새로운 기획·연구에서 진가가 드러나요.',
+  T: '원칙과 논리로 판단하는 것이 타고난 바탕이에요. 공정하다는 신뢰를 얻는 대신, 말이 차갑게 들릴 수 있다는 점은 기억해 두세요.',
+  F: '사람과 마음을 먼저 헤아리는 것이 타고난 바탕이에요. 팀의 분위기를 지키는 힘이 크지만, 남의 감정을 떠안아 쉽게 지칠 수 있어요.',
+  J: '계획하고 정리된 상태에서 가장 편안한 것이 타고난 바탕이에요. 일정과 규칙이 있는 환경에서 실력이 안정적으로 나와요.',
+  P: '상황에 맞춰 유연하게 움직이는 것이 타고난 바탕이에요. 변화가 많은 환경에서 빛나지만, 마감과 마무리는 장치로 보완하는 것이 좋아요.',
 };
 
 /** MBTI 글자(키)와 사주가 반대일 때 */
 const DIFF: Record<string, string> = {
-  E: '밖에서는 활발하고 사람을 잘 대하지만, 타고난 바탕은 혼자 충전하는 쪽일 가능성이 큽니다. 사회생활로 익힌 외향성이라 사람을 많이 만난 날은 생각보다 더 지칩니다. 일정 사이에 혼자 있는 시간을 꼭 끼워 넣으세요.',
-  I: '스스로는 내향적이라고 느끼지만, 사주에는 밖으로 표현하고 움직이려는 기운이 큽니다. 마음이 맞는 자리에서는 누구보다 말이 많고 주도적인 편이고, 표현을 너무 참으면 오히려 답답함이 쌓입니다.',
-  S: '현실적이고 꼼꼼하게 일하지만, 바탕에는 큰 그림과 새로운 가능성을 그리는 힘이 숨어 있습니다. 반복 업무만 계속하면 이유 모를 답답함이 생기니, 기획이나 새로운 시도의 기회를 일부러 만드세요.',
-  N: '생각과 아이디어가 많은 편이지만, 사주는 현실 감각과 실행 쪽을 가리킵니다. 아이디어를 구체적인 숫자와 일정으로 바꾸는 순간 진짜 힘이 나옵니다.',
-  T: '논리적으로 판단하려 하지만, 바탕에는 사람의 마음을 크게 신경 쓰는 성향이 있습니다. 냉정하게 결정한 뒤 오래 마음에 걸린 적이 있다면 이 때문입니다.',
-  F: '사람의 마음을 먼저 헤아리지만, 사주에는 원칙과 판단의 기운이 강합니다. 참다가 결정적인 순간에는 누구보다 단호해지는 편이라, 그 단호함이 주변에는 갑작스럽게 느껴질 수 있습니다.',
-  J: '계획대로 움직이려 노력하지만, 바탕에는 자유롭고 즉흥적인 기운이 있습니다. 계획을 너무 빡빡하게 세우면 스스로 지치니, 여백이 있는 계획이 더 잘 맞습니다.',
-  P: '즉흥적이고 유연하다고 느끼지만, 사주는 안정과 질서를 원하는 쪽입니다. 예측할 수 없는 상황이 길어지면 생각보다 크게 불안해지니, 생활의 기본 리듬은 지켜 두세요.',
+  E: '밖에서는 활발하고 사람을 잘 대하지만, 타고난 바탕은 혼자 충전하는 쪽일 가능성이 커요. 사회생활로 익힌 외향성이라 사람을 많이 만난 날은 생각보다 더 지쳐요. 일정 사이에 혼자 있는 시간을 꼭 끼워 넣으세요.',
+  I: '스스로는 내향적이라고 느끼지만, 사주에는 밖으로 표현하고 움직이려는 기운이 커요. 마음이 맞는 자리에서는 누구보다 말이 많고 주도적인 편이고, 표현을 너무 참으면 오히려 답답함이 쌓여요.',
+  S: '현실적이고 꼼꼼하게 일하지만, 바탕에는 큰 그림과 새로운 가능성을 그리는 힘이 숨어 있어요. 반복 업무만 계속하면 이유 모를 답답함이 생기니, 기획이나 새로운 시도의 기회를 일부러 만드세요.',
+  N: '생각과 아이디어가 많은 편이지만, 사주는 현실 감각과 실행 쪽을 가리켜요. 아이디어를 구체적인 숫자와 일정으로 바꾸는 순간 진짜 힘이 나와요.',
+  T: '논리적으로 판단하려 하지만, 바탕에는 사람의 마음을 크게 신경 쓰는 성향이 있어요. 냉정하게 결정한 뒤 오래 마음에 걸린 적이 있다면 이 때문이에요.',
+  F: '사람의 마음을 먼저 헤아리지만, 사주에는 원칙과 판단의 기운이 강해요. 참다가 결정적인 순간에는 누구보다 단호해지는 편이라, 그 단호함이 주변에는 갑작스럽게 느껴질 수 있어요.',
+  J: '계획대로 움직이려 노력하지만, 바탕에는 자유롭고 즉흥적인 기운이 있어요. 계획을 너무 빡빡하게 세우면 스스로 지치니, 여백이 있는 계획이 더 잘 맞아요.',
+  P: '즉흥적이고 유연하다고 느끼지만, 사주는 안정과 질서를 원하는 쪽이에요. 예측할 수 없는 상황이 길어지면 생각보다 크게 불안해지니, 생활의 기본 리듬은 지켜 두세요.',
 };
 
 const AXIS_STRENGTH: Record<string, string> = {
@@ -421,15 +422,15 @@ export function crossAxis(ax: Axis, userLetter: string, saju: AxisLean): AxisCro
   if (saju.lean === userLetter) {
     verdict = 'agree';
     title = `${userLetter}(${LETTER_KO[userLetter]}) — 사주와 같은 방향`;
-    text = `MBTI의 ${userLetter}(${LETTER_KO[userLetter]})와 사주가 같은 쪽을 가리킵니다. 사주는 ${WHY[userLetter]}입니다. ${AGREE[userLetter]}`;
+    text = `MBTI의 ${userLetter}(${LETTER_KO[userLetter]})와 사주가 같은 쪽을 가리켜요. 사주는 ${josa(WHY[userLetter], '이에요/예요')}. ${AGREE[userLetter]}`;
   } else if (saju.lean === other) {
     verdict = 'differ';
     title = `${userLetter}(${LETTER_KO[userLetter]}) — 사주는 ${other}(${LETTER_KO[other]}) 쪽`;
-    text = `MBTI는 ${userLetter}(${LETTER_KO[userLetter]})인데, 사주는 ${WHY[other]}입니다. ${DIFF[userLetter]}`;
+    text = `MBTI는 ${userLetter}(${LETTER_KO[userLetter]})인데, 사주는 ${josa(WHY[other], '이에요/예요')}. ${DIFF[userLetter]}`;
   } else {
     verdict = 'neutral';
     title = `${userLetter}(${LETTER_KO[userLetter]}) — 사주로는 반반`;
-    text = `사주로는 ${info.aKo}과 ${info.bKo}의 기운이 비슷하게 섞여 있습니다. MBTI의 ${userLetter}(${LETTER_KO[userLetter]}) 성향은 타고난 쪽이라기보다 경험과 환경으로 굳어진 선호일 수 있어, 상황에 따라 반대 모습도 자연스럽게 나옵니다.`;
+    text = `사주로는 ${info.aKo}과 ${info.bKo}의 기운이 비슷하게 섞여 있어요. MBTI의 ${userLetter}(${LETTER_KO[userLetter]}) 성향은 타고난 쪽이라기보다 경험과 환경으로 굳어진 선호일 수 있어, 상황에 따라 반대 모습도 자연스럽게 나와요.`;
   }
   return { axis: ax, info, user: userLetter, saju, verdict, match: Math.round(toward), title, text };
 }
@@ -511,39 +512,39 @@ export function mbtiCross(a: SajuAnalysis, type: string, mainWeakness?: string):
   const tgText = tops.map((t) => `${t}(${TG_POWER[t]})`).join('과 ');
   const engineText =
     same === 'same'
-      ? `MBTI로 본 ${type}의 주기능은 ‘${FN_INFO[dom].name}’, 곧 ${FN_INFO[dom].desc}입니다. 사주에서 가장 두드러진 십성도 ${tgText}이어서, 두 체계가 같은 엔진을 가리킵니다. 이 힘은 ${who}이 가장 믿고 써도 되는 무기입니다.`
+      ? `MBTI로 본 ${type}의 주기능은 ‘${FN_INFO[dom].name}’, 곧 ${josa(FN_INFO[dom].desc, '이에요/예요')}. 사주에서 가장 두드러진 십성도 ${tgText}이어서, 두 체계가 같은 엔진을 가리켜요. 이 힘은 ${who}이 가장 믿고 써도 되는 무기예요.`
       : same === 'partial'
-        ? `MBTI로 본 주기능은 ‘${FN_INFO[dom].name}’(${FN_INFO[dom].desc})이고, 보조 기능은 ‘${FN_INFO[aux].name}’(${FN_INFO[aux].desc})입니다. 사주에서 두드러진 ${tgText}은 보조 기능 쪽과 맞닿아 있습니다. 즉 겉으로 가장 많이 쓰는 힘과 타고난 힘이 조금 다르며, 보조 기능을 의식적으로 키울수록 균형이 잡힙니다.`
-        : `MBTI로 본 주기능은 ‘${FN_INFO[dom].name}’(${FN_INFO[dom].desc})인데, 사주에서 두드러진 것은 ${tgText}입니다. 겉으로 쓰는 힘과 타고난 힘의 결이 달라, 지금의 모습이 환경에 맞춰 익힌 것일 수 있습니다. 사주 쪽 힘을 쓸 기회를 만들면 의외의 재능이 나올 수 있습니다.`;
+        ? `MBTI로 본 주기능은 ‘${FN_INFO[dom].name}’(${FN_INFO[dom].desc})이고, 보조 기능은 ${josa(`‘${FN_INFO[aux].name}’(${FN_INFO[aux].desc})`, '이에요/예요')}. 사주에서 두드러진 ${tgText}은 보조 기능 쪽과 맞닿아 있어요. 즉 겉으로 가장 많이 쓰는 힘과 타고난 힘이 조금 다르며, 보조 기능을 의식적으로 키울수록 균형이 잡혀요.`
+        : `MBTI로 본 주기능은 ‘${FN_INFO[dom].name}’(${FN_INFO[dom].desc})인데, 사주에서 두드러진 것은 ${josa(tgText, '이에요/예요')}. 겉으로 쓰는 힘과 타고난 힘의 결이 달라, 지금의 모습이 환경에 맞춰 익힌 것일 수 있어요. 사주 쪽 힘을 쓸 기회를 만들면 의외의 재능이 나올 수 있어요.`;
 
   // 강점: 일치하는 축 → 핵심 엔진 → 사주 가장 강한 기운
   const strengths: MbtiInsight[] = [];
   for (const x of [...axes].filter((x) => x.verdict === 'agree').sort((p, q) => q.match - p.match)) {
-    strengths.push({ title: AXIS_STRENGTH[x.user], text: `MBTI(${x.user})와 사주가 함께 가리키는 힘입니다. ${AGREE[x.user].split('. ')[0]}.`, basis: `사주 ${x.saju.basis.join(' · ') || '기운 분포'}` });
+    strengths.push({ title: AXIS_STRENGTH[x.user], text: `MBTI(${x.user})와 사주가 함께 가리키는 힘이에요. ${AGREE[x.user].split('. ')[0]}.`, basis: `사주 ${x.saju.basis.join(' · ') || '기운 분포'}` });
     if (strengths.length >= 2) break;
   }
   if (same !== 'diff') {
-    strengths.push({ title: `${FN_INFO[same === 'same' ? dom : aux].name}의 힘`, text: `${FN_INFO[same === 'same' ? dom : aux].desc}. ${type}의 ${same === 'same' ? '주기능' : '보조 기능'}과 사주의 ${tops.join('·')}이 같은 힘을 가리킵니다.`, basis: `${type} 기능 · 사주 ${tops.join('·')}` });
+    strengths.push({ title: `${FN_INFO[same === 'same' ? dom : aux].name}의 힘`, text: `${FN_INFO[same === 'same' ? dom : aux].desc}. ${type}의 ${same === 'same' ? '주기능' : '보조 기능'}과 사주의 ${tops.join('·')}이 같은 힘을 가리켜요.`, basis: `${type} 기능 · 사주 ${tops.join('·')}` });
   }
   const gp = a.elements.groupPercent;
   const topGroup = (Object.keys(gp) as TenGodGroup[]).sort((x, y) => gp[y] - gp[x])[0];
-  strengths.push({ title: GROUP_STRENGTH[topGroup], text: `${type}의 강점인 ‘${profile.strengths[0]}’ 위에, 사주에서 가장 강한 ${topGroup}(${gp[topGroup].toFixed(0)}%)의 힘이 더해집니다.`, basis: `${topGroup} ${gp[topGroup].toFixed(0)}%` });
+  strengths.push({ title: GROUP_STRENGTH[topGroup], text: `${type}의 강점인 ‘${profile.strengths[0]}’ 위에, 사주에서 가장 강한 ${topGroup}(${gp[topGroup].toFixed(0)}%)의 힘이 더해져요.`, basis: `${topGroup} ${gp[topGroup].toFixed(0)}%` });
   // 일치하는 축이 적은 사람도 강점이 세 가지는 나오도록, 유형 강점에 사주의 두 번째 기운을 붙여 채운다
   const second = (Object.keys(gp) as TenGodGroup[]).sort((x, y) => gp[y] - gp[x])[1];
   for (const st of profile.strengths.slice(1)) {
-    strengths.push({ title: st, text: `${type}의 대표 강점입니다. 사주에서는 ${second}(${gp[second].toFixed(0)}%)의 ${GROUP_STRENGTH[second]}이 이 강점을 받쳐 줍니다.`, basis: `${type} · ${second} ${gp[second].toFixed(0)}%` });
+    strengths.push({ title: st, text: `${type}의 대표 강점이에요. 사주에서는 ${second}(${gp[second].toFixed(0)}%)의 ${GROUP_STRENGTH[second]}이 이 강점을 받쳐 줘요.`, basis: `${type} · ${second} ${gp[second].toFixed(0)}%` });
   }
   const uniqStrengths = strengths.filter((s, i) => strengths.findIndex((x) => x.title === s.title) === i).slice(0, 3);
 
   // 약점: MBTI 약점 + 사주 약점 + 겉과 속의 차이
   const weaknesses: MbtiInsight[] = [];
-  weaknesses.push({ title: profile.weaknesses[0], text: `${type}에게 흔한 약점입니다. 보완법: ${profile.growth}.`, basis: `${type} 유형 특성` });
+  weaknesses.push({ title: profile.weaknesses[0], text: `${type}에게 흔한 약점이에요. 보완법: ${profile.growth}.`, basis: `${type} 유형 특성` });
   if (mainWeakness) weaknesses.push({ title: '사주가 경고하는 약점', text: mainWeakness, basis: '사주 원국 분석' });
   const diffAxis = axes.find((x) => x.verdict === 'differ');
   if (diffAxis) {
     weaknesses.push({
       title: `겉(${diffAxis.user})과 속(${diffAxis.saju.lean})의 차이`,
-      text: `보이는 모습과 실제 에너지가 달라 남들보다 쉽게 지칠 수 있습니다. ${DIFF[diffAxis.user].split('. ').slice(-1)[0]}`,
+      text: `보이는 모습과 실제 에너지가 달라 남들보다 쉽게 지칠 수 있어요. ${DIFF[diffAxis.user].split('. ').slice(-1)[0]}`,
       basis: `${diffAxis.info.name} 교차 결과`,
     });
   } else {
@@ -571,16 +572,16 @@ export function mbtiCross(a: SajuAnalysis, type: string, mainWeakness?: string):
       { label: '장소', value: g.place },
     ],
     habits,
-    avoid: `피할 것: ${GISIN_AVOID[gisin]} — 사주에 부담이 되는 ${ELEMENT_KO[gisin]}(${ELEMENT_HANJA[gisin]}) 기운을 키우는 생활입니다.`,
+    avoid: `피할 것: ${GISIN_AVOID[gisin]} — 사주에 부담이 되는 ${ELEMENT_KO[gisin]}(${ELEMENT_HANJA[gisin]}) 기운을 키우는 생활이에요.`,
     growth: profile.growth,
   };
 
   const summary =
     agree >= 3
-      ? `${who}의 MBTI(${type})와 사주는 네 가지 축 중 ${agree}개에서 같은 방향을 가리킵니다. 스스로 알고 있는 모습이 타고난 바탕과 거의 같다는 뜻이라, 지금의 강점을 믿고 밀고 나가도 됩니다.`
+      ? `${who}의 MBTI(${type})와 사주는 네 가지 축 중 ${agree}개에서 같은 방향을 가리켜요. 스스로 알고 있는 모습이 타고난 바탕과 거의 같다는 뜻이라, 지금의 강점을 믿고 밀고 나가도 돼요.`
       : agree === 2
-        ? `${who}의 MBTI(${type})와 사주는 네 가지 축 중 ${agree}개가 같고 ${differ}개가 다릅니다. 같은 부분은 확실한 강점으로, 다른 부분은 ‘겉으로 익힌 모습’과 ‘타고난 바탕’의 차이로 읽으면 됩니다.`
-        : `${who}의 MBTI(${type})와 사주는 같은 방향이 ${agree}개뿐입니다. 지금의 성격은 환경과 경험으로 단단히 다져진 것일 수 있고, 사주가 가리키는 반대쪽 성향은 아직 덜 쓴 잠재력일 수 있습니다.`;
+        ? `${who}의 MBTI(${type})와 사주는 네 가지 축 중 ${agree}개가 같고 ${differ}개가 달라요. 같은 부분은 확실한 강점으로, 다른 부분은 ‘겉으로 익힌 모습’과 ‘타고난 바탕’의 차이로 읽으면 돼요.`
+        : `${who}의 MBTI(${type})와 사주는 같은 방향이 ${agree}개뿐이에요. 지금의 성격은 환경과 경험으로 단단히 다져진 것일 수 있고, 사주가 가리키는 반대쪽 성향은 아직 덜 쓴 잠재력일 수 있어요.`;
 
   return {
     type,

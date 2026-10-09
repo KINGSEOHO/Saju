@@ -238,84 +238,84 @@ export function matchJob(text: string): JobCategory & { freelance: boolean } {
 // 문장 재료
 // ---------------------------------------------------------------------------
 const STRENGTH_IN_JOB: Record<TenGodGroup, { title: string; text: (field: string) => string }> = {
-  비겁: { title: '혼자서도 버티는 자립심', text: (f) => `${f} 안에서도 남에게 기대지 않고 스스로 길을 만드는 힘이 있습니다. 경쟁이 치열할수록 오히려 힘이 나는 편이라, 성과가 나에게 돌아오는 구조에서 빛납니다.` },
-  식상: { title: '만들고 표현하는 힘', text: (f) => `생각을 결과물과 말로 꺼내는 힘이 강합니다. ${f}에서는 기획·제작·발표처럼 “눈에 보이는 결과”를 내는 일에서 실력이 가장 잘 드러납니다.` },
-  재성: { title: '성과로 바꾸는 현실 감각', text: (f) => `무엇이 돈이 되고 무엇이 손해인지 빠르게 계산하는 감각이 있습니다. ${f}에서 숫자와 성과로 평가받는 자리에 설수록 유리합니다.` },
-  관성: { title: '책임지고 신뢰받는 힘', text: (f) => `맡은 일을 끝까지 책임지는 태도로 조직의 신뢰를 얻습니다. ${f}에서 직급과 역할이 올라갈수록 진가가 드러나는 구조입니다.` },
-  인성: { title: '깊이 배우고 이해하는 힘', text: (f) => `한 분야를 깊이 파고들어 이해하는 힘이 강합니다. ${f}에서 자격·전문성·노하우가 쌓일수록 대체하기 어려운 사람이 됩니다.` },
+  비겁: { title: '혼자서도 버티는 자립심', text: (f) => `${f} 안에서도 남에게 기대지 않고 스스로 길을 만드는 힘이 있어요. 경쟁이 치열할수록 오히려 힘이 나는 편이라, 성과가 나에게 돌아오는 구조에서 빛나요.` },
+  식상: { title: '만들고 표현하는 힘', text: (f) => `생각을 결과물과 말로 꺼내는 힘이 강해요. ${f}에서는 기획·제작·발표처럼 “눈에 보이는 결과”를 내는 일에서 실력이 가장 잘 드러나요.` },
+  재성: { title: '성과로 바꾸는 현실 감각', text: (f) => `무엇이 돈이 되고 무엇이 손해인지 빠르게 계산하는 감각이 있어요. ${f}에서 숫자와 성과로 평가받는 자리에 설수록 유리해요.` },
+  관성: { title: '책임지고 신뢰받는 힘', text: (f) => `맡은 일을 끝까지 책임지는 태도로 조직의 신뢰를 얻어요. ${f}에서 직급과 역할이 올라갈수록 진가가 드러나는 구조예요.` },
+  인성: { title: '깊이 배우고 이해하는 힘', text: (f) => `한 분야를 깊이 파고들어 이해하는 힘이 강해요. ${f}에서 자격·전문성·노하우가 쌓일수록 대체하기 어려운 사람이 돼요.` },
 };
 
 const STRAIN: Record<TenGodGroup, { title: string; text: string }> = {
-  비겁: { title: '내 몫을 지키는 힘이 약하다', text: '이 일은 혼자 버티고 경쟁하는 힘이 필요한데, 사주상 자기 주장을 밀어붙이는 기운이 약합니다. 성과의 공을 분명히 남기고, 내 몫을 요구하는 연습이 필요합니다.' },
-  식상: { title: '실력만큼 드러내지 못한다', text: '이 일은 생각을 밖으로 표현하는 힘이 많이 필요한데, 사주상 그 기운이 약해 실력만큼 인정받지 못할 수 있습니다. 보고서와 발표를 정해 둔 틀에 맞춰 미리 준비해 두면 보완됩니다.' },
-  재성: { title: '숫자·돈 감각이 약하다', text: '성과와 돈을 다뤄야 하는 일인데, 사주상 현실 계산과 재물 감각이 약한 편입니다. 내 성과를 수치로 기록하고, 돈이 걸린 판단은 체크리스트로 하세요.' },
-  관성: { title: '규칙과 위계가 버겁다', text: '규칙과 위계가 분명한 일인데, 사주상 통제를 견디는 기운이 약합니다. 스스로 정한 마감과 루틴으로 조직의 규칙을 ‘내 것’으로 만드는 것이 열쇠입니다.' },
-  인성: { title: '공부와 쉼이 밀리기 쉽다', text: '꾸준히 공부하고 자격을 갖춰야 하는 일인데, 사주상 배우고 쉬어 가는 기운이 약합니다. 공부 시간을 일정에 고정해 두지 않으면 금방 밀립니다.' },
+  비겁: { title: '내 몫을 지키는 힘이 약하다', text: '이 일은 혼자 버티고 경쟁하는 힘이 필요한데, 사주상 자기 주장을 밀어붙이는 기운이 약해요. 성과의 공을 분명히 남기고, 내 몫을 요구하는 연습이 필요해요.' },
+  식상: { title: '실력만큼 드러내지 못한다', text: '이 일은 생각을 밖으로 표현하는 힘이 많이 필요한데, 사주상 그 기운이 약해 실력만큼 인정받지 못할 수 있어요. 보고서와 발표를 정해 둔 틀에 맞춰 미리 준비해 두면 보완돼요.' },
+  재성: { title: '숫자·돈 감각이 약하다', text: '성과와 돈을 다뤄야 하는 일인데, 사주상 현실 계산과 재물 감각이 약한 편이에요. 내 성과를 수치로 기록하고, 돈이 걸린 판단은 체크리스트로 하세요.' },
+  관성: { title: '규칙과 위계가 버겁다', text: '규칙과 위계가 분명한 일인데, 사주상 통제를 견디는 기운이 약해요. 스스로 정한 마감과 루틴으로 조직의 규칙을 ‘내 것’으로 만드는 것이 열쇠예요.' },
+  인성: { title: '공부와 쉼이 밀리기 쉽다', text: '꾸준히 공부하고 자격을 갖춰야 하는 일인데, 사주상 배우고 쉬어 가는 기운이 약해요. 공부 시간을 일정에 고정해 두지 않으면 금방 밀려요.' },
 };
 
 const PHASE: Record<TenGodGroup, { title: string; good: string; neutral: string; bad: string }> = {
   비겁: {
     title: '독립과 경쟁의 시기',
-    good: '내 이름을 걸고 움직이기 좋은 때입니다. 독립·창업·이직처럼 주도권을 쥐는 선택이 힘을 받습니다.',
-    neutral: '주도권을 쥐고 싶은 마음이 커지는 때입니다. 독립은 준비를 충분히 한 뒤에 움직이세요.',
-    bad: '경쟁자와 지출이 늘어 지치기 쉬운 때입니다. 동업·보증·무리한 독립은 피하고 내 기반부터 다지세요.',
+    good: '내 이름을 걸고 움직이기 좋은 때예요. 독립·창업·이직처럼 주도권을 쥐는 선택이 힘을 받아요.',
+    neutral: '주도권을 쥐고 싶은 마음이 커지는 때예요. 독립은 준비를 충분히 한 뒤에 움직이세요.',
+    bad: '경쟁자와 지출이 늘어 지치기 쉬운 때예요. 동업·보증·무리한 독립은 피하고 내 기반부터 다지세요.',
   },
   식상: {
     title: '실력을 결과물로 보여 줄 시기',
-    good: '만든 것이 인정받는 때입니다. 포트폴리오·작품·성과를 밖으로 적극적으로 알리세요.',
-    neutral: '새로운 일과 변화를 꿈꾸는 때입니다. 작게 실험해 보며 방향을 찾으세요.',
-    bad: '하고 싶은 것은 많은데 방향이 흩어지는 때입니다. 일을 줄이고 하나에 집중하세요. 말실수와 감정적인 퇴사를 조심하세요.',
+    good: '만든 것이 인정받는 때예요. 포트폴리오·작품·성과를 밖으로 적극적으로 알리세요.',
+    neutral: '새로운 일과 변화를 꿈꾸는 때예요. 작게 실험해 보며 방향을 찾으세요.',
+    bad: '하고 싶은 것은 많은데 방향이 흩어지는 때예요. 일을 줄이고 하나에 집중하세요. 말실수와 감정적인 퇴사를 조심하세요.',
   },
   재성: {
     title: '성과를 돈으로 바꿀 시기',
-    good: '활동 반경과 수입이 커지는 때입니다. 연봉 협상·부업·사업 확장에 유리합니다.',
-    neutral: '돈과 현실 문제가 관심사가 되는 때입니다. 수입 구조를 점검하세요.',
-    bad: '돈 때문에 애쓰는 때입니다. 수입이 늘어도 지출과 투자 손실이 따르기 쉬우니 보수적으로 운영하세요.',
+    good: '활동 반경과 수입이 커지는 때예요. 연봉 협상·부업·사업 확장에 유리해요.',
+    neutral: '돈과 현실 문제가 관심사가 되는 때예요. 수입 구조를 점검하세요.',
+    bad: '돈 때문에 애쓰는 때예요. 수입이 늘어도 지출과 투자 손실이 따르기 쉬우니 보수적으로 운영하세요.',
   },
   관성: {
     title: '책임과 자리를 얻는 시기',
-    good: '인정받고 승진·발탁이 따르는 때입니다. 책임 있는 역할을 피하지 마세요.',
-    neutral: '맡는 역할과 책임이 늘어나는 때입니다. 평가에 대비해 기록을 남겨 두세요.',
-    bad: '압박과 책임이 무거워지는 때입니다. 건강을 먼저 챙기고, 무리한 직책 욕심은 내려놓으세요.',
+    good: '인정받고 승진·발탁이 따르는 때예요. 책임 있는 역할을 피하지 마세요.',
+    neutral: '맡는 역할과 책임이 늘어나는 때예요. 평가에 대비해 기록을 남겨 두세요.',
+    bad: '압박과 책임이 무거워지는 때예요. 건강을 먼저 챙기고, 무리한 직책 욕심은 내려놓으세요.',
   },
   인성: {
     title: '배우고 자격을 갖출 시기',
-    good: '배움과 귀인의 도움이 길을 여는 때입니다. 자격·학위·교육에 투자하세요.',
-    neutral: '드러나지 않게 실력을 쌓는 때입니다. 지금의 공부가 다음 단계의 무기가 됩니다.',
-    bad: '생각만 많고 실행이 막히는 때입니다. 공부를 핑계로 결정을 미루지 마세요.',
+    good: '배움과 귀인의 도움이 길을 여는 때예요. 자격·학위·교육에 투자하세요.',
+    neutral: '드러나지 않게 실력을 쌓는 때예요. 지금의 공부가 다음 단계의 무기가 돼요.',
+    bad: '생각만 많고 실행이 막히는 때예요. 공부를 핑계로 결정을 미루지 마세요.',
   },
 };
 
 const PREP: Record<TenGodGroup, { title: string; text: (field: string) => string }> = {
-  비겁: { title: '내 이름으로 할 수 있는 일 만들기', text: (f) => `${f} 안에서 사이드 프로젝트나 개인 브랜드처럼 ‘내 이름’으로 할 수 있는 일을 하나 만들어 두세요. 독립은 그것이 자리 잡은 뒤에 결정해도 늦지 않습니다.` },
-  식상: { title: '결과물을 쌓아 밖으로 보여 주기', text: () => '포트폴리오·사례·작품을 정리해 공개하세요. 이 시기에는 보여 준 만큼 기회가 옵니다.' },
-  재성: { title: '성과를 숫자로 정리해 몸값 키우기', text: () => '지난 1~2년의 성과를 숫자로 정리해 연봉·단가·수익 구조를 다시 협상하세요. 부업이나 추가 수입원도 이때 만들기 좋습니다.' },
+  비겁: { title: '내 이름으로 할 수 있는 일 만들기', text: (f) => `${f} 안에서 사이드 프로젝트나 개인 브랜드처럼 ‘내 이름’으로 할 수 있는 일을 하나 만들어 두세요. 독립은 그것이 자리 잡은 뒤에 결정해도 늦지 않아요.` },
+  식상: { title: '결과물을 쌓아 밖으로 보여 주기', text: () => '포트폴리오·사례·작품을 정리해 공개하세요. 이 시기에는 보여 준 만큼 기회가 와요.' },
+  재성: { title: '성과를 숫자로 정리해 몸값 키우기', text: () => '지난 1~2년의 성과를 숫자로 정리해 연봉·단가·수익 구조를 다시 협상하세요. 부업이나 추가 수입원도 이때 만들기 좋아요.' },
   관성: { title: '책임 있는 역할로 리더 경험 쌓기', text: () => '팀을 이끌거나 책임지는 역할을 맡아 경험을 쌓고, 다음 직급이나 자격의 요건을 미리 확인해 두세요.' },
-  인성: { title: '다음 10년의 몸값이 될 공부', text: (f) => `${f}에서 다음 단계로 가는 데 필요한 자격증·학위·새 기술 하나를 정해 끝까지 마치세요. 이 시기의 배움이 다음 10년의 몸값이 됩니다.` },
+  인성: { title: '다음 10년의 몸값이 될 공부', text: (f) => `${f}에서 다음 단계로 가는 데 필요한 자격증·학위·새 기술 하나를 정해 끝까지 마치세요. 이 시기의 배움이 다음 10년의 몸값이 돼요.` },
 };
 
 const YEAR_PREP: Record<TenGodGroup, string> = {
-  비겁: '올해는 사람 문제와 지출 관리가 먼저입니다. 동업이나 돈거래는 반드시 문서로 남기세요.',
+  비겁: '올해는 사람 문제와 지출 관리가 먼저예요. 동업이나 돈거래는 반드시 문서로 남기세요.',
   식상: '올해는 아이디어 하나라도 완성해 공개하는 해로 삼으세요.',
-  재성: '올해는 성과를 수입으로 연결하는 협상과 정리가 핵심입니다.',
-  관성: '올해는 평가와 책임이 늘어납니다. 기본 업무의 완성도를 지키세요.',
-  인성: '올해는 배우고 준비하기 좋은 해입니다. 하나의 과정을 끝까지 마치세요.',
+  재성: '올해는 성과를 수입으로 연결하는 협상과 정리가 핵심이에요.',
+  관성: '올해는 평가와 책임이 늘어나요. 기본 업무의 완성도를 지키세요.',
+  인성: '올해는 배우고 준비하기 좋은 해예요. 하나의 과정을 끝까지 마치세요.',
 };
 
 const WORK_YONGSIN: Record<Element, string> = {
-  wood: '새로운 것을 배우는 시간을 업무 일정에 고정하세요(주 2시간 학습). 성장하고 있다는 감각이 이 사주의 기운을 살립니다.',
-  fire: '성과를 사람들 앞에서 발표하고 알리는 기회를 만드세요. 드러날수록 운이 붙는 사주입니다.',
-  earth: '업무 루틴과 마감을 일정하게 지키는 것이 가장 큰 무기가 됩니다. 약속을 지키는 사람이라는 평판이 기회를 부릅니다.',
-  metal: '하는 일을 줄이고 기준을 세워 정리하세요. 불필요한 회의와 업무를 덜어 내는 것이 곧 성과로 이어집니다.',
-  water: '깊이 생각하고 기록하는 시간을 확보하세요. 충분한 수면이 판단력을 지켜 줍니다.',
+  wood: '새로운 것을 배우는 시간을 업무 일정에 고정하세요(주 2시간 학습). 성장하고 있다는 감각이 이 사주의 기운을 살려요.',
+  fire: '성과를 사람들 앞에서 발표하고 알리는 기회를 만드세요. 드러날수록 운이 붙는 사주예요.',
+  earth: '업무 루틴과 마감을 일정하게 지키는 것이 가장 큰 무기가 돼요. 약속을 지키는 사람이라는 평판이 기회를 불러요.',
+  metal: '하는 일을 줄이고 기준을 세워 정리하세요. 불필요한 회의와 업무를 덜어 내는 것이 곧 성과로 이어져요.',
+  water: '깊이 생각하고 기록하는 시간을 확보하세요. 충분한 수면이 판단력을 지켜 줘요.',
 };
 
 const STUDENT_PREP: Record<TenGodGroup, string> = {
-  비겁: '혼자 하는 공부보다 함께 겨루는 환경(스터디·대회·팀 프로젝트)에서 실력이 빨리 늡니다.',
-  식상: '배운 것을 결과물(발표·작품·포트폴리오)로 남기는 습관이 진로의 무기가 됩니다.',
-  재성: '아르바이트·인턴처럼 현장을 직접 겪어 보는 경험이 진로를 정하는 데 가장 큰 도움이 됩니다.',
-  관성: '시험·자격처럼 기준이 분명한 목표를 세우면 꾸준히 해냅니다. 학교나 모임에서 책임 있는 역할도 도움이 됩니다.',
-  인성: '깊이 공부하는 힘이 큰 시기입니다. 관심 분야 하나를 정해 남보다 깊이 파고드세요.',
+  비겁: '혼자 하는 공부보다 함께 겨루는 환경(스터디·대회·팀 프로젝트)에서 실력이 빨리 늘어요.',
+  식상: '배운 것을 결과물(발표·작품·포트폴리오)로 남기는 습관이 진로의 무기가 돼요.',
+  재성: '아르바이트·인턴처럼 현장을 직접 겪어 보는 경험이 진로를 정하는 데 가장 큰 도움이 돼요.',
+  관성: '시험·자격처럼 기준이 분명한 목표를 세우면 꾸준히 해내요. 학교나 모임에서 책임 있는 역할도 도움이 돼요.',
+  인성: '깊이 공부하는 힘이 큰 시기예요. 관심 분야 하나를 정해 남보다 깊이 파고드세요.',
 };
 
 /** 분야별로 각 오행 환경이 실제로 뜻하는 것 [짧게, 자세히] */
@@ -456,15 +456,15 @@ export function analyzeJob(a: SajuAnalysis, report: Report, jobText: string): Jo
     const weak = needs.filter((g) => gp[g] < 10);
     const envGood = els.filter((e) => ['용신', '희신'].includes(a.yongsin.roles[e]));
     const envBad = els.filter((e) => ['기신', '구신'].includes(a.yongsin.roles[e]));
-    const parts = [`${fieldJ('은/는')} ${cat.need}이 필요한 일입니다.`];
+    const parts = [`${fieldJ('은/는')} ${cat.need}이 필요한 일이에요.`];
     const gName = (g: TenGodGroup) => `${GROUP_PLAIN[g].name}(${g} ${gp[g].toFixed(0)}%)`;
-    if (strong.length) parts.push(`${who}의 사주에는 이 일이 쓰는 ${josa(strong.map(gName).join('·'), '이/가')} 충분합니다.`);
-    if (weak.length) parts.push(`반면 ${josa(weak.map(gName).join('·'), '은/는')} 약해, 그 부분은 노력과 요령으로 채워야 합니다.`);
-    if (!strong.length && !weak.length) parts.push(`이 일이 쓰는 힘(${needs.map((g) => GROUP_PLAIN[g].name).join('·')})이 사주에 보통 수준으로 있습니다.`);
+    if (strong.length) parts.push(`${who}의 사주에는 이 일이 쓰는 ${josa(strong.map(gName).join('·'), '이/가')} 충분해요.`);
+    if (weak.length) parts.push(`반면 ${josa(weak.map(gName).join('·'), '은/는')} 약해, 그 부분은 노력과 요령으로 채워야 해요.`);
+    if (!strong.length && !weak.length) parts.push(`이 일이 쓰는 힘(${needs.map((g) => GROUP_PLAIN[g].name).join('·')})이 사주에 보통 수준으로 있어요.`);
     const env = jobEnv(a, cat.id, els);
     const q = (e: Element) => `‘${env.find((x) => x.el === e)!.short}’`;
-    if (envGood.length) parts.push(`이 일의 ${envGood.map(q).join('·')} 쪽은 이 사주에 필요한 기운이라, 일할수록 기운이 채워지는 쪽입니다.`);
-    if (envBad.length) parts.push(`다만 ${envBad.map(q).join('·')} 쪽은 이 사주에 부담이 되는 기운이라, 그런 일이 몰릴수록 남보다 빨리 지치기 쉽습니다. 아래에 무엇이 왜 부담인지, 어떻게 하면 되는지 풀어 두었어요.`);
+    if (envGood.length) parts.push(`이 일의 ${envGood.map(q).join('·')} 쪽은 이 사주에 필요한 기운이라, 일할수록 기운이 채워지는 쪽이에요.`);
+    if (envBad.length) parts.push(`다만 ${envBad.map(q).join('·')} 쪽은 이 사주에 부담이 되는 기운이라, 그런 일이 몰릴수록 남보다 빨리 지치기 쉬워요. 아래에 무엇이 왜 부담인지, 어떻게 하면 되는지 풀어 두었어요.`);
     fit = {
       score,
       label,
@@ -500,7 +500,7 @@ export function analyzeJob(a: SajuAnalysis, report: Report, jobText: string): Jo
   const nTone = next ? (next.score >= 58 ? 'good' : next.score < 42 ? 'bad' : 'neutral') : 'neutral';
   const now: JobPoint = {
     title: `지금은 ‘${PHASE[dg].title}’`,
-    text: `${d ? `${d.startYear}~${d.endYear}년의 대운은 ${PHASE[dg].title}입니다. ` : ''}${PHASE[dg][dTone]}${yRead ? ` 그리고 ${a.currentSajuYear}년은 “${yRead.headline}”입니다.` : ''}${switching && next ? (ng === dg ? ` ${next.startYear}년부터 시작되는 다음 10년(${next.stemTenGod})도 같은 흐름이 이어집니다.` : ` 곧 ${next.startYear}년부터는 ‘${PHASE[ng].title}’로 넘어갑니다. ${PHASE[ng][nTone]}`) : ''}`,
+    text: `${d ? `${d.startYear}~${d.endYear}년의 대운은 ${josa(PHASE[dg].title, '이에요/예요')}. ` : ''}${PHASE[dg][dTone]}${yRead ? ` 그리고 ${a.currentSajuYear}년은 ${josa(`“${yRead.headline}”`, '이에요/예요')}.` : ''}${switching && next ? (ng === dg ? ` ${next.startYear}년부터 시작되는 다음 10년(${next.stemTenGod})도 같은 흐름이 이어져요.` : ` 곧 ${next.startYear}년부터는 ‘${PHASE[ng].title}’로 넘어가요. ${PHASE[ng][nTone]}`) : ''}`,
     basis: `${d ? `대운 ${d.stemTenGod}(${d.stemRole}) ${d.score}점` : '대운 정보 없음'}${year ? ` · ${year.year}년 세운 ${year.stemTenGod} ${year.combined}점` : ''}${switching && next ? ` · 다음 대운 ${next.stemTenGod} ${next.score}점` : ''}`,
   };
 
@@ -508,15 +508,15 @@ export function analyzeJob(a: SajuAnalysis, report: Report, jobText: string): Jo
   const prepare: JobPoint[] = [];
   if (cat.special === 'student') {
     prepare.push({ title: '지금 시기의 공부법', text: STUDENT_PREP[dg], basis: `대운 ${dg}` });
-    prepare.push({ title: '진로를 고를 때', text: `사주에서 가장 강한 ${top}의 힘을 쓰는 길이 유리합니다: ${GROUP_JOBS[top]}. 필요한 기운인 ${ELEMENT_KO[a.yongsin.yongsin]}(${ELEMENT_HANJA[a.yongsin.yongsin]})과 관련된 ${ELEMENT_JOBS[a.yongsin.yongsin].slice(0, 3).join('·')} 분야도 잘 맞습니다.`, basis: `${top} ${gp[top].toFixed(0)}% · 용신 ${ELEMENT_KO[a.yongsin.yongsin]}` });
+    prepare.push({ title: '진로를 고를 때', text: `사주에서 가장 강한 ${top}의 힘을 쓰는 길이 유리해요: ${GROUP_JOBS[top]}. 필요한 기운인 ${ELEMENT_KO[a.yongsin.yongsin]}(${ELEMENT_HANJA[a.yongsin.yongsin]})과 관련된 ${ELEMENT_JOBS[a.yongsin.yongsin].slice(0, 3).join('·')} 분야도 잘 맞아요.`, basis: `${top} ${gp[top].toFixed(0)}% · 용신 ${ELEMENT_KO[a.yongsin.yongsin]}` });
   } else if (switching && next && ng !== dg) {
-    prepare.push({ title: `다음 10년 준비: ${PREP[ng].title}`, text: `${next.startYear}년부터 대운이 바뀝니다. ${PREP[ng].text(field)}`, basis: `다음 대운 ${next.stemTenGod}(${next.stemRole})` });
+    prepare.push({ title: `다음 10년 준비: ${PREP[ng].title}`, text: `${next.startYear}년부터 대운이 바뀌어요. ${PREP[ng].text(field)}`, basis: `다음 대운 ${next.stemTenGod}(${next.stemRole})` });
   } else {
     prepare.push({ title: PREP[dg].title, text: PREP[dg].text(field), basis: `대운 ${d ? d.stemTenGod : dg}` });
   }
   prepare.push({
     title: `${a.currentSajuYear}년에 할 일`,
-    text: `${YEAR_PREP[yg]} ${yTone === 'good' ? '운의 뒷받침이 있으니 적극적으로 움직여도 좋습니다.' : yTone === 'bad' ? '운의 뒷받침이 약하니 큰 결정은 서두르지 마세요.' : '무리하지 않는 선에서 꾸준히 밀고 가면 됩니다.'}`,
+    text: `${YEAR_PREP[yg]} ${yTone === 'good' ? '운의 뒷받침이 있으니 적극적으로 움직여도 좋아요.' : yTone === 'bad' ? '운의 뒷받침이 약하니 큰 결정은 서두르지 마세요.' : '무리하지 않는 선에서 꾸준히 밀고 가면 돼요.'}`,
     basis: year ? `${year.year}년 세운 ${year.stemTenGod}(${year.stemRole})` : '올해 세운',
   });
   const strain = needs.find((g) => gp[g] < 10);
@@ -529,13 +529,13 @@ export function analyzeJob(a: SajuAnalysis, report: Report, jobText: string): Jo
   const promote = tl.filter((t) => t.verdict === '승진·인정' || t.verdict === '성과 유리').map((t) => t.year);
   const caution = tl.filter((t) => t.verdict === '충동 이직 주의' || t.verdict === '버티며 준비').map((t) => t.year);
   const tParts: string[] = [];
-  if (good.length) tParts.push(`이직·전환에 유리한 해는 ${good.join(', ')}년입니다.`);
-  if (promote.length) tParts.push(`지금 자리에서 성과와 인정이 따르기 쉬운 해는 ${promote.slice(0, 4).join(', ')}년입니다.`);
-  if (caution.length) tParts.push(`${caution.slice(0, 4).join(', ')}년은 무리한 변화보다 버티며 준비하는 편이 낫습니다.`);
-  if (!tParts.length) tParts.push('향후 10년 중 커리어 신호가 크게 튀는 해는 뚜렷하지 않습니다. 운보다 조건(연봉·직무·사람)을 기준으로 판단하세요.');
+  if (good.length) tParts.push(`이직·전환에 유리한 해는 ${good.join(', ')}년이에요.`);
+  if (promote.length) tParts.push(`지금 자리에서 성과와 인정이 따르기 쉬운 해는 ${promote.slice(0, 4).join(', ')}년이에요.`);
+  if (caution.length) tParts.push(`${caution.slice(0, 4).join(', ')}년은 무리한 변화보다 버티며 준비하는 편이 나아요.`);
+  if (!tParts.length) tParts.push('향후 10년 중 커리어 신호가 크게 튀는 해는 뚜렷하지 않아요. 운보다 조건(연봉·직무·사람)을 기준으로 판단하세요.');
 
   // 이 분야 안에서 잘 맞는 역할
-  const role = cat.roles ? `${fieldJ('에서')}는 ${cat.roles[top]} 쪽이 사주와 가장 잘 맞고, 그다음은 ${cat.roles[second]}입니다.` : null;
+  const role = cat.roles ? `${fieldJ('에서')}는 ${cat.roles[top]} 쪽이 사주와 가장 잘 맞고, 그다음은 ${josa(cat.roles[second], '이에요/예요')}.` : null;
 
   // 다른 길
   const alternatives = [GROUP_JOBS[top], `필요한 기운 ${ELEMENT_KO[a.yongsin.yongsin]}(${ELEMENT_HANJA[a.yongsin.yongsin]})의 분야: ${ELEMENT_JOBS[a.yongsin.yongsin].join(', ')}`];

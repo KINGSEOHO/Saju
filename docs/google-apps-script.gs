@@ -27,6 +27,8 @@ var META = [
   ['item', '항목'],
   ['offer', '선택'],
   ['amount', '금액'],
+  // 지인 리뷰 링크(?from=friend)로 들어온 기기 — 통계에서 따로 본다
+  ['from', '유입'],
 ];
 
 var TABLES = {

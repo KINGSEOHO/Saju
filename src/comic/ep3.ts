@@ -189,7 +189,7 @@ export function lifeEpisode(a: SajuAnalysis): Comic {
   beats.push(
     cutRaw(c, '인생 그래프', `장르: ${shape}`, { bg: 'white', cast: [c.mirror(500, 'smile', 'point', { dir: -1 })], talk: [say(0, SHAPE_JOKE[shape])], props: [{ kind: 'graph', x: 220, y: 110, values: [early, mid, late] }] }, {
       basis: `대운 평균 초년 ${early} · 중년 ${mid} · 말년 ${late}점`,
-      note: `10년마다 바뀌는 대운의 점수를 이어 보면 인생의 큰 흐름이 보입니다. 초년 ${early}점, 중년 ${mid}점, 말년 ${late}점으로 ‘${shape}’에 가깝습니다. ${SHAPE_LINE[shape]}`,
+      note: `10년마다 바뀌는 대운의 점수를 이어 보면 인생의 큰 흐름이 보여요. 초년 ${early}점, 중년 ${mid}점, 말년 ${late}점으로 ‘${shape}’에 가까워요. ${SHAPE_LINE[shape]}`,
     }),
   );
 
@@ -198,7 +198,7 @@ export function lifeEpisode(a: SajuAnalysis): Comic {
     cutRaw(c, '튜토리얼', `튜토리얼: 어린 시절${firstAge >= 1 ? ` (만 0~${firstAge}세)` : ''} — ${ch.skill}`, ch.s(c), {
       badge: ageNow < list[0].startAge ? '지금 여기!' : undefined,
       basis: `월지 ${pillarHanja(a.pillars.month).slice(1)}(${monthInfo.branchTenGod}) · 성장 환경`,
-      note: `태어난 달은 부모와 성장 환경을 뜻하는 자리입니다. 이 자리에 ${monthInfo.branchTenGod}(${cg})이 있어 이런 어린 시절을 보냈을 가능성이 큽니다. 실제 기억과 비교해 보세요.`,
+      note: `태어난 달은 부모와 성장 환경을 뜻하는 자리예요. 이 자리에 ${monthInfo.branchTenGod}(${cg})이 있어 이런 어린 시절을 보냈을 가능성이 커요. 실제 기억과 비교해 보세요.`,
       tone: 'neutral',
     }),
   );
@@ -237,7 +237,7 @@ export function lifeEpisode(a: SajuAnalysis): Comic {
       beats.push(
         cutRaw(c, '지금 여기', '그리고 지금, 나는 여기에 서 있다.', { bg: tone === 'bad' ? 'drama' : 'speed', drama: tone === 'bad', shot: 'face', cast: [c.me(300, face, 'stand', { front: true })], talk: [think(0, NOW_LINE[tone](theme.label))] }, {
           basis: `현재 대운 ${pillarHanja(d.pillar)} · ${d.score}점`,
-          note: `지금은 ${d.startYear}~${d.endYear}년의 대운, ‘${theme.label}’의 10년입니다. ${toneText(g, tone, stage)}`,
+          note: `지금은 ${d.startYear}~${d.endYear}년의 대운, ‘${theme.label}’의 10년이에요. ${toneText(g, tone, stage)}`,
         }),
       );
       const next = list[list.indexOf(d) + 1];

@@ -152,7 +152,7 @@ export function resolveSolarDate(input: BirthInput): { year: number; month: numb
   const s = lunarToSolar(input.year, input.month, input.day, !!input.leapMonth);
   if (!s) {
     throw new Error(
-      `존재하지 않는 음력 날짜입니다: ${input.year}년 ${input.leapMonth ? '윤' : ''}${input.month}월 ${input.day}일`,
+      `존재하지 않는 음력 날짜예요: ${input.year}년 ${input.leapMonth ? '윤' : ''}${input.month}월 ${input.day}일`,
     );
   }
   return s;
@@ -253,13 +253,13 @@ export function boundaryAnalysis(input: BirthInput, base: PillarResult): Boundar
       if (j.ms >= dayStart && j.ms < dayEnd) {
         w.push({
           kind: 'unknownTime',
-          message: `출생일에 ${j.name} 절입(${fmtKst(j.ms, input.timeZone)})이 있어, 출생 시각에 따라 월주${j.name === '입춘' ? '·년주' : ''}가 달라집니다. 시각을 확인하면 정확도가 크게 올라갑니다.`,
+          message: `출생일에 ${j.name} 절입(${fmtKst(j.ms, input.timeZone)})이 있어, 출생 시각에 따라 월주${j.name === '입춘' ? '·년주' : ''}가 달라져요. 시각을 확인하면 정확도가 크게 올라가요.`,
         });
       }
     }
     w.push({
       kind: 'unknownTime',
-      message: '출생 시간을 모르면 시주(時柱)를 제외한 6글자로 분석합니다. 자녀·말년·성향의 일부(약 25%) 해석의 신뢰도가 낮아집니다.',
+      message: '출생 시간을 모르면 시주(時柱)를 제외한 6글자로 분석해요. 자녀·말년·성향의 일부(약 25%) 해석의 신뢰도가 낮아져요.',
     });
     return w;
   }
@@ -271,7 +271,7 @@ export function boundaryAnalysis(input: BirthInput, base: PillarResult): Boundar
     const alt = yearMonthPillarsAt(altMs);
     w.push({
       kind: 'jie',
-      message: `${near.name} 절입 시각(${fmtKst(near.ms, input.timeZone)})과 ${mins}분 차이입니다. 기록된 출생 시각이 실제와 ${mins}분 이상 다르면 월주가 바뀝니다.`,
+      message: `${near.name} 절입 시각(${fmtKst(near.ms, input.timeZone)})과 ${mins}분 차이예요. 기록된 출생 시각이 실제와 ${mins}분 이상 다르면 월주가 바뀌어요.`,
       alternative: `대안 월주: ${pName(alt.month)}${near.name === '입춘' ? ` / 대안 년주: ${pName(alt.year)}` : ''}`,
     });
   }
@@ -289,7 +289,7 @@ export function boundaryAnalysis(input: BirthInput, base: PillarResult): Boundar
       });
       w.push({
         kind: 'hour',
-        message: `보정된 태양시가 시(時)의 경계와 ${Math.round(toBoundary)}분 차이입니다. 출생 시각 기록 오차가 이보다 크면 시주가 달라집니다.`,
+        message: `보정된 태양시가 시(時)의 경계와 ${Math.round(toBoundary)}분 차이예요. 출생 시각 기록 오차가 이보다 크면 시주가 달라져요.`,
         alternative: `대안 시주: ${pName(shifted.hour)}${shifted.day.index !== base.day.index ? ` / 대안 일주: ${pName(shifted.day)}` : ''}`,
       });
     }
@@ -298,7 +298,7 @@ export function boundaryAnalysis(input: BirthInput, base: PillarResult): Boundar
       const other = computePillars({ ...input, ziHourRule: otherRule });
       w.push({
         kind: 'zi',
-        message: `23시~24시(야자시) 출생입니다. 학파에 따라 일주가 달라지는 구간입니다. 현재는 '${base.options.ziHourRule === 'traditional' ? '23시 일진 변경(정통)' : '야·조자시 구분'}' 기준으로 계산했습니다.`,
+        message: `23시~24시(야자시) 출생이에요. 학파에 따라 일주가 달라지는 구간이에요. 현재는 '${base.options.ziHourRule === 'traditional' ? '23시 일진 변경(정통)' : '야·조자시 구분'}' 기준으로 계산했어요.`,
         alternative: `다른 기준 적용 시: 일주 ${pName(other.day)}, 시주 ${pName(other.hour)}`,
       });
     }
@@ -318,7 +318,7 @@ export function boundaryAnalysis(input: BirthInput, base: PillarResult): Boundar
   if (diffs.length) {
     w.push({
       kind: 'correction',
-      message: '시간 보정 방식에 따라 시주가 달라지는 출생 시각입니다. 다른 사이트와 결과가 다르다면 이 차이 때문일 가능성이 큽니다.',
+      message: '시간 보정 방식에 따라 시주가 달라지는 출생 시각이에요. 다른 사이트와 결과가 다르다면 이 차이 때문일 가능성이 커요.',
       alternative: diffs.join(' / '),
     });
   }
@@ -326,11 +326,11 @@ export function boundaryAnalysis(input: BirthInput, base: PillarResult): Boundar
   if (base.conversion.dst) {
     w.push({
       kind: 'dst',
-      message: '출생 당시 서머타임(일광절약시간)이 시행 중이어서 1시간을 빼고 계산했습니다. 기록된 시각이 이미 표준시라면 결과가 달라집니다.',
+      message: '출생 당시 서머타임(일광절약시간)이 시행 중이어서 1시간을 빼고 계산했어요. 기록된 시각이 이미 표준시라면 결과가 달라져요.',
     });
   }
   if (base.conversion.ambiguous) {
-    w.push({ kind: 'dst', message: base.conversion.note ?? '서머타임 전환 시각 부근입니다.' });
+    w.push({ kind: 'dst', message: base.conversion.note ?? '서머타임 전환 시각 부근이에요.' });
   }
   return w;
 }
