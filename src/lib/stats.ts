@@ -33,21 +33,9 @@ export interface Stats {
   daily: { day: string; analyses: number; reviews: number }[];
   recentReviews: { created_at: string; overall: number; accuracy: number; text: string | null; price: string | null; meta: Meta }[];
   recentComments: { created_at: string; section: string; rating: number; comment: string }[];
-  /** 유료 전환 판단 — 지인 리뷰는 빼고 본다 (지인은 후하게 주기 쉬워서) */
   decision: { ready: boolean; notes: string[]; wtpPaidShare: number | null; medianPrice: string | null };
-  /** 지인 리뷰 링크(?from=friend)로 온 리뷰와 그 밖의 리뷰 */
-  split: { friend: ReviewSplit; other: ReviewSplit };
   funnel: Funnel;
 }
-
-export interface ReviewSplit {
-  n: number;
-  avgAccuracy: number | null;
-  wtpPaidShare: number | null;
-}
-
-/** 지인 리뷰 링크로 들어온 기기에서 온 기록인지 */
-const isFriend = (m?: Meta) => String(m?.from ?? '') === 'friend';
 
 /** 단계별 측정 — 단계마다 몇 명(기기)이 남았는지. src/lib/funnel.ts가 남긴 이벤트로 계산한다 */
 export interface Funnel {
@@ -63,8 +51,6 @@ export interface Funnel {
   revenue: number;
   /** 접속한 사람 한 명당 매출 */
   perVisitor: number | null;
-  /** 지인 리뷰 링크로 온 기기 수 — 위 숫자에서는 뺐다 */
-  friends: number;
 }
 
 type FunnelEvent = RawData['events'][number];
@@ -81,9 +67,7 @@ const FUNNEL_ITEMS: [string, string][] = [
 export function computeFunnel(events: FunnelEvent[]): Funnel {
   const visits = events.filter((e) => e.type === 'visit').map((e) => String(e.created_at));
   const since = visits.length ? visits.reduce((m, t) => (t < m ? t : m)) : null;
-  // 지인 리뷰 링크로 온 기기는 실제 손님의 흐름이 아니라서 뺀다
-  const friendSessions = new Set(events.filter((e) => isFriend(e.meta)).map((e) => e.session_id));
-  const ev = since ? events.filter((e) => String(e.created_at) >= since && !friendSessions.has(e.session_id)) : [];
+  const ev = since ? events.filter((e) => String(e.created_at) >= since) : [];
   const itemOf = (e: FunnelEvent) => {
     const it = String(e.meta?.item ?? '');
     return it === 'compat' || it === 'reunion' ? 'match' : it;
@@ -132,7 +116,6 @@ export function computeFunnel(events: FunnelEvent[]): Funnel {
     offers: count(ev.filter(is('pay_click')).map((e) => String(e.meta?.offer ?? ''))),
     revenue,
     perVisitor: visitors ? revenue / visitors : null,
-    friends: friendSessions.size,
   };
 }
 
@@ -184,14 +167,9 @@ export function computeStats(raw: RawData): Stats {
   }
   const daily = [...dayMap].map(([day, v]) => ({ day, ...v })).sort((a, b) => b.day.localeCompare(a.day)).slice(0, 30);
 
-  // 유료 전환 판단은 지인 리뷰를 뺀 값으로 한다
-  const gateRv = rv.filter((r) => !isFriend(r.meta));
-  const friendRv = rv.filter((r) => isFriend(r.meta));
-  const accuracy = avg(gateRv.map((r) => Number(r.accuracy)));
-  const allAccuracy = avg(rv.map((r) => Number(r.accuracy)));
-  const gatePrice = count(gateRv.map((r) => r.price)).sort((a, b) => PRICE_ORDER.indexOf(a.key) - PRICE_ORDER.indexOf(b.key));
-  const priced = gatePrice.reduce((a, p) => a + p.n, 0);
-  const paidRows = gatePrice.filter((p) => p.key !== 'free_only');
+  const accuracy = avg(rv.map((r) => Number(r.accuracy)));
+  const priced = price.reduce((a, p) => a + p.n, 0);
+  const paidRows = price.filter((p) => p.key !== 'free_only');
   const paid = paidRows.reduce((a, p) => a + p.n, 0);
   const wtpPaidShare = priced ? paid / priced : null;
   let medianPrice: string | null = null;
@@ -205,28 +183,19 @@ export function computeStats(raw: RawData): Stats {
   }
   const notes: string[] = [];
   const minReviews = 100;
-  if (friendRv.length) notes.push(`지인 리뷰 ${friendRv.length}건은 따로 봤어요 — 후하게 나오기 쉬워서 아래 판단에서는 뺐어요.`);
-  if (gateRv.length < minReviews) notes.push(`리뷰 ${gateRv.length}/${minReviews}건 — 통계적으로 의미 있는 표본까지 수집을 계속하세요.`);
+  if (rv.length < minReviews) notes.push(`리뷰 ${rv.length}/${minReviews}건 — 통계적으로 의미 있는 표본까지 수집을 계속하세요.`);
   if (accuracy !== null && accuracy < 3.8) notes.push(`평균 정확도 ${accuracy.toFixed(2)} < 3.8 — 과금보다 해석 엔진 개선이 먼저예요.`);
   if (wtpPaidShare !== null && wtpPaidShare < 0.25) notes.push(`유료 의향 ${Math.round(wtpPaidShare * 100)}% < 25% — 가격 제시 전에 가치 증명이 더 필요해요.`);
   const weak = sections.filter((s) => s.n >= 20 && s.avg !== null && s.avg < 3.5).map((s) => s.section);
   if (weak.length) notes.push(`정확도가 낮은 섹션(${weak.join(', ')})은 유료 후보에서 제외하고 개선하세요.`);
   const strong = sections.filter((s) => s.n >= 20 && s.avg !== null && s.avg >= 4).map((s) => s.section);
   if (strong.length) notes.push(`정확도 4.0 이상 섹션(${strong.join(', ')})은 유료 상세 리포트의 1순위 후보예요.`);
-  const ready = gateRv.length >= minReviews && accuracy !== null && accuracy >= 3.8 && wtpPaidShare !== null && wtpPaidShare >= 0.25;
-  const splitOf = (list: typeof rv): ReviewSplit => {
-    const withPrice = list.filter((r) => r.price);
-    return {
-      n: list.length,
-      avgAccuracy: avg(list.map((r) => Number(r.accuracy))),
-      wtpPaidShare: withPrice.length ? withPrice.filter((r) => r.price !== 'free_only').length / withPrice.length : null,
-    };
-  };
+  const ready = rv.length >= minReviews && accuracy !== null && accuracy >= 3.8 && wtpPaidShare !== null && wtpPaidShare >= 0.25;
   if (ready) notes.push('게이트 통과: 상위 수요 기능을 묶어 유료 상품 A/B 테스트를 시작할 수 있어요.');
 
   return {
     totals: { analyses: analyses.length, feedback: fb.length, reviews: rv.length, sessions: new Set(analyses.map((e) => e.session_id)).size },
-    overall: { n: rv.length, avgOverall: avg(rv.map((r) => Number(r.overall))), avgAccuracy: allAccuracy, avgDetail: avg(rv.filter((r) => r.detail !== '').map((r) => Number(r.detail))) },
+    overall: { n: rv.length, avgOverall: avg(rv.map((r) => Number(r.overall))), avgAccuracy: accuracy, avgDetail: avg(rv.filter((r) => r.detail !== '').map((r) => Number(r.detail))) },
     sections,
     price,
     features,
@@ -241,7 +210,6 @@ export function computeStats(raw: RawData): Stats {
     })),
     recentComments: [...fb].reverse().filter((f) => f.comment).slice(0, 30).map((f) => ({ created_at: fmtTime(f.created_at), section: f.section, rating: Number(f.rating), comment: String(f.comment) })),
     decision: { ready, notes, wtpPaidShare, medianPrice },
-    split: { friend: splitOf(friendRv), other: splitOf(gateRv) },
     funnel: computeFunnel(ev),
   };
 }

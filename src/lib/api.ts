@@ -7,7 +7,6 @@ import { SHEET_URL } from '../config/backend.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { matchJob } from '../report/job.ts';
 import { parseMbti } from '../report/mbti.ts';
-import { sourceMeta } from './source.ts';
 import { computeFunnel, computeStats, type RawData, type Stats } from './stats.ts';
 
 const QUEUE_KEY = 'mg_pending_v1';
@@ -44,8 +43,6 @@ export function chartMeta(a: SajuAnalysis) {
     // 교차 분석 정확도를 유형별로 보기 위한 값 (직업은 분야 이름만, 입력한 직업명은 보내지 않는다)
     mbti: parseMbti(a.input.mbti) ?? '',
     jobCat: a.input.job ? matchJob(a.input.job).id : '',
-    // 지인 리뷰 링크로 들어온 기기면 표시 (관리 화면에서 따로 본다)
-    ...sourceMeta(),
   };
 }
 

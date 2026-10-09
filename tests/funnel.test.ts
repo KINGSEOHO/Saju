@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRICE_OPTIONS, PRICE_ORDER } from '../src/config/plans.ts';
 import { FUNNEL_EVENTS } from '../src/lib/funnel.ts';
-import { computeFunnel, computeStats, type RawData } from '../src/lib/stats.ts';
+import { computeFunnel, type RawData } from '../src/lib/stats.ts';
 
 const sent: { type: string; meta: unknown }[] = [];
 vi.mock('../src/lib/api.ts', () => ({
@@ -34,15 +34,6 @@ describe('단계별 측정 — 남기기', () => {
     track('analyze', { dayStem: 3 }, false);
     track('paid', { item: 'career', offer: 'first', amount: 1900 }, false);
     expect(sent.map((x) => x.type)).toEqual(['visit', 'concern_open', 'concern_open', 'pay_click', 'pay_click', 'analyze', 'analyze', 'paid']);
-  });
-
-  it('지인 리뷰 링크로 들어온 기기는 기록에 지인 표시가 붙는다', async () => {
-    const { track } = await import('../src/lib/funnel.ts');
-    const store = new Map([['mg_from', 'friend']]);
-    vi.stubGlobal('localStorage', { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v) });
-    track('concern_open', { item: 'exam' });
-    vi.unstubAllGlobals();
-    expect(sent.at(-1)).toEqual({ type: 'concern_open', meta: { item: 'exam', from: 'friend' } });
   });
 
   it('보내는 것은 단계와 고민·선택지·금액뿐 — 생년월일이 들어갈 자리가 없다', async () => {
@@ -103,18 +94,6 @@ describe('단계별 측정 — 계산', () => {
     expect(f.perVisitor).toBe(1700);
   });
 
-  it('지인 리뷰 링크로 온 기기는 결제까지 가는 길에서 뺀다', () => {
-    const withFriend = computeFunnel([
-      ...events,
-      ev('2', 'f1', 'visit', { from: 'friend' }),
-      ev('3', 'f1', 'analyze', { from: 'friend' }),
-      ev('6', 'f1', 'paid', { item: 'love', amount: 3900, from: 'friend' }),
-    ]);
-    expect(withFriend.friends).toBe(1);
-    expect(withFriend.steps.map((s) => s.n)).toEqual(f.steps.map((s) => s.n));
-    expect(withFriend.revenue).toBe(f.revenue);
-  });
-
   it('측정 기록이 없으면 비워 둔다', () => {
     const empty = computeFunnel([ev('1', 'x', 'analyze')]);
     expect(empty.since).toBeNull();
@@ -141,11 +120,11 @@ describe('받는 쪽(시트 스크립트·자체 서버)과 이름이 같다', (
     }
   });
 
-  it('측정에 쓰는 항목·선택·금액·유입 열은 맨 뒤에 붙인다 (예전 행의 열 위치가 그대로)', () => {
+  it('측정에 쓰는 항목·선택·금액 열은 맨 뒤에 붙인다 (예전 행의 열 위치가 그대로)', () => {
     const keys = [...gas.slice(gas.indexOf('var META'), gas.indexOf('];', gas.indexOf('var META'))).matchAll(/\['(\w+)',/g)].map((x) => x[1]);
     expect(keys.slice(0, 13)).toEqual(['dayStem', 'dayPillar', 'gender', 'ageGroup', 'strength', 'gyeokguk', 'yongsin', 'yongsinMethod', 'confidence', 'timeKnown', 'calendar', 'mbti', 'jobCat']);
-    expect(keys.slice(13)).toEqual(['item', 'offer', 'amount', 'from']);
-    expect(listIn(server, 'const META_KEYS')).toEqual(expect.arrayContaining(['item', 'offer', 'amount', 'from']));
+    expect(keys.slice(13)).toEqual(['item', 'offer', 'amount']);
+    expect(listIn(server, 'const META_KEYS')).toEqual(expect.arrayContaining(['item', 'offer', 'amount']));
   });
 
   it('리뷰에서 묻는 가격을 시트 스크립트와 서버가 모두 받는다', () => {
@@ -157,38 +136,5 @@ describe('받는 쪽(시트 스크립트·자체 서버)과 이름이 같다', (
       expect(PRICE_ORDER).toContain(p.id);
     }
     expect(serverPrices).toEqual(PRICE_ORDER);
-  });
-});
-
-describe('지인 리뷰는 따로 본다', () => {
-  const review = (accuracy: number, price: string, friend: boolean): RawData['reviews'][number] => ({
-    created_at: '2026-11-03T00:00:00.000Z',
-    overall: 5,
-    accuracy,
-    detail: '',
-    text: '',
-    price,
-    features: '',
-    compare: '',
-    is_public: 0,
-    meta: friend ? { from: 'friend' } : {},
-  });
-  const raw: RawData = {
-    feedback: [],
-    events: [],
-    reviews: [review(5, 'p9900', true), review(5, 'p3900', true), review(3, 'free_only', false), review(4, 'p1900', false)],
-  };
-  const s = computeStats(raw);
-
-  it('지인 리뷰와 그 밖의 리뷰를 나눠 센다', () => {
-    expect(s.split.friend).toEqual({ n: 2, avgAccuracy: 5, wtpPaidShare: 1 });
-    expect(s.split.other).toEqual({ n: 2, avgAccuracy: 3.5, wtpPaidShare: 0.5 });
-  });
-
-  it('유료 전환 판단은 지인 리뷰를 빼고 한다', () => {
-    expect(s.decision.wtpPaidShare).toBe(0.5);
-    expect(s.decision.notes[0]).toContain('지인 리뷰 2건은 따로 봤어요');
-    expect(s.decision.notes[1]).toContain('리뷰 2/100건');
-    expect(s.decision.notes.some((n) => n.includes('평균 정확도 3.50'))).toBe(true);
   });
 });

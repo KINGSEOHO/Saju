@@ -72,7 +72,7 @@ const FUNNEL_TYPES = ['visit', 'analyze', 'concern_open', 'match_result', 'detai
 const EVENT_TYPES = new Set(['share', 'print', 'premium_interest', ...FUNNEL_TYPES]);
 const CHART_KEYS = ['dayPillar', 'dayStem', 'gender', 'ageGroup', 'strength', 'gyeokguk', 'yongsin', 'yongsinMethod', 'confidence', 'timeKnown', 'calendar', 'mbti', 'jobCat'];
 // 단계별 측정(이벤트)용 — 어느 고민 · 고른 선택지 · 금액
-const META_KEYS = [...CHART_KEYS, 'item', 'offer', 'amount', 'from'];
+const META_KEYS = [...CHART_KEYS, 'item', 'offer', 'amount'];
 
 const int15 = (v) => (Number.isInteger(v) && v >= 1 && v <= 5 ? v : null);
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) || null : null);
@@ -221,25 +221,14 @@ function stats() {
     ...FUNNEL_TYPES,
   ).map((r) => ({ ...r, meta: r.meta ? JSON.parse(r.meta) : {} }));
 
-  // 지인 리뷰 링크(?from=friend)로 온 리뷰는 따로 본다 — 유료 전환 판단에서는 뺀다 (src/lib/stats.ts와 같게)
-  const FRIEND = "COALESCE(json_extract(meta, '$.from'), '') = 'friend'";
-  const splitOf = (where) => {
-    const r = one(`SELECT COUNT(*) AS n, AVG(accuracy) AS a FROM reviews WHERE ${where}`);
-    const p = one(`SELECT COUNT(*) AS priced, SUM(CASE WHEN price != 'free_only' THEN 1 ELSE 0 END) AS paid FROM reviews WHERE price IS NOT NULL AND ${where}`);
-    return { n: r.n, avgAccuracy: r.a, wtpPaidShare: p.priced ? p.paid / p.priced : null };
-  };
-  const split = { friend: splitOf(FRIEND), other: splitOf(`NOT (${FRIEND})`) };
-  const gatePrice = q(`SELECT price AS key, COUNT(*) AS n FROM reviews WHERE price IS NOT NULL AND NOT (${FRIEND}) GROUP BY price`).sort(
-    (a, b) => PRICE_ORDER.indexOf(a.key) - PRICE_ORDER.indexOf(b.key),
-  );
   // 유료 전환 판단 보조 (docs/MONETIZATION.md 의 게이트 기준)
-  const priced = gatePrice.reduce((a, p) => a + p.n, 0);
-  const paid = gatePrice.filter((p) => p.key !== 'free_only').reduce((a, p) => a + p.n, 0);
+  const priced = price.reduce((a, p) => a + p.n, 0);
+  const paid = price.filter((p) => p.key !== 'free_only').reduce((a, p) => a + p.n, 0);
   const wtpPaidShare = priced ? paid / priced : null;
   let medianPrice = null;
   if (paid) {
     let acc = 0;
-    for (const p of gatePrice.filter((x) => x.key !== 'free_only')) {
+    for (const p of price.filter((x) => x.key !== 'free_only')) {
       acc += p.n;
       if (acc >= paid / 2) {
         medianPrice = p.key;
@@ -249,16 +238,14 @@ function stats() {
   }
   const notes = [];
   const minReviews = 100;
-  const gateAcc = split.other.avgAccuracy;
-  if (split.friend.n) notes.push(`지인 리뷰 ${split.friend.n}건은 따로 봤어요 — 후하게 나오기 쉬워서 아래 판단에서는 뺐어요.`);
-  if (split.other.n < minReviews) notes.push(`리뷰 ${split.other.n}/${minReviews}건 — 통계적으로 의미 있는 표본까지 수집을 계속하세요.`);
-  if (gateAcc !== null && gateAcc < 3.8) notes.push(`평균 정확도 ${gateAcc.toFixed(2)} < 3.8 — 과금보다 해석 엔진 개선이 먼저예요.`);
+  if (totals.reviews < minReviews) notes.push(`리뷰 ${totals.reviews}/${minReviews}건 — 통계적으로 의미 있는 표본까지 수집을 계속하세요.`);
+  if (ov.a !== null && ov.a < 3.8) notes.push(`평균 정확도 ${ov.a.toFixed(2)} < 3.8 — 과금보다 해석 엔진 개선이 먼저예요.`);
   if (wtpPaidShare !== null && wtpPaidShare < 0.25) notes.push(`유료 의향 ${Math.round(wtpPaidShare * 100)}% < 25% — 가격 제시 전에 가치 증명이 더 필요해요.`);
   const weak = sections.filter((s) => s.n >= 20 && s.avg !== null && s.avg < 3.5).map((s) => s.section);
   if (weak.length) notes.push(`정확도가 낮은 섹션(${weak.join(', ')})은 유료 후보에서 제외하고 개선하세요.`);
   const strong = sections.filter((s) => s.n >= 20 && s.avg !== null && s.avg >= 4).map((s) => s.section);
   if (strong.length) notes.push(`정확도 4.0 이상 섹션(${strong.join(', ')})은 유료 상세 리포트의 1순위 후보예요.`);
-  const ready = split.other.n >= minReviews && gateAcc !== null && gateAcc >= 3.8 && wtpPaidShare !== null && wtpPaidShare >= 0.25;
+  const ready = totals.reviews >= minReviews && ov.a !== null && ov.a >= 3.8 && wtpPaidShare !== null && wtpPaidShare >= 0.25;
   if (ready) notes.push('게이트 통과: 상위 수요 기능을 묶어 유료 상품 A/B 테스트를 시작할 수 있어요.');
 
   return {
@@ -277,7 +264,6 @@ function stats() {
     recentComments,
     funnelEvents,
     decision: { ready, notes, wtpPaidShare, medianPrice },
-    split,
   };
 }
 
