@@ -370,6 +370,7 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         items={c.detail.items}
         locked={PAYWALL_DEMO ? !isOpen(u.ent, id) : undefined}
         offers={concernOffers(u.ent, id)}
+        fresh={u.ent.first}
         onTake={(o) => u.buy(o, id)}
         onRedeem={u.redeem}
         peek={concernPeek(a, c)}
@@ -383,19 +384,6 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
 /** 내 구매 코드 — 산 게 있으면 늘 보여 준다. 다른 휴대폰에서 이 코드를 넣으면 그대로 열린다 */
 function CodeBox({ u }: { u: Unlock }) {
   const [copied, setCopied] = useState(false);
-  const [note, setNote] = useState('');
-  useEffect(() => {
-    const on = () => {
-      try {
-        setNote(sessionStorage.getItem('mg_redeem_note') ?? '');
-        sessionStorage.removeItem('mg_redeem_note');
-      } catch {
-        /* noop */
-      }
-    };
-    window.addEventListener('mg-redeem-note', on);
-    return () => window.removeEventListener('mg-redeem-note', on);
-  }, []);
   if (!u.account || !u.purchases.length) return null;
   const copy = async () => {
     try {
@@ -415,7 +403,6 @@ function CodeBox({ u }: { u: Unlock }) {
           {copied ? '복사됨' : '복사'}
         </button>
       </div>
-      {note && <p className="mt-2 text-label font-semibold text-accent">{note}</p>}
       <p className="mt-2 text-cap text-sub">코드는 한 사람에 하나예요. 더 사도 같은 코드에 쌓여요. 다른 휴대폰이나 카카오톡 안에서 열 때 이 코드를 넣으면 산 리포트가 그대로 열려요. 캡처해 두세요.</p>
     </div>
   );
@@ -463,7 +450,10 @@ function DemoBox({ u }: { u: Unlock }) {
           {u.purchases.map((p) => (
             <li key={`${p.at}-${p.target}`} className="flex justify-between gap-3 border-b border-line py-1.5">
               <span className="min-w-0 text-ink-2">{purchaseLabel(p)}</span>
-              <span className="shrink-0 text-sub tabular-nums">{p.amount ? `${p.amount.toLocaleString('ko-KR')}원` : '무료'}</span>
+              <span className="shrink-0 text-sub tabular-nums">
+                {p.amount ? `${p.amount.toLocaleString('ko-KR')}원` : '무료'}
+                {p.refunded ? ` · 환불 ${p.refunded.toLocaleString('ko-KR')}원` : ''}
+              </span>
             </li>
           ))}
         </ul>
@@ -485,13 +475,13 @@ function DemoBox({ u }: { u: Unlock }) {
 
 /** 고민 하나 — 고민 리포트 칸의 줄을 펼치면 보인다 */
 export function ConcernBody({ a, report, id }: { a: SajuAnalysis; report: Report; id: ConcernId }) {
-  const u = useUnlock(sajuKey(a.input), seasonKey(a));
+  const u = useUnlock(sajuKey(a), seasonKey(a));
   return <ConcernView a={a} report={report} id={id} u={u} />;
 }
 
 /** 고민 리포트 칸 맨 위 — 내 구매 코드(산 것이 있을 때)와 시안 체험 상자. 궁합·재회에서 산 것도 같은 코드에 쌓인다 */
 export function ConcernTop({ a }: { a: SajuAnalysis }) {
-  const u = useUnlock(sajuKey(a.input), seasonKey(a));
+  const u = useUnlock(sajuKey(a), seasonKey(a));
   return (
     <>
       {PAYWALL_DEMO && <DemoBox u={u} />}

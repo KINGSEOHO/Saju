@@ -21,7 +21,7 @@ describe('구매 코드', () => {
 // ---------------------------------------------------------------------------
 import { beforeEach } from 'vitest';
 import { demoApi } from '../src/lib/account.ts';
-import { entOf, isOpen, PAID_CONCERNS, type Purchase } from '../src/lib/entitlements.ts';
+import { concernOffers, entOf, isOpen, PAID_CONCERNS, partnerOffers, purchaseOf, type Purchase, type SeasonKey } from '../src/lib/entitlements.ts';
 
 const mem = new Map<string, string>();
 Object.assign(globalThis, {
@@ -53,13 +53,13 @@ describe('구매 코드 합치기', () => {
     await demoApi.record(P('one', 'money', 3900));
     const codeB = (await demoApi.current()).code;
     expect(codeB).not.toBe(codeA);
-    // B에서 A 코드를 넣는다
+    // B에서 A 코드를 넣는다 — A에서 7,800원을 낸 뒤라 B는 2,100원만 더 내면 전부 열 수 있었다. 겹쳐 낸 1,800원은 환불
     const r = await demoApi.redeem(codeA.toLowerCase());
-    expect(r).toEqual({ ok: true, merged: 1, code: codeA });
+    expect(r).toEqual({ ok: true, merged: 1, code: codeA, refund: 1800 });
     const e = entOf(await demoApi.purchases(), S);
     expect(['career', 'love', 'money'].every((id) => isOpen(e, id as Purchase['item']))).toBe(true);
-    expect(e.spent).toBe(11700);
-    // 합치고 보니 9,900원을 넘게 냈다 — 그만큼 전부 열린다
+    expect(e.spent).toBe(9900);
+    // 환불하고도 묶음 가격(9,900원)에 이르렀으니 전부 열린다
     expect(e.all).toBe(true);
     // 세 번째 휴대폰에서 예전 B 코드를 넣어도 합쳐진 기록으로 이어진다
     newPhone();
@@ -84,5 +84,74 @@ describe('구매 코드 합치기', () => {
     const before = await demoApi.purchases();
     expect((await demoApi.redeem('MG-2222-2222')).ok).toBe(false);
     expect(await demoApi.purchases()).toEqual(before);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 중복 결제 막기 — 결제는 서버가 최신 기록으로 다시 본 뒤에만 된다 (시안의 흉내 서버로 확인)
+// ---------------------------------------------------------------------------
+const Y27: SeasonKey = { year: 2027, title: '2027 신년운세' };
+/** 지금 화면에 보이는 선택지 중 하나로 결제 */
+async function payOffer(id: Purchase['item'], kind: string, list?: Purchase[]) {
+  const e = entOf(list ?? (await demoApi.purchases()), S, Y27);
+  const o = concernOffers(e, id, undefined).find((x) => x.kind === kind)!;
+  expect(o, `${id} ${kind}`).toBeTruthy();
+  return { o, r: await demoApi.pay(purchaseOf(o, S, id, undefined, Y27.year), Y27) };
+}
+
+describe('중복 결제 막기', () => {
+  beforeEach(() => mem.clear());
+
+  it('결제하면 구매 코드를 돌려주고, 같은 리포트를 다시 결제하려 하면 결제하지 않는다', async () => {
+    const { r } = await payOffer('career', 'one');
+    expect(r).toEqual({ ok: true, code: (await demoApi.current()).code });
+    // 옛 화면(아직 잠겨 보이던 탭)에 남은 버튼으로 또 눌러도 서버가 막는다
+    const again = await demoApi.pay(purchaseOf({ kind: 'one', cost: 3900, label: '' }, S, 'career', undefined, 2027), Y27);
+    expect(again).toEqual({ ok: false, reason: 'owned' });
+    expect(await demoApi.purchases()).toHaveLength(1);
+  });
+
+  it('다른 탭에서 먼저 하나를 산 뒤 옛 값으로 전부 열기를 누르면, 값이 바뀌었다고 다시 고르게 한다', async () => {
+    const stale = entOf([], S, Y27);
+    const oldAll = concernOffers(stale, 'love').find((x) => x.kind === 'all')!;
+    expect(oldAll.cost).toBe(9900);
+    await payOffer('career', 'one'); // 다른 탭에서 첫 결제 1,900원
+    const r = await demoApi.pay(purchaseOf(oldAll, S, 'love', undefined, 2027), Y27);
+    expect(r).toEqual({ ok: false, reason: 'price' });
+    // 새 값(8,000원)으로는 결제된다
+    const { o, r: r2 } = await payOffer('love', 'all');
+    expect(o.cost).toBe(8000);
+    expect(r2.ok).toBe(true);
+    // 전부 열린 뒤에는 어떤 고민도, 신년운세도 다시 결제되지 않는다
+    for (const id of PAID_CONCERNS) {
+      expect(await demoApi.pay({ kind: 'one', item: id, target: S, amount: 3900, at: Date.now(), year: 2027 }, Y27)).toEqual({ ok: false, reason: 'owned' });
+    }
+  });
+
+  it('궁합 상대도 같은 사람은 한 번만', async () => {
+    const o = partnerOffers(entOf([], S, Y27), 'p1')[0];
+    expect((await demoApi.pay(purchaseOf(o, S, null, 'p1'), Y27)).ok).toBe(true);
+    expect(await demoApi.pay(purchaseOf(o, S, null, 'p1'), Y27)).toEqual({ ok: false, reason: 'owned' });
+    expect((await demoApi.pay(purchaseOf(o, S, null, 'p2'), Y27)).ok).toBe(true);
+  });
+
+  it('코드를 모른 채 새 휴대폰에서 같은 리포트를 또 샀다면, 코드를 넣어 합칠 때 겹친 결제를 환불한다', async () => {
+    await payOffer('career', 'one'); // 휴대폰 A: 첫 결제 1,900원
+    await payOffer('love', 'one'); // A: 3,900원
+    const codeA = (await demoApi.current()).code;
+    newPhone();
+    const { o } = await payOffer('career', 'one'); // 휴대폰 B: 코드를 몰라 이직·진로를 또 삼 (B에서는 첫 결제라 1,900원)
+    expect(o.cost).toBe(1900);
+    const r = await demoApi.redeem(codeA);
+    expect(r).toMatchObject({ ok: true, merged: 1, refund: 1900 });
+    const list = await demoApi.purchases();
+    expect(list.map((p) => p.refunded ?? 0)).toEqual([0, 0, 1900]);
+    const e = entOf(list, S, Y27);
+    expect(isOpen(e, 'career') && isOpen(e, 'love')).toBe(true);
+    // 환불한 돈은 차액에 넣지 않는다 — 나머지 전부는 9,900 − 5,800 = 4,100원
+    expect(e.spent).toBe(5800);
+    expect(concernOffers(e, 'money').find((x) => x.kind === 'all')?.cost).toBe(4100);
+    // 같은 코드를 또 넣어도 두 번 환불하지 않는다
+    expect(await demoApi.redeem(codeA)).toEqual({ ok: true, merged: 0, code: codeA });
   });
 });

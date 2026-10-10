@@ -5,13 +5,16 @@
  *  - 다른 휴대폰·카카오톡 안 브라우저에서는 구매 코드를 넣으면 같은 계정의 기록이 그대로 열린다.
  *  - 코드를 넣은 기기에서 따로 산 것이 있으면 버리지 않고 넣은 코드 쪽으로 합친다. 예전 코드도 계속
  *    합쳐진 코드로 이어진다(별칭). 그래서 어떤 순서로 코드를 넣어도 산 것이 사라지지 않는다.
- * 기록에는 '무엇을 · 어느 사주의 것인지(암호값) · 얼마에 · 언제'만 남는다. 이름·생년월일은 저장하지 않는다.
+ * 기록에는 '무엇을 · 어느 사람의 것인지(암호값) · 얼마에 · 언제'만 남는다. 이름·생년월일은 저장하지 않는다.
+ *
+ * 중복 결제 막기: 결제는 pay로만 한다. 서버가 계정의 최신 기록으로 다시 계산해(checkPurchase) 이미 열린 것이면
+ * 결제하지 않고, 값이 바뀌었으면 다시 고르게 한다. 코드를 합칠 때 겹쳐 낸 돈(overpaid)은 환불한다.
  *
  * 지금은 시안용 demoApi(이 기기 안에서 서버를 흉내)만 있다. 실제로는 Supabase 익명 계정 + 결제 확인
  * 서버(Edge Function)가 같은 모양(AccountApi)으로 들어온다. 나중에 카카오 로그인을 붙여도 같은 계정에 이어진다.
  */
 import { useEffect, useState } from 'react';
-import type { Purchase } from './entitlements.ts';
+import { checkPurchase, overpaid, type Purchase, type SeasonKey } from './entitlements.ts';
 
 export interface Account {
   /** 보이지 않는 계정 번호 */
@@ -26,15 +29,25 @@ export interface RedeemResult {
   merged: number;
   /** 앞으로 쓸 구매 코드 */
   code?: string;
+  /** 합쳐 보니 겹쳐 낸 돈 — 환불한다 (원) */
+  refund?: number;
 }
+
+/** 결제 결과 — 성공이면 구매 코드, 아니면 결제하지 않은 까닭 */
+export type PayResult = { ok: true; code: string } | { ok: false; reason: 'owned' | 'price' };
 
 export interface AccountApi {
   current(): Promise<Account>;
   purchases(): Promise<Purchase[]>;
-  record(p: Purchase): Promise<void>;
+  /**
+   * 결제 — 서버가 계정의 최신 기록으로 다시 확인한 뒤에만 남긴다. 이미 열린 것('owned')이면 승인하지 않아 돈이 빠지지 않고,
+   * 그사이 다른 화면에서 산 것이 있어 값이 바뀌었으면('price') 다시 고르게 한다. season: 지금 시즌 (실제 서버는 서버 시각으로 정한다)
+   */
+  pay(p: Purchase, season: SeasonKey): Promise<PayResult>;
   /**
    * 다른 기기의 구매 코드로 그 계정의 기록을 불러온다. 이 기기에서 따로 산 것은 그 계정으로 합친다.
    * merged = 합쳐 넣은 기록 수 (실제 서버에서는 결제 확인 서버가 한 번에 옮긴다)
+   * refund = 합쳐 보니 겹쳐 낸 돈 (실제 서버는 이만큼 결제를 부분 취소한다)
    */
   redeem(code: string): Promise<RedeemResult>;
 }
@@ -95,15 +108,25 @@ function resolve(code: string): string {
 }
 const mine = () => resolve(device().code);
 
-export const demoApi: AccountApi = {
+export const demoApi: AccountApi & { record(p: Purchase): Promise<void> } = {
   current: async () => ({ ...device(), code: mine() }),
   async purchases() {
     return read<Record<string, Purchase[]>>(STORE, {})[mine()] ?? [];
   },
+  /** 확인 없이 바로 남긴다 — 시안 시험용 (실제 결제는 pay) */
   async record(p) {
     const code = mine();
     const all = read<Record<string, Purchase[]>>(STORE, {});
     write(STORE, { ...all, [code]: [...(all[code] ?? []), p] });
+  },
+  async pay(p, season) {
+    const code = mine();
+    // 화면이 아니라 저장된 최신 기록으로 다시 본다 (다른 탭에서 먼저 산 것까지)
+    const all = read<Record<string, Purchase[]>>(STORE, {});
+    const check = checkPurchase(all[code] ?? [], p, season);
+    if (check !== 'ok') return { ok: false, reason: check };
+    write(STORE, { ...all, [code]: [...(all[code] ?? []), p] });
+    return { ok: true, code };
   },
   async redeem(input) {
     const norm = normalizeCode(input);
@@ -115,14 +138,19 @@ export const demoApi: AccountApi = {
     if (own === target) return { ok: true, merged: 0, code: target };
     // 이 기기에서 따로 산 것은 버리지 않고 넣은 코드 쪽으로 합친다
     const mineList = all[own] ?? [];
+    let refund = 0;
     if (mineList.length) {
-      const next = { ...all, [target]: [...all[target], ...mineList] };
+      // 합쳐 보니 겹쳐 낸 돈은 돌려준다 (이미 연 것을 또 샀거나 묶음 가격을 넘겨 낸 만큼)
+      const joined = [...all[target], ...mineList];
+      const back = overpaid(joined);
+      refund = back.reduce((a, b) => a + b, 0);
+      const next = { ...all, [target]: joined.map((p, i) => (back[i] ? { ...p, refunded: (p.refunded ?? 0) + back[i] } : p)) };
       delete next[own];
       write(STORE, next);
       write(ALIAS, { ...read<Record<string, string>>(ALIAS, {}), [own]: target });
     }
     write(DEVICE, { ...device(), code: target });
-    return { ok: true, merged: mineList.length, code: target };
+    return { ok: true, merged: mineList.length, code: target, ...(refund ? { refund } : {}) };
   },
 };
 
@@ -152,20 +180,30 @@ export function useAccount() {
         setPurchases(list);
       }
     };
+    // 다른 탭에서 사거나(시안) 다른 화면에 갔다 돌아오면 최신 기록으로 다시 맞춘다 — 옛 화면에서 또 결제하지 않게
+    const onShow = () => {
+      if (document.visibilityState === 'visible') void sync();
+    };
     void sync();
     window.addEventListener('mg-account', sync);
+    window.addEventListener('storage', sync);
+    document.addEventListener('visibilitychange', onShow);
     return () => {
       alive = false;
       window.removeEventListener('mg-account', sync);
+      window.removeEventListener('storage', sync);
+      document.removeEventListener('visibilitychange', onShow);
     };
   }, []);
   const changed = () => window.dispatchEvent(new Event('mg-account'));
   return {
     account,
     purchases,
-    record: async (p: Purchase) => {
-      await accountApi.record(p);
+    /** 결제 — 이미 열렸거나 값이 바뀌었으면 결제하지 않고 까닭을 돌려준다. 어느 쪽이든 기록을 다시 읽는다 */
+    pay: async (p: Purchase, season: SeasonKey) => {
+      const r = await accountApi.pay(p, season);
       changed();
+      return r;
     },
     redeem: async (code: string) => {
       const r = await accountApi.redeem(code);

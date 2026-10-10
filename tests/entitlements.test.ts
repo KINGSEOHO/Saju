@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { PRICES } from '../src/config/plans.ts';
-import { concernOffers, CORE_CONCERNS, entOf, isOpen, PAID_CONCERNS, partnerOffers, partnerOpen, purchaseOf, type Purchase, type SeasonKey } from '../src/lib/entitlements.ts';
+import { analyze, type BirthInput } from '../src/engine/index.ts';
+import {
+  checkPurchase,
+  concernOffers,
+  CORE_CONCERNS,
+  entOf,
+  isOpen,
+  overpaid,
+  PAID_CONCERNS,
+  partnerKey,
+  partnerOffers,
+  partnerOpen,
+  purchaseOf,
+  sajuKey,
+  type Purchase,
+  type SeasonKey,
+} from '../src/lib/entitlements.ts';
 import type { ConcernId } from '../src/report/concernList.ts';
 
 const S = 'saju1';
@@ -136,5 +152,79 @@ describe('궁합·재회', () => {
     ];
     const e = entOf(legacy, S, Y27);
     expect(isOpen(e, 'love') && partnerOpen(e, 'p9')).toBe(true);
+  });
+});
+
+describe('중복 결제 막기', () => {
+  const NOW = Date.UTC(2026, 9, 9);
+  const base: BirthInput = { gender: 'female', calendar: 'solar', year: 1992, month: 5, day: 17, hour: null, minute: null, longitude: 126.978, timeZone: 'Asia/Seoul' };
+  const key = (x: Partial<BirthInput>) => sajuKey(analyze({ ...base, ...x }, NOW));
+
+  it('이용권은 사람(양력 생일) 단위 — 시간·태어난 곳·음력 입력·성별을 고쳐 넣어도 이미 산 것이 그대로 열린다', () => {
+    const me = key({});
+    const lunar = analyze(base, NOW).pillars.lunarDate;
+    expect(key({ hour: 14, minute: 30 })).toBe(me);
+    expect(key({ hour: 23, minute: 50 })).toBe(me);
+    expect(key({ longitude: 129.075 })).toBe(me);
+    expect(key({ calendar: 'lunar', year: lunar.year, month: lunar.month, day: lunar.day, leapMonth: lunar.leap })).toBe(me);
+    expect(key({ gender: 'male' })).toBe(me);
+    // 다른 날 태어난 사람에게는 넘어가지 않는다
+    expect(key({ day: 18 })).not.toBe(me);
+    // 상대 값은 내 값과 섞이지 않는다
+    expect(partnerKey(analyze(base, NOW))).not.toBe(me);
+  });
+
+  it('결제 직전 확인 — 이미 열렸으면 owned, 화면에 남은 옛 값이면 price', () => {
+    const one = buy([], 'career', 'one');
+    expect(checkPurchase([], one.list[0], Y27)).toBe('ok');
+    expect(checkPurchase(one.list, one.list[0], Y27)).toBe('owned');
+    // 첫 결제 혜택을 쓴 뒤 다른 고민을 1,900원으로 결제하려 하면 값이 틀렸다
+    expect(checkPurchase(one.list, { ...one.list[0], item: 'love' }, Y27)).toBe('price');
+    const all = buy(one.list, 'love', 'all');
+    expect(all.o.cost).toBe(8000);
+    expect(checkPurchase(one.list, { ...all.list[1], amount: 9900 }, Y27)).toBe('price');
+    expect(checkPurchase(all.list, all.list[1], Y27)).toBe('owned');
+    const p1 = purchaseOf(partnerOffers(entOf([], S, Y27), 'p1')[0], S, null, 'p1');
+    expect(checkPurchase([p1], p1, Y27)).toBe('owned');
+  });
+
+  it('한 계정 안에서 화면이 권하는 대로 사면 겹친 결제가 없다', () => {
+    let r = buy([], 'career', 'one');
+    r = buy(r.list, 'love', 'one');
+    r = buy(r.list, 'money', 'all');
+    const p = purchaseOf(partnerOffers(entOf(r.list, S, Y27), 'p1')[0], S, null, 'p1');
+    const next = buy([...r.list, p], 'year', 'one', Y28);
+    expect(overpaid(next.list)).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it('두 기기에서 따로 산 기록을 합치면 겹쳐 낸 만큼만 돌려준다', () => {
+    const at = (n: number, p: Purchase): Purchase => ({ ...p, at: n });
+    const one = (item: Purchase['item'], amount: number, year = 2027): Purchase => ({ kind: 'one', item, target: S, amount, at: 0, year });
+    const all = (amount: number, year = 2027): Purchase => ({ kind: 'all', item: 'career', target: S, amount, at: 0, year });
+    // A에서 고민 둘(7,800원) 뒤 B에서 모르고 전부 열기 9,900원 → 그때 낼 값은 2,100원이라 7,800원 환불
+    expect(overpaid([at(1, one('career', 3900)), at(2, one('love', 3900)), at(3, all(9900))])).toEqual([0, 0, 7800]);
+    // A에서 전부 열기 뒤 B에서 같은 고민 1,900원 → 전부 환불
+    expect(overpaid([at(1, all(9900)), at(2, one('career', 1900))])).toEqual([0, 1900]);
+    // 지난 시즌에 전부 연 사람이 다음 시즌에 모르고 전부 열기 → 그해 신년운세 값(6,900원)만 남기고 환불
+    expect(overpaid([at(1, all(9900, 2027)), at(2, all(9900, 2028))])).toEqual([0, 3000]);
+    // 같은 상대 궁합을 두 번
+    const pair = (n: number): Purchase => ({ kind: 'partner', item: 'match', target: `${S}>p1`, amount: 4900, at: n });
+    expect(overpaid([pair(1), pair(2)])).toEqual([0, 4900]);
+    // 합친 기록의 순서와 상관없이 먼저 산 쪽을 남긴다
+    expect(overpaid([at(2, one('career', 1900)), at(1, all(9900))])).toEqual([1900, 0]);
+  });
+
+  it('돌려준 몫은 다시 세지 않고, 이용권 계산에서도 뺀다', () => {
+    const list: Purchase[] = [
+      { kind: 'one', item: 'career', target: S, amount: 3900, at: 1, year: 2027 },
+      { kind: 'one', item: 'career', target: S, amount: 3900, at: 2, year: 2027 },
+    ];
+    const back = overpaid(list);
+    expect(back).toEqual([0, 3900]);
+    const after = list.map((p, i) => ({ ...p, refunded: back[i] }));
+    expect(overpaid(after)).toEqual([0, 0]);
+    const e = entOf(after, S, Y27);
+    expect(e.spent).toBe(3900);
+    expect(isOpen(e, 'career')).toBe(true);
   });
 });

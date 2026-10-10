@@ -361,12 +361,13 @@ function CompatDetail({ r }: { r: CompatReport }) {
 
 /** 궁합·재회 상세는 상대 한 명마다 따로 연다 */
 function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
-  const u = useUnlock(sajuKey(a.input), seasonKey(a));
-  const pk = partnerKey(b.input);
+  const u = useUnlock(sajuKey(a), seasonKey(a));
+  const pk = partnerKey(b);
   return {
     locked: PAYWALL_DEMO ? !partnerOpen(u.ent, pk) : undefined,
     offers: partnerOffers(u.ent, pk),
-    onTake: (o: Parameters<typeof u.buy>[0]) => void u.buy(o, null, pk),
+    fresh: u.ent.first,
+    onTake: (o: Parameters<typeof u.buy>[0]) => u.buy(o, null, pk),
     onRedeem: u.redeem,
   };
 }
