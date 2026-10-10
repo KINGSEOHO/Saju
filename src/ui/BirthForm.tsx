@@ -4,7 +4,7 @@
  * 단계는 주소(#/start/1 ~ 5)로 나눠 휴대폰의 뒤로 가기가 이전 단계로 돌아가게 한다.
  */
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { CITIES } from '../engine/timezone.ts';
+import { OVERSEAS, REGIONS, regionOf, type Region } from '../engine/timezone.ts';
 import {
   checkDate, checkTime, draftToInput, formatTime, formatYmd, loadDraft, saveDraft, stepValid, type Draft,
 } from '../lib/birthDraft.ts';
@@ -30,6 +30,96 @@ function Question({ title, sub, children }: { title: string; sub?: ReactNode; ch
       <h1 className="mt-8 text-title1 text-ink">{title}</h1>
       {sub && <p className="mt-2 text-ui text-sub">{sub}</p>}
       <div className="mt-8">{children}</div>
+    </>
+  );
+}
+
+/** 같은 시 안에서는 구가 달라도 해의 시각이 2분도 차이 나지 않는다 (가장 넓은 부산·인천이 동서로 약 1.8분) */
+const ONE_CITY = /(특별시|광역시|특별자치시)$/;
+const chip = (on: boolean) =>
+  `min-h-12 rounded-xl border px-1 py-1.5 text-ui leading-tight transition-colors ${on ? 'border-accent bg-accent-soft font-bold text-accent' : 'border-line text-ink active:bg-fill'}`;
+
+/** 태어난 곳 — 국내는 시·도 탭을 먼저 고르고 그 안의 시·군을 고른다. 해외는 도시 목록이나 경도 직접 입력 */
+function PlacePicker({ d, update }: { d: Draft; update: (patch: Partial<Draft>) => void }) {
+  const isOverseas = d.city === '__custom' || OVERSEAS.some((c) => c.name === d.city);
+  const [prov, setProv] = useState(() => regionOf(d.city)?.name ?? REGIONS[0].name);
+  const region = REGIONS.find((r) => r.name === prov) ?? REGIONS[0];
+  const pickRegion = (r: Region) => {
+    setProv(r.name);
+    // 시·군이 하나뿐이면 바로 고르고, 아니면 그 안에서 고를 때까지 비워 둔다 (다른 시·도의 도시가 남아 있지 않게)
+    update({ city: r.cities.length === 1 ? r.cities[0].name : r.cities.some((c) => c.name === d.city) ? d.city : '' });
+  };
+  return (
+    <>
+      <div className="seg" role="radiogroup" aria-label="지역">
+        <button
+          type="button"
+          role="radio"
+          aria-checked={!isOverseas}
+          onClick={() => {
+            setProv(REGIONS[0].name);
+            update({ city: REGIONS[0].cities[0].name });
+          }}
+          className={`seg-item ${!isOverseas ? 'seg-on' : ''}`}
+        >
+          국내
+        </button>
+        <button type="button" role="radio" aria-checked={isOverseas} onClick={() => update({ city: OVERSEAS[0]?.name ?? '__custom' })} className={`seg-item ${isOverseas ? 'seg-on' : ''}`}>
+          해외
+        </button>
+      </div>
+      {isOverseas ? (
+        <>
+          <div className="mt-5 grid grid-cols-3 gap-2" role="radiogroup" aria-label="태어난 곳">
+            {[...OVERSEAS.map((c) => c.name), '__custom'].map((name) => (
+              <button key={name} type="button" role="radio" aria-checked={d.city === name} onClick={() => update({ city: name })} className={chip(d.city === name)}>
+                {name === '__custom' ? '직접 입력' : name}
+              </button>
+            ))}
+          </div>
+          {d.city === '__custom' && (
+            <div className="mt-5 grid gap-3">
+              <label className="block">
+                <span className="text-label font-semibold text-ink-2">경도 (동경 +, 서경 −)</span>
+                <input className="field mt-2" inputMode="decimal" value={d.lon} onChange={(e) => update({ lon: e.target.value })} />
+              </label>
+              <label className="block">
+                <span className="text-label font-semibold text-ink-2">시간대 (예: America/New_York)</span>
+                <input className="field mt-2" value={d.tz} onChange={(e) => update({ tz: e.target.value })} placeholder="Asia/Seoul" />
+              </label>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <p className="mt-6 text-label font-semibold text-ink-2">시·도</p>
+          <div className="mt-2 grid grid-cols-6 gap-1.5" role="tablist" aria-label="시·도">
+            {REGIONS.map((r) => (
+              <button
+                key={r.name}
+                type="button"
+                role="tab"
+                aria-selected={r.name === region.name}
+                aria-controls="place-cities"
+                onClick={() => pickRegion(r)}
+                className={`h-10 rounded-lg border text-label font-semibold transition-colors ${r.name === region.name ? 'border-ink bg-ink text-bg' : 'border-line text-ink-2 active:bg-fill'}`}
+              >
+                {r.name}
+              </button>
+            ))}
+          </div>
+          <p className="mt-6 text-label font-semibold text-ink-2">{region.cities.length > 1 ? `${region.full}의 시·군` : region.full}</p>
+          <div id="place-cities" className="mt-2 grid grid-cols-3 gap-2" role="radiogroup" aria-label={`${region.full}에서 태어난 곳`}>
+            {region.cities.map((c) => (
+              <button key={c.name} type="button" role="radio" aria-checked={d.city === c.name} onClick={() => update({ city: c.name })} className={chip(d.city === c.name)}>
+                {c.label ?? c.name}
+              </button>
+            ))}
+          </div>
+          {ONE_CITY.test(region.full) && <p className="mt-3 text-cap text-sub">구는 고르지 않아도 돼요. 같은 시 안에서는 어느 구든 해의 시각 차이가 2분이 안 돼요.</p>}
+          {region.note && <p className="mt-2 text-cap text-sub">{region.note}</p>}
+        </>
+      )}
     </>
   );
 }
@@ -98,9 +188,6 @@ export function BirthFlow({ step }: { step: number }) {
 
   const date = checkDate(d.ymd, d.calendar, d.leap);
   const time = checkTime(d.time);
-  const domestic = CITIES.filter((c) => c.timeZone === 'Asia/Seoul');
-  const overseas = CITIES.filter((c) => c.timeZone !== 'Asia/Seoul');
-  const isOverseas = d.city === '__custom' || overseas.some((c) => c.name === d.city);
 
   return (
     <form onSubmit={submit} noValidate>
@@ -223,40 +310,7 @@ export function BirthFlow({ step }: { step: number }) {
 
         {step === 4 && (
           <Question title="어디에서 태어났나요?" sub="태어난 곳의 경도로 그곳의 실제 해의 시각을 맞춰요.">
-            <div className="seg" role="radiogroup" aria-label="지역">
-              <button type="button" role="radio" aria-checked={!isOverseas} onClick={() => update({ city: '서울' })} className={`seg-item ${!isOverseas ? 'seg-on' : ''}`}>
-                국내
-              </button>
-              <button type="button" role="radio" aria-checked={isOverseas} onClick={() => update({ city: overseas[0]?.name ?? '__custom' })} className={`seg-item ${isOverseas ? 'seg-on' : ''}`}>
-                해외
-              </button>
-            </div>
-            <div className="mt-5 grid grid-cols-3 gap-2" role="radiogroup" aria-label="태어난 곳">
-              {[...(isOverseas ? overseas : domestic).map((c) => c.name), ...(isOverseas ? ['__custom'] : [])].map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  role="radio"
-                  aria-checked={d.city === name}
-                  onClick={() => update({ city: name })}
-                  className={`h-12 rounded-xl border px-1 text-ui transition-colors ${d.city === name ? 'border-accent bg-accent-soft font-bold text-accent' : 'border-line text-ink active:bg-fill'}`}
-                >
-                  {name === '__custom' ? '직접 입력' : name}
-                </button>
-              ))}
-            </div>
-            {d.city === '__custom' && (
-              <div className="mt-5 grid gap-3">
-                <label className="block">
-                  <span className="text-label font-semibold text-ink-2">경도 (동경 +, 서경 −)</span>
-                  <input className="field mt-2" inputMode="decimal" value={d.lon} onChange={(e) => update({ lon: e.target.value })} />
-                </label>
-                <label className="block">
-                  <span className="text-label font-semibold text-ink-2">시간대 (예: America/New_York)</span>
-                  <input className="field mt-2" value={d.tz} onChange={(e) => update({ tz: e.target.value })} placeholder="Asia/Seoul" />
-                </label>
-              </div>
-            )}
+            <PlacePicker d={d} update={update} />
             <button type="button" className="link mt-8 text-label" onClick={() => setAdv((v) => !v)} aria-expanded={adv}>
               {adv ? '계산 기준 닫기' : '계산 기준 바꾸기 (시간 보정·자시)'}
             </button>

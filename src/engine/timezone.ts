@@ -11,52 +11,271 @@
 import { equationOfTime, msToJd } from './astro.ts';
 
 export interface City {
+  /** 고유 이름 — 결과 화면과 공유 주소에 그대로 쓴다 */
   name: string;
   longitude: number;
   latitude: number;
   timeZone: string;
+  /** 고르는 칸에 보이는 짧은 이름 (없으면 name) */
+  label?: string;
 }
 
-export const CITIES: City[] = [
-  { name: '서울', longitude: 126.978, latitude: 37.566, timeZone: 'Asia/Seoul' },
-  { name: '부산', longitude: 129.075, latitude: 35.18, timeZone: 'Asia/Seoul' },
-  { name: '대구', longitude: 128.601, latitude: 35.871, timeZone: 'Asia/Seoul' },
-  { name: '인천', longitude: 126.705, latitude: 37.456, timeZone: 'Asia/Seoul' },
-  { name: '광주', longitude: 126.851, latitude: 35.16, timeZone: 'Asia/Seoul' },
-  { name: '대전', longitude: 127.385, latitude: 36.351, timeZone: 'Asia/Seoul' },
-  { name: '울산', longitude: 129.311, latitude: 35.539, timeZone: 'Asia/Seoul' },
-  { name: '세종', longitude: 127.289, latitude: 36.48, timeZone: 'Asia/Seoul' },
-  { name: '수원', longitude: 127.028, latitude: 37.263, timeZone: 'Asia/Seoul' },
-  { name: '성남', longitude: 127.126, latitude: 37.42, timeZone: 'Asia/Seoul' },
-  { name: '고양', longitude: 126.832, latitude: 37.658, timeZone: 'Asia/Seoul' },
-  { name: '용인', longitude: 127.177, latitude: 37.241, timeZone: 'Asia/Seoul' },
-  { name: '의정부', longitude: 127.033, latitude: 37.738, timeZone: 'Asia/Seoul' },
-  { name: '춘천', longitude: 127.73, latitude: 37.881, timeZone: 'Asia/Seoul' },
-  { name: '원주', longitude: 127.92, latitude: 37.342, timeZone: 'Asia/Seoul' },
-  { name: '강릉', longitude: 128.876, latitude: 37.752, timeZone: 'Asia/Seoul' },
-  { name: '속초', longitude: 128.592, latitude: 38.207, timeZone: 'Asia/Seoul' },
-  { name: '청주', longitude: 127.489, latitude: 36.642, timeZone: 'Asia/Seoul' },
-  { name: '충주', longitude: 127.926, latitude: 36.991, timeZone: 'Asia/Seoul' },
-  { name: '천안', longitude: 127.114, latitude: 36.815, timeZone: 'Asia/Seoul' },
-  { name: '공주', longitude: 127.119, latitude: 36.446, timeZone: 'Asia/Seoul' },
-  { name: '전주', longitude: 127.148, latitude: 35.824, timeZone: 'Asia/Seoul' },
-  { name: '군산', longitude: 126.737, latitude: 35.968, timeZone: 'Asia/Seoul' },
-  { name: '익산', longitude: 126.957, latitude: 35.948, timeZone: 'Asia/Seoul' },
-  { name: '목포', longitude: 126.392, latitude: 34.812, timeZone: 'Asia/Seoul' },
-  { name: '여수', longitude: 127.662, latitude: 34.76, timeZone: 'Asia/Seoul' },
-  { name: '순천', longitude: 127.487, latitude: 34.951, timeZone: 'Asia/Seoul' },
-  { name: '포항', longitude: 129.343, latitude: 36.019, timeZone: 'Asia/Seoul' },
-  { name: '경주', longitude: 129.225, latitude: 35.856, timeZone: 'Asia/Seoul' },
-  { name: '안동', longitude: 128.729, latitude: 36.568, timeZone: 'Asia/Seoul' },
-  { name: '구미', longitude: 128.344, latitude: 36.12, timeZone: 'Asia/Seoul' },
-  { name: '창원', longitude: 128.681, latitude: 35.228, timeZone: 'Asia/Seoul' },
-  { name: '진주', longitude: 128.108, latitude: 35.18, timeZone: 'Asia/Seoul' },
-  { name: '김해', longitude: 128.889, latitude: 35.229, timeZone: 'Asia/Seoul' },
-  { name: '통영', longitude: 128.433, latitude: 34.854, timeZone: 'Asia/Seoul' },
-  { name: '제주', longitude: 126.531, latitude: 33.5, timeZone: 'Asia/Seoul' },
-  { name: '서귀포', longitude: 126.56, latitude: 33.254, timeZone: 'Asia/Seoul' },
-  { name: '울릉', longitude: 130.906, latitude: 37.484, timeZone: 'Asia/Seoul' },
-  { name: '평양', longitude: 125.754, latitude: 39.039, timeZone: 'Asia/Pyongyang' },
+/** 국내 출생지는 시·도를 먼저 고르고 그 안의 시·군을 고른다 */
+export interface Region {
+  /** 탭에 보이는 짧은 이름 */
+  name: string;
+  full: string;
+  cities: City[];
+  /** 옛 지명 안내 */
+  note?: string;
+}
+
+/**
+ * 좌표는 시청·군청 자리(소수 셋째 자리). 경도 0.1°가 해의 시각 24초라, 같은 시·군 안의 차이는 계산에 거의 영향이 없다.
+ * 이름은 겹치지 않게: 광주광역시는 '광주', 경기도 광주시는 '경기 광주', 고성군은 '강원 고성'·'경남 고성'.
+ */
+const kr = (name: string, longitude: number, latitude: number, label?: string): City => ({ name, longitude, latitude, timeZone: 'Asia/Seoul', ...(label ? { label } : {}) });
+const nk = (name: string, longitude: number, latitude: number): City => ({ name, longitude, latitude, timeZone: 'Asia/Pyongyang' });
+
+export const REGIONS: Region[] = [
+  { name: '서울', full: '서울특별시', cities: [kr('서울', 126.978, 37.566)] },
+  { name: '부산', full: '부산광역시', cities: [kr('부산', 129.075, 35.18), kr('기장', 129.219, 35.245)] },
+  { name: '대구', full: '대구광역시', cities: [kr('대구', 128.601, 35.871), kr('달성', 128.431, 35.775), kr('군위', 128.573, 36.243)], note: '군위는 2023년부터 대구에 속해요.' },
+  {
+    name: '인천',
+    full: '인천광역시',
+    cities: [kr('인천', 126.705, 37.456), kr('강화', 126.488, 37.747), kr('옹진', 126.47, 37.25), kr('백령도', 124.7, 37.96, '백령·대청도'), kr('연평도', 125.7, 37.665)],
+    note: '서해 섬은 육지와 해의 시각이 몇 분씩 달라서 백령·대청도와 연평도를 따로 두었어요. 영흥·덕적 같은 그 밖의 섬은 옹진을 고르세요.',
+  },
+  { name: '광주', full: '광주광역시', cities: [kr('광주', 126.851, 35.16)] },
+  { name: '대전', full: '대전광역시', cities: [kr('대전', 127.385, 36.351)] },
+  { name: '울산', full: '울산광역시', cities: [kr('울산', 129.311, 35.539), kr('울주', 129.242, 35.522)] },
+  { name: '세종', full: '세종특별자치시', cities: [kr('세종', 127.289, 36.48)] },
+  {
+    name: '경기',
+    full: '경기도',
+    cities: [
+      kr('수원', 127.028, 37.263),
+      kr('성남', 127.126, 37.42),
+      kr('고양', 126.832, 37.658),
+      kr('용인', 127.177, 37.241),
+      kr('부천', 126.766, 37.504),
+      kr('화성', 126.831, 37.2),
+      kr('안산', 126.831, 37.322),
+      kr('남양주', 127.216, 37.636),
+      kr('안양', 126.957, 37.394),
+      kr('평택', 127.113, 36.992),
+      kr('시흥', 126.803, 37.38),
+      kr('파주', 126.78, 37.76),
+      kr('의정부', 127.033, 37.738),
+      kr('김포', 126.716, 37.615),
+      kr('경기 광주', 127.255, 37.43, '광주'),
+      kr('광명', 126.865, 37.479),
+      kr('군포', 126.935, 37.362),
+      kr('하남', 127.215, 37.539),
+      kr('오산', 127.077, 37.15),
+      kr('양주', 127.046, 37.785),
+      kr('이천', 127.443, 37.272),
+      kr('구리', 127.13, 37.594),
+      kr('안성', 127.28, 37.008),
+      kr('포천', 127.2, 37.895),
+      kr('의왕', 126.968, 37.345),
+      kr('양평', 127.487, 37.492),
+      kr('여주', 127.638, 37.298),
+      kr('동두천', 127.061, 37.904),
+      kr('과천', 126.988, 37.429),
+      kr('가평', 127.51, 37.832),
+      kr('연천', 127.075, 38.096),
+    ],
+    note: '송탄은 평택, 미금은 남양주, 일산은 고양, 분당은 성남으로 골라 주세요.',
+  },
+  {
+    name: '강원',
+    full: '강원특별자치도',
+    cities: [
+      kr('춘천', 127.73, 37.881),
+      kr('원주', 127.92, 37.342),
+      kr('강릉', 128.876, 37.752),
+      kr('동해', 129.114, 37.525),
+      kr('태백', 128.986, 37.164),
+      kr('속초', 128.592, 38.207),
+      kr('삼척', 129.165, 37.45),
+      kr('홍천', 127.889, 37.697),
+      kr('횡성', 127.985, 37.492),
+      kr('영월', 128.462, 37.184),
+      kr('평창', 128.391, 37.371),
+      kr('정선', 128.661, 37.381),
+      kr('철원', 127.313, 38.147),
+      kr('화천', 127.708, 38.106),
+      kr('양구', 127.99, 38.11),
+      kr('인제', 128.171, 38.07),
+      kr('강원 고성', 128.468, 38.381, '고성'),
+      kr('양양', 128.619, 38.075),
+    ],
+  },
+  {
+    name: '충북',
+    full: '충청북도',
+    cities: [
+      kr('청주', 127.489, 36.642),
+      kr('충주', 127.926, 36.991),
+      kr('제천', 128.191, 37.133),
+      kr('보은', 127.729, 36.49),
+      kr('옥천', 127.571, 36.306),
+      kr('영동', 127.783, 36.175),
+      kr('증평', 127.581, 36.785),
+      kr('진천', 127.436, 36.855),
+      kr('괴산', 127.787, 36.815),
+      kr('음성', 127.69, 36.94),
+      kr('단양', 128.366, 36.985),
+    ],
+    note: '청원은 청주로 골라 주세요.',
+  },
+  {
+    name: '충남',
+    full: '충청남도',
+    cities: [
+      kr('천안', 127.114, 36.815),
+      kr('공주', 127.119, 36.446),
+      kr('보령', 126.613, 36.333),
+      kr('아산', 127.002, 36.79),
+      kr('서산', 126.45, 36.785),
+      kr('논산', 127.099, 36.187),
+      kr('계룡', 127.249, 36.275),
+      kr('당진', 126.646, 36.89),
+      kr('금산', 127.488, 36.109),
+      kr('부여', 126.91, 36.276),
+      kr('서천', 126.692, 36.08),
+      kr('청양', 126.802, 36.459),
+      kr('홍성', 126.661, 36.601),
+      kr('예산', 126.845, 36.683),
+      kr('태안', 126.298, 36.746),
+    ],
+    note: '온양은 아산, 대천은 보령으로 골라 주세요.',
+  },
+  {
+    name: '전북',
+    full: '전북특별자치도',
+    cities: [
+      kr('전주', 127.148, 35.824),
+      kr('군산', 126.737, 35.968),
+      kr('익산', 126.957, 35.948),
+      kr('정읍', 126.856, 35.57),
+      kr('남원', 127.39, 35.416),
+      kr('김제', 126.881, 35.804),
+      kr('완주', 127.162, 35.905),
+      kr('진안', 127.425, 35.792),
+      kr('무주', 127.661, 36.007),
+      kr('장수', 127.521, 35.647),
+      kr('임실', 127.279, 35.618),
+      kr('순창', 127.137, 35.374),
+      kr('고창', 126.702, 35.436),
+      kr('부안', 126.733, 35.732),
+    ],
+    note: '이리는 익산, 정주는 정읍으로 골라 주세요.',
+  },
+  {
+    name: '전남',
+    full: '전라남도',
+    cities: [
+      kr('목포', 126.392, 34.812),
+      kr('여수', 127.662, 34.76),
+      kr('순천', 127.487, 34.951),
+      kr('나주', 126.711, 35.016),
+      kr('광양', 127.696, 34.941),
+      kr('담양', 126.988, 35.321),
+      kr('곡성', 127.292, 35.282),
+      kr('구례', 127.463, 35.203),
+      kr('고흥', 127.285, 34.611),
+      kr('보성', 127.08, 34.771),
+      kr('화순', 126.987, 35.064),
+      kr('장흥', 126.907, 34.682),
+      kr('강진', 126.767, 34.642),
+      kr('해남', 126.599, 34.573),
+      kr('영암', 126.697, 34.8),
+      kr('무안', 126.481, 34.99),
+      kr('함평', 126.516, 35.066),
+      kr('영광', 126.512, 35.277),
+      kr('장성', 126.785, 35.302),
+      kr('완도', 126.755, 34.311),
+      kr('진도', 126.263, 34.487),
+      kr('신안', 126.351, 34.834),
+    ],
+    note: '여천은 여수, 승주는 순천, 동광양은 광양으로 골라 주세요.',
+  },
+  {
+    name: '경북',
+    full: '경상북도',
+    cities: [
+      kr('포항', 129.343, 36.019),
+      kr('경주', 129.225, 35.856),
+      kr('김천', 128.114, 36.14),
+      kr('안동', 128.729, 36.568),
+      kr('구미', 128.344, 36.12),
+      kr('영주', 128.624, 36.806),
+      kr('영천', 128.939, 35.973),
+      kr('상주', 128.159, 36.411),
+      kr('문경', 128.187, 36.587),
+      kr('경산', 128.741, 35.825),
+      kr('의성', 128.697, 36.353),
+      kr('청송', 129.057, 36.436),
+      kr('영양', 129.112, 36.667),
+      kr('영덕', 129.365, 36.415),
+      kr('청도', 128.734, 35.647),
+      kr('고령', 128.263, 35.726),
+      kr('성주', 128.283, 35.919),
+      kr('칠곡', 128.402, 35.996),
+      kr('예천', 128.453, 36.658),
+      kr('봉화', 128.732, 36.893),
+      kr('울진', 129.4, 36.993),
+      kr('울릉', 130.906, 37.484),
+    ],
+    note: '영일은 포항, 점촌은 문경으로 골라 주세요. 군위는 2023년부터 대구에 속해서 대구 탭에 있어요.',
+  },
+  {
+    name: '경남',
+    full: '경상남도',
+    cities: [
+      kr('창원', 128.681, 35.228),
+      kr('진주', 128.108, 35.18),
+      kr('통영', 128.433, 34.854),
+      kr('사천', 128.064, 35.004),
+      kr('김해', 128.889, 35.229),
+      kr('밀양', 128.746, 35.504),
+      kr('거제', 128.621, 34.881),
+      kr('양산', 129.037, 35.335),
+      kr('의령', 128.262, 35.322),
+      kr('함안', 128.407, 35.273),
+      kr('창녕', 128.492, 35.545),
+      kr('경남 고성', 128.322, 34.973, '고성'),
+      kr('남해', 127.892, 34.838),
+      kr('하동', 127.751, 35.067),
+      kr('산청', 127.874, 35.416),
+      kr('함양', 127.725, 35.521),
+      kr('거창', 127.909, 35.687),
+      kr('합천', 128.166, 35.567),
+    ],
+    note: '마산·진해는 창원, 충무는 통영, 삼천포는 사천, 장승포는 거제로 골라 주세요.',
+  },
+  { name: '제주', full: '제주특별자치도', cities: [kr('제주', 126.531, 33.5), kr('서귀포', 126.56, 33.254)] },
+  {
+    name: '북한',
+    full: '북한',
+    cities: [
+      nk('평양', 125.754, 39.039),
+      nk('개성', 126.554, 37.971),
+      nk('남포', 125.408, 38.737),
+      nk('사리원', 125.756, 38.508),
+      nk('해주', 125.716, 38.04),
+      nk('신의주', 124.398, 40.1),
+      nk('원산', 127.443, 39.153),
+      nk('함흥', 127.536, 39.918),
+      nk('청진', 129.775, 41.796),
+    ],
+  },
+];
+
+export const OVERSEAS: City[] = [
   { name: '도쿄', longitude: 139.692, latitude: 35.69, timeZone: 'Asia/Tokyo' },
   { name: '오사카', longitude: 135.502, latitude: 34.694, timeZone: 'Asia/Tokyo' },
   { name: '베이징', longitude: 116.407, latitude: 39.904, timeZone: 'Asia/Shanghai' },
@@ -82,6 +301,12 @@ export const CITIES: City[] = [
   { name: '호놀룰루', longitude: -157.858, latitude: 21.307, timeZone: 'Pacific/Honolulu' },
   { name: '상파울루', longitude: -46.633, latitude: -23.55, timeZone: 'America/Sao_Paulo' },
 ];
+
+/** 모든 출생지 (이름은 겹치지 않는다) */
+export const CITIES: City[] = [...REGIONS.flatMap((r) => r.cities), ...OVERSEAS];
+
+/** 이 출생지가 든 시·도 (국내가 아니면 undefined) */
+export const regionOf = (name: string): Region | undefined => REGIONS.find((r) => r.cities.some((c) => c.name === name));
 
 // ---------------------------------------------------------------------------
 // 한국 표준시 / 서머타임 (IANA tzdata Asia/Seoul, Rule ROK)

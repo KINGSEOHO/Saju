@@ -16,7 +16,7 @@ export interface Draft {
   time: string;
   timeUnknown: boolean;
   gender: 'male' | 'female' | '';
-  /** 도시 이름 또는 '__custom' */
+  /** 출생지 이름(engine/timezone.ts) 또는 '__custom'. 시·도만 고르고 시·군을 아직 안 골랐으면 '' */
   city: string;
   lon: string;
   tz: string;

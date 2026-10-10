@@ -112,7 +112,7 @@ ADMIN_TOKEN=비밀값 npm start   # 운영: dist/ 정적 서빙 + /api (기본 �
 src/engine/      만세력·명리 엔진 (UI 의존성 없는 순수 TS, 서버에서도 import 가능)
   astro.ts         천문 계산 (절기·합삭·ΔT·균시차)
   calendar.ts      한국 음력
-  timezone.ts      표준시·서머타임·경도 보정, 도시 목록
+  timezone.ts      표준시·서머타임·경도 보정, 출생지 목록(시·도 → 시·군, 해외)
   pillars.ts       4기둥, 경계 민감도 분석
   tenGods.ts       십성·12운성
   strength.ts      오행 세력·신강약·격국·조후·용신

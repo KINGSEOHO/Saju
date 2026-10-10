@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { analyze, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
-import { CITIES } from '../engine/timezone.ts';
+import { OVERSEAS, REGIONS, regionOf } from '../engine/timezone.ts';
 import { checkDate, checkTime, formatTime, formatYmd } from '../lib/birthDraft.ts';
 import { checkBreakup, formatYm, loadPartner, partnerInput, savePartner, type PartnerDraft } from '../lib/partnerDraft.ts';
 import { compatReport, RELATION_LABEL, reunionReport, SCORE_NOTE, type CompatReport, type Factor, type Relation, type ReunionReport, type YearSign } from '../report/compat.ts';
@@ -149,13 +149,29 @@ function PartnerForm({ a, p, update, onSubmit }: { a: SajuAnalysis; p: PartnerDr
           </label>
         </Field>
         <Field label="상대가 태어난 곳">
-          <select className="field" value={p.city} onChange={(e) => update({ city: e.target.value })}>
-            {CITIES.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          {/* 시·도를 고르면 그 안의 첫 시·군으로 바뀌고, 오른쪽에서 시·군을 고른다 */}
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              className="field"
+              aria-label="시·도"
+              value={regionOf(p.city)?.name ?? '해외'}
+              onChange={(e) => update({ city: (REGIONS.find((r) => r.name === e.target.value)?.cities ?? OVERSEAS)[0].name })}
+            >
+              {REGIONS.map((r) => (
+                <option key={r.name} value={r.name}>
+                  {r.name}
+                </option>
+              ))}
+              <option value="해외">해외</option>
+            </select>
+            <select className="field" aria-label="시·군" value={p.city} onChange={(e) => update({ city: e.target.value })}>
+              {(regionOf(p.city)?.cities ?? OVERSEAS).map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.label ?? c.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </Field>
         <Field label="상대 MBTI (선택)">
           <select className="field" value={p.mbti} onChange={(e) => update({ mbti: e.target.value })}>
