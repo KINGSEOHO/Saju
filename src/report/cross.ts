@@ -409,25 +409,35 @@ export function crossReport(a: SajuAnalysis, report: Report): CrossReport {
 
   const glance = [t1.glance, t2.glance, ch ? ch.glance : `지금은 ${d ? DECADE_THEME[groupOf(d.stemTenGod)].label : '준비'}의 시기 — 강점을 결과로 바꿀 때`];
 
-  // 종합 요약
+  // 종합 요약 — '2/3 일치' 같은 숫자 대신 어느 체계가 가리키는지 이름으로 말한다. 누구에게나 맞는 일반론은 넣지 않는다
   const evid = (t: ThemeResult) =>
     t.evidence
       .filter((e) => e.agree)
       .map((e) => (e.system === 'saju' ? `사주의 ${e.text.split(' — ')[0]}` : e.system === 'mbti' ? `MBTI ${type}` : e.system === 'job' ? `직업(${job?.category.label})` : e.system === 'tti' ? tti.name : '지금의 대운'))
       .join(', ');
+  const sysName = (e: Evidence) => (e.system === 'saju' ? '사주' : e.system === 'mbti' ? `MBTI(${type})` : e.system === 'job' ? '직업' : e.system === 'tti' ? tti.name : '지금의 대운');
+  /** 사주와 쥐띠 · 사주, 직업, 쥐띠 */
+  const andList = (xs: string[]) => (xs.length === 2 ? `${josa(xs[0], '과/와')} ${xs[1]}` : xs.join(', '));
+  const names = (t: ThemeResult, agree: boolean) => t.evidence.filter((e) => e.agree === agree).map(sysName);
   const parts: string[] = [];
-  parts.push(`${who}은 ${josa(t1.glance, '이에요/예요')}. ${evid(lead)}${lead.agree >= 2 ? '이 같은 방향을 가리켜요' : '에서 이 특성이 드러나요'}.`);
+  parts.push(`${who}은 ${josa(t1.glance, '이에요/예요')}. ${lead.agree >= 2 ? `${josa(evid(lead), '이/가')} 같은 방향을 가리켜요` : `${evid(lead)}에서 이 특성이 드러나요`}.`);
   const second = all.find((t) => t.id === t2.id)!;
-  parts.push(`여기에 ${t2.glance.replace(/사람$|형$/, (m) => m)}의 면모가 더해져요(${second.agree}/${second.total} 일치).`);
+  const [yes, no] = [names(second, true), names(second, false)];
+  const point = yes.length
+    ? ` ${josa(andList(yes), '이/가')} ${yes.length >= 2 ? '함께 ' : ''}${no.length ? `이쪽을 가리키고, ${josa(andList(no), '은/는')} 다른 쪽을 가리켜요` : '이쪽을 가리켜요'}.`
+    : '';
+  parts.push(`여기에 ${t2.glance}의 면모가 더해져요.${point}`);
   if (ch) {
     const chr = all.find((t) => t.id === ch.id)!;
-    parts.push(`반면 ${chr.agree >= 2 ? '여러 체계가 함께' : '사주가'} 경고하는 약점이 있는데, 바로 ${josa(CHALLENGE_PHRASE[ch.id], '이에요/예요')}.`);
+    const warn = names(chr, true);
+    parts.push(`반면 ${josa(andList(warn.length ? warn : ['사주']), '이/가')} ${warn.length >= 2 ? '함께 ' : ''}경고하는 약점이 있는데, 바로 ${josa(CHALLENGE_PHRASE[ch.id], '이에요/예요')}.`);
   }
   if (d) parts.push(`만 ${Math.floor(ageNow)}세인 지금은 ${DECADE_THEME[groupOf(d.stemTenGod)].label}의 10년(${d.startYear}~${d.endYear})을 지나고 있어요.`);
   if (job) parts.push(`직업 면에서는 ${josa(job.headline, '이에요/예요')}.`);
-  if (mbti) parts.push(`MBTI(${mbti.type})와 사주는 네 가지 축 중 ${mbti.agree}개가 같은 방향이에요.`);
-  parts.push(`띠로는 ${tti.name}(${tti.nick})이고, ${a.currentSajuYear}년은 ${tti.thisYear.line === '무난한 해' ? '띠로 보아 무난한 해' : `‘${tti.thisYear.line}’인 해`}예요.`);
-  parts.push('강점이 뚜렷한 만큼 약점도 분명한 구조이므로, 강점을 살리는 것만큼 약점을 보완하는 것이 실제 삶의 질을 가르는 분기점이 돼요.');
+  if (mbti) parts.push(`MBTI(${mbti.type})와 사주는 ${mbti.agree === 4 ? '네 가지 축이 모두 같아요' : mbti.agree === 0 ? '네 가지 축이 모두 달라요' : `네 가지 축 중 ${mbti.agree}개가 같아요`}.`);
+  // ‘내 띠의 해’처럼 이미 ‘해’로 끝나면 ‘…해’인 해예요’로 겹치지 않게
+  const yearLine = tti.thisYear.line === '무난한 해' ? '띠로 보아 무난한 해예요' : /해$/.test(tti.thisYear.line) ? josa(`‘${tti.thisYear.line}’`, '이에요/예요') : `‘${tti.thisYear.line}’인 해예요`;
+  parts.push(`띠로는 ${tti.name}(${tti.nick})이고, ${a.currentSajuYear}년은 ${yearLine}.`);
 
   return {
     systems,

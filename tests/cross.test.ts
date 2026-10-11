@@ -143,3 +143,25 @@ describe('띠', () => {
     expect(tiger.best).toEqual(['말띠', '개띠', '돼지띠']);
   });
 });
+
+describe('교차 검증 종합 요약 (지인 리뷰 반영)', () => {
+  const people = randomInputs(80, 41).map((i) => analyze(i, NOW));
+  const sums = people.map((a) => crossReport(a, generateReport(a)).summary);
+
+  it('조사가 앞말에 맞는다 — ‘쥐띠이’, ‘가리키요’ 같은 오류가 없다', () => {
+    for (const s of sums) {
+      expect(s).not.toMatch(BAD_TEXT);
+      expect(s).not.toMatch(/띠이 |띠은 |띠을 |가리키요/);
+    }
+  });
+
+  it('‘2/3 일치’ 같은 숫자 대신 어느 체계가 같은 쪽을 가리키는지 이름으로 말한다', () => {
+    for (const s of sums) expect(s).not.toMatch(/\d+\/\d+ 일치|0개가 같/);
+    expect(sums.some((s) => /(사주|띠|직업|대운|MBTI\([A-Z]{4}\))(와|과|가|이) .*이쪽을 가리/.test(s))).toBe(true);
+    expect(sums.some((s) => /다른 쪽을 가리켜요/.test(s))).toBe(true);
+  });
+
+  it('누구에게나 맞는 일반론으로 끝내지 않는다', () => {
+    for (const s of sums) expect(s).not.toMatch(/분기점|삶의 질|강점이 뚜렷한 만큼/);
+  });
+});
