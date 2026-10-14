@@ -20,6 +20,7 @@ import { BirthFlow, FLOW_STEPS, goToStep } from './ui/BirthForm.tsx';
 import { ElementStrip } from './ui/Charts.tsx';
 import { BottomBar, Chevron, Disclosure, Gloss, GLOSSARY, Lead, Term } from './ui/common.tsx';
 import { ConcernBridge } from './ui/ConcernBridge.tsx';
+import { DetailCards } from './ui/DetailCards.tsx';
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx';
 import { Faq } from './ui/Faq.tsx';
 import { ReviewForm } from './ui/Feedback.tsx';
@@ -423,6 +424,17 @@ function Result({ input }: { input: BirthInput }) {
       term: '대운',
     },
   ];
+  /** 세부 풀이 카드 앞면의 한 줄 — 내 사주로 쓴 문장 */
+  const cardLine: Record<Sec, string> = {
+    report: strengths[0] ? clean(strengths[0].text) : cross.card.subline,
+    luck: month ? month.r.headline : facts[2].value,
+    cross: cross.card.headline,
+    mbti: cross.mbti ? `${cross.mbti.type} — 사주와 네 가지 축 중 ${cross.mbti.agree}개가 같아요` : 'MBTI를 넣으면 겉과 속이 같은 점과 다른 점을 비교해요',
+    job: cross.job ? cross.job.headline : '하는 일을 넣으면 지금 일과의 궁합을 봐요',
+    webtoon: '내 사주로 그린 개그 웹툰 4화',
+    chart: `${pillarHanja(p.day)}일주 · 원국 상세표와 시간 보정 내역`,
+    detail: `${facts[0].value} · 가장 필요한 기운은 ${facts[1].value}`,
+  };
   const lean = sajuAxes(a);
   const shareData: StoryData = {
     name: input.name,
@@ -576,18 +588,21 @@ function Result({ input }: { input: BirthInput }) {
           세부 풀이
         </h2>
         <p className="mt-1 text-label text-sub">
-          누르면 이 자리에서 펼쳐져요. 고민이 있다면{' '}
+          카드를 눌러 뒤집으면 내 사주로 쓴 한 줄이 나와요. ‘풀이 보기’를 누르면 아래에 펼쳐져요. 고민이 있다면{' '}
           <button type="button" className="link no-print" onClick={scrollToConcerns}>
             고민 리포트로 바로 가기
           </button>
         </p>
-        <ul className="mt-4 border-t border-line">
-          {DETAILS.map((d) => (
-            <Row key={d.id} id={d.id} title={d.title} desc={d.desc} open={open === d.id} onToggle={() => toggle(d.id)}>
+        <div className="mt-5">
+          <DetailCards items={DETAILS.map((d) => ({ id: d.id, title: d.title, line: cardLine[d.id] }))} open={DETAILS.some((d) => d.id === open) ? open : null} onOpen={(id) => openSection(id as Sec)} />
+        </div>
+        {DETAILS.filter((d) => d.id === open).map((d) => (
+          <ul key={d.id} className="mt-6 border-t border-line">
+            <Row id={d.id} title={d.title} desc={d.desc} open onToggle={() => toggle(d.id)}>
               <DetailContent id={d.id} a={a} report={report} onConcern={openSection} />
             </Row>
-          ))}
-        </ul>
+          </ul>
+        ))}
       </section>
 
       <section className="mt-16" aria-labelledby="concerns">

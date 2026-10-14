@@ -106,6 +106,10 @@
   --c-shade-3: #62887d;
   --c-shade-4: #86a79d;
   --c-shade-5: #b1c6c0;
+  /* 세부 풀이 카드 — 종이라서 어두운 화면에서도 한지 색 (밝기만 낮춘다) */
+  --card-face: #f6f2e9;
+  --card-back: #ebe4d4;
+  --card-edge: #d8cfbb;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -129,6 +133,9 @@
     --c-shade-3: #62887d;
     --c-shade-4: #466a60;
     --c-shade-5: #33574d;
+    --card-face: #e4ddcf;
+    --card-back: #d6cdb9;
+    --card-edge: #bdb29b;
   }
 }
 
