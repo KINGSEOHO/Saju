@@ -23,6 +23,8 @@ const tmp = path.join(root, 'dist-preview/.build');
 process.env.VITE_SHEET_URL = '';
 process.env.VITE_KAKAO_KEY = '';
 process.env.VITE_PAYWALL_DEMO = paywall ? '1' : '';
+// 미리보기에서는 지난번 결과를 기억해 두었다가 바로 연다 (App.tsx PREVIEW)
+process.env.VITE_PREVIEW = '1';
 
 await build({
   root,

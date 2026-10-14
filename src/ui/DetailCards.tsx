@@ -39,155 +39,142 @@ function InkDefs() {
 /** 붉은 낙관 — 그림 귀퉁이에 작게 */
 const Seal = ({ x, y, s = 9 }: { x: number; y: number; s?: number }) => <rect x={x} y={y} width={s} height={s} rx="1" fill="#a8392c" opacity="0.85" filter="url(#mg-brush)" />;
 
-/** 카드마다의 수묵화 (viewBox 0 0 160 100) */
+/** 카드마다의 수묵화 (viewBox 0 0 160 100) — 그 칸이 하는 일을 떠올리게 하는 사물로 */
+const PAPER = { fill: 'var(--card-face)' };
 const ART: Record<string, ReactNode> = {
-  // 풀이 리포트 — 달 아래 겹친 산 (나를 비추는 거울, 명경지수)
+  // 풀이 리포트 — 나를 비추는 청동 거울(명경), 거울 속에 산과 달
   report: (
     <>
-      <circle cx="116" cy="26" r="11" fill={INK} opacity="0.12" filter="url(#mg-wash)" />
-      <path d="M0 78 Q22 52 40 62 Q56 40 76 58 Q92 46 108 60 Q130 50 160 70 L160 100 L0 100 Z" fill={INK} opacity="0.16" filter="url(#mg-soft)" />
-      <path d="M8 86 Q30 56 48 70 Q60 50 74 66 Q84 60 96 74 L96 100 L8 100 Z" fill={INK} opacity="0.3" filter="url(#mg-soft)" />
-      <path d="M44 70 Q54 56 64 66" stroke={INK} strokeWidth="1.6" fill="none" opacity="0.7" filter="url(#mg-brush)" />
-      <path d="M104 88 L128 88" stroke={INK} strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
-      <path d="M110 86 L116 80 L118 87" stroke={INK} strokeWidth="1" fill="none" opacity="0.5" />
+      <circle cx="80" cy="42" r="30" fill={INK} opacity="0.07" filter="url(#mg-wash)" />
+      <circle cx="80" cy="42" r="30" stroke={INK} strokeWidth="3.2" fill="none" opacity="0.75" filter="url(#mg-brush)" />
+      <circle cx="80" cy="42" r="24" stroke={INK} strokeWidth="0.8" fill="none" opacity="0.35" />
+      <circle cx="91" cy="31" r="4" fill={INK} opacity="0.16" filter="url(#mg-wash)" />
+      <path d="M60 54 Q68 42 75 50 Q83 36 92 48 Q98 44 102 52" stroke={INK} strokeWidth="1.5" fill="none" opacity="0.5" filter="url(#mg-brush)" />
+      <path d="M64 96 L80 72 L96 96" stroke={INK} strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.7" filter="url(#mg-brush)" />
+      <path d="M52 97 L108 97" stroke={INK} strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+      <path d="M80 72 q-3 6 0 12" stroke="#a8392c" strokeWidth="1.6" fill="none" opacity="0.8" />
       <Seal x={142} y={8} />
     </>
   ),
-  // 운의 흐름 — 겹쳐 밀려오는 물결과 해
+  // 운의 흐름 — 차오르는 달 넷과 물결 (달마다·해마다 바뀌는 운)
   luck: (
     <>
-      <circle cx="40" cy="28" r="10" fill="#a8392c" opacity="0.55" filter="url(#mg-wash)" />
-      {[54, 66, 78, 90].map((y, i) => (
-        <path
-          key={y}
-          d={`M-4 ${y} Q20 ${y - 12} 40 ${y} T80 ${y} T120 ${y} T164 ${y}`}
-          stroke={INK}
-          strokeWidth={2.6 - i * 0.4}
-          fill="none"
-          strokeLinecap="round"
-          opacity={0.75 - i * 0.14}
-          filter="url(#mg-brush)"
-        />
+      {[
+        [28, 58, 8],
+        [58, 44, 5],
+        [90, 34, 2.5],
+      ].map(([x, y, d]) => (
+        <g key={x}>
+          <circle cx={x} cy={y} r="9" fill={INK} opacity="0.6" filter="url(#mg-brush)" />
+          <circle cx={x - d} cy={y - 1} r="9" style={PAPER} />
+        </g>
       ))}
-      <path d="M96 52 q6 -10 14 -4" stroke={INK} strokeWidth="1.2" fill="none" opacity="0.6" />
-      <Seal x={142} y={8} />
+      <circle cx="122" cy="28" r="10" fill={INK} opacity="0.12" filter="url(#mg-wash)" />
+      <circle cx="122" cy="28" r="10" stroke={INK} strokeWidth="1.4" fill="none" opacity="0.55" filter="url(#mg-brush)" />
+      {[78, 88].map((y, i) => (
+        <path key={y} d={`M-4 ${y} Q20 ${y - 8} 40 ${y} T80 ${y} T120 ${y} T164 ${y}`} stroke={INK} strokeWidth={2.2 - i * 0.8} fill="none" strokeLinecap="round" opacity={0.6 - i * 0.2} filter="url(#mg-brush)" />
+      ))}
+      <Seal x={142} y={60} />
     </>
   ),
-  // 교차 검증 — 서로 겹치는 세 원상(圓相)
+  // 교차 검증 — 방향을 가리키는 패철(나침반): 여러 체계가 한쪽을 가리키는지
   cross: (
     <>
-      <circle cx="64" cy="48" r="24" stroke={INK} strokeWidth="5" fill="none" opacity="0.7" strokeDasharray="128 22" filter="url(#mg-brush)" />
-      <circle cx="94" cy="48" r="24" stroke={INK} strokeWidth="3" fill="none" opacity="0.45" strokeDasharray="120 30" transform="rotate(70 94 48)" filter="url(#mg-brush)" />
-      <circle cx="79" cy="70" r="22" stroke={INK} strokeWidth="2" fill="none" opacity="0.3" strokeDasharray="110 28" transform="rotate(200 79 70)" filter="url(#mg-brush)" />
-      <circle cx="79" cy="56" r="5" fill="#a8392c" opacity="0.6" filter="url(#mg-wash)" />
+      <circle cx="80" cy="50" r="38" fill={INK} opacity="0.06" filter="url(#mg-wash)" />
+      <circle cx="80" cy="50" r="38" stroke={INK} strokeWidth="2.6" fill="none" opacity="0.7" filter="url(#mg-brush)" />
+      <circle cx="80" cy="50" r="28" stroke={INK} strokeWidth="0.8" fill="none" opacity="0.4" />
+      <circle cx="80" cy="50" r="18" stroke={INK} strokeWidth="0.8" fill="none" opacity="0.4" />
+      {Array.from({ length: 24 }, (_, i) => i * 15).map((deg) => (
+        <path key={deg} d="M80 14 L80 19" stroke={INK} strokeWidth={deg % 90 ? 0.8 : 1.6} opacity="0.55" transform={`rotate(${deg} 80 50)`} />
+      ))}
+      <g transform="rotate(35 80 50)">
+        <path d="M80 26 L84 50 L76 50 Z" fill="#a8392c" opacity="0.85" />
+        <path d="M80 74 L84 50 L76 50 Z" fill={INK} opacity="0.75" />
+      </g>
+      <circle cx="80" cy="50" r="2.4" fill={INK} />
       <Seal x={142} y={8} />
     </>
   ),
-  // MBTI × 사주 — 매화 가지 (겉으로 핀 꽃과 속의 가지)
+  // MBTI × 사주 — 물 위의 산과 물에 비친 산 (겉으로 보이는 나와 속의 나)
   mbti: (
     <>
-      <path d="M6 96 Q34 70 52 74 Q70 78 84 56 Q96 38 128 30" stroke={INK} strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.8" filter="url(#mg-brush)" />
-      <path d="M84 56 Q100 62 116 58" stroke={INK} strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.7" filter="url(#mg-brush)" />
-      <path d="M52 74 Q56 58 70 50" stroke={INK} strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.6" filter="url(#mg-brush)" />
-      {[
-        [128, 30],
-        [116, 57],
-        [70, 49],
-        [100, 41],
-        [140, 24],
-      ].map(([x, y], i) => (
-        <g key={i} opacity={i % 2 ? 0.55 : 0.8}>
-          {[0, 72, 144, 216, 288].map((r) => (
-            <circle key={r} cx={x + 3.2 * Math.cos((r * Math.PI) / 180)} cy={y + 3.2 * Math.sin((r * Math.PI) / 180)} r="2.4" fill="#b0463a" opacity="0.55" />
-          ))}
-          <circle cx={x} cy={y} r="1" fill={INK} />
-        </g>
+      <path d="M14 56 Q32 30 50 42 Q62 18 82 36 Q98 26 114 42 Q130 34 148 56 Z" fill={INK} opacity="0.5" filter="url(#mg-soft)" />
+      <path d="M14 60 Q32 86 50 74 Q62 98 82 80 Q98 90 114 74 Q130 82 148 60 Z" fill={INK} opacity="0.14" filter="url(#mg-soft)" />
+      <path d="M6 58 L154 58" stroke={INK} strokeWidth="1.6" opacity="0.6" filter="url(#mg-brush)" />
+      {[66, 74, 82].map((y, i) => (
+        <path key={y} d={`M${30 + i * 18} ${y} q10 -2 20 0`} stroke={INK} strokeWidth="0.9" fill="none" opacity="0.35" />
       ))}
-      <Seal x={8} y={8} />
+      <Seal x={142} y={8} />
     </>
   ),
-  // 지금 하는 일과 나 — 곧게 자라는 대나무
+  // 지금 하는 일과 나 — 벼루 위에 놓인 붓 (지금 손에 쥔 일)
   job: (
     <>
-      {[
-        [58, 0.8, 4],
-        [80, 0.45, 3],
-      ].map(([x, o, w]) => (
-        <g key={x} opacity={o} filter="url(#mg-brush)">
-          {[0, 1, 2, 3].map((k) => (
-            <rect key={k} x={x - w / 2} y={6 + k * 24} width={w} height={21} rx="1.2" fill={INK} />
-          ))}
-        </g>
-      ))}
-      {[
-        'M60 30 q22 -8 40 -4 q-20 6 -40 4',
-        'M60 31 q18 8 34 22 q-20 -10 -34 -22',
-        'M82 54 q22 -4 38 4 q-22 0 -38 -4',
-        'M58 54 q-20 -6 -36 -2 q18 4 36 2',
-        'M82 78 q16 6 26 18 q-16 -10 -26 -18',
-      ].map((d, i) => (
-        <path key={i} d={d} fill={INK} opacity={0.75 - (i % 3) * 0.15} filter="url(#mg-brush)" />
-      ))}
+      <path d="M26 70 Q26 62 36 62 L100 62 Q110 62 110 70 L110 84 Q110 92 100 92 L36 92 Q26 92 26 84 Z" fill={INK} opacity="0.28" filter="url(#mg-soft)" />
+      <ellipse cx="48" cy="76" rx="13" ry="7" fill={INK} opacity="0.85" filter="url(#mg-brush)" />
+      <path d="M44 30 L124 54" stroke="#5c4a36" strokeWidth="4" strokeLinecap="round" opacity="0.85" filter="url(#mg-brush)" />
+      <path d="M44 30 L38 28" stroke="#a8392c" strokeWidth="2" strokeLinecap="round" />
+      <path d="M122 50 Q138 54 150 66 Q136 64 120 58 Z" fill={INK} opacity="0.9" filter="url(#mg-brush)" />
+      <path d="M118 82 q10 -8 22 -2" stroke={INK} strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5" filter="url(#mg-brush)" />
       <Seal x={142} y={8} />
     </>
   ),
-  // 인생 웹툰 — 펼친 쥘부채
+  // 인생 웹툰 — 네 칸으로 나뉜 두루마리 (네 편의 이야기)
   webtoon: (
     <>
-      <g transform="translate(80 92)">
-        {Array.from({ length: 9 }, (_, i) => -64 + i * 16).map((deg) => (
-          <path key={deg} d="M0 0 L0 -74" stroke={INK} strokeWidth="1.1" opacity="0.5" transform={`rotate(${deg})`} />
-        ))}
-        <path d="M-66 -38 A76 76 0 0 1 66 -38 L30 -16 A36 36 0 0 0 -30 -16 Z" fill={INK} opacity="0.1" filter="url(#mg-wash)" />
-        <path d="M-66 -38 A76 76 0 0 1 66 -38" stroke={INK} strokeWidth="2.4" fill="none" opacity="0.7" filter="url(#mg-brush)" />
-        <path d="M-40 -50 Q-20 -64 0 -54 Q18 -46 36 -58" stroke={INK} strokeWidth="2" fill="none" opacity="0.55" filter="url(#mg-brush)" />
-        <circle cx="0" cy="0" r="2.4" fill="#a8392c" />
-      </g>
-      <Seal x={142} y={8} />
+      <rect x="18" y="26" width="124" height="48" fill="#fbf8f1" stroke={INK} strokeOpacity="0.3" strokeWidth="0.8" />
+      {[49, 80, 111].map((x) => (
+        <path key={x} d={`M${x} 30 L${x} 70`} stroke={INK} strokeWidth="0.8" opacity="0.35" />
+      ))}
+      <circle cx="33" cy="42" r="5" fill={INK} opacity="0.2" filter="url(#mg-wash)" />
+      <path d="M22 66 Q30 54 38 62 Q42 58 46 64" stroke={INK} strokeWidth="1.4" fill="none" opacity="0.6" filter="url(#mg-brush)" />
+      <path d="M58 64 L66 46 L74 64" stroke={INK} strokeWidth="1.6" fill="none" opacity="0.6" filter="url(#mg-brush)" />
+      <path d="M86 56 q6 -6 12 0 t12 0" stroke={INK} strokeWidth="1.4" fill="none" opacity="0.6" filter="url(#mg-brush)" />
+      <circle cx="126" cy="50" r="7" fill="#a8392c" opacity="0.55" filter="url(#mg-wash)" />
+      {[12, 142].map((x) => (
+        <rect key={x} x={x} y="20" width="6" height="60" rx="3" fill={INK} opacity="0.7" filter="url(#mg-brush)" />
+      ))}
+      <Seal x={142} y={86} s={8} />
     </>
   ),
-  // 만세력 — 별자리와 해·달의 길 (천문)
+  // 만세력 — 펼친 책력, 간지가 세로로 적힌 장
   chart: (
     <>
-      <circle cx="80" cy="52" r="34" stroke={INK} strokeWidth="1.2" fill="none" opacity="0.4" />
-      <ellipse cx="80" cy="52" rx="44" ry="14" stroke={INK} strokeWidth="2" fill="none" opacity="0.55" transform="rotate(-18 80 52)" filter="url(#mg-brush)" />
-      {Array.from({ length: 24 }, (_, i) => i * 15).map((deg) => (
-        <path key={deg} d="M80 18 L80 22" stroke={INK} strokeWidth="1" opacity="0.5" transform={`rotate(${deg} 80 52)`} />
+      <path d="M80 20 Q56 14 24 20 L24 86 Q56 80 80 86 Z" fill="#fbf8f1" stroke={INK} strokeOpacity="0.45" strokeWidth="1" />
+      <path d="M80 20 Q104 14 136 20 L136 86 Q104 80 80 86 Z" fill="#fbf8f1" stroke={INK} strokeOpacity="0.45" strokeWidth="1" />
+      <path d="M80 20 L80 86" stroke={INK} strokeWidth="1.4" opacity="0.6" />
+      {['甲子', '乙丑', '丙寅'].map((t, i) => (
+        <text key={t} x={66 - i * 16} y={34} fontSize="9" fill={INK} opacity="0.75" style={{ fontFamily: 'var(--font-hanja)', writingMode: 'vertical-rl' }}>
+          {t}
+        </text>
       ))}
-      {[
-        [60, 40],
-        [70, 34],
-        [84, 38],
-        [96, 30],
-        [104, 44],
-      ].map(([x, y], i, all) => (
-        <g key={i}>
-          {i > 0 && <line x1={all[i - 1][0]} y1={all[i - 1][1]} x2={x} y2={y} stroke={INK} strokeWidth="0.8" opacity="0.4" />}
-          <circle cx={x} cy={y} r="2" fill={INK} opacity="0.8" />
-        </g>
+      {['丁卯', '戊辰', '己巳'].map((t, i) => (
+        <text key={t} x={126 - i * 16} y={34} fontSize="9" fill={INK} opacity="0.75" style={{ fontFamily: 'var(--font-hanja)', writingMode: 'vertical-rl' }}>
+          {t}
+        </text>
       ))}
-      <circle cx="80" cy="52" r="4" fill="#a8392c" opacity="0.7" filter="url(#mg-wash)" />
-      <Seal x={142} y={8} />
+      <rect x="112" y="68" width="10" height="10" rx="1" fill="#a8392c" opacity="0.8" filter="url(#mg-brush)" />
     </>
   ),
-  // 전문 분석 — 다섯 기운, 농담이 다른 먹점 다섯
+  // 전문 분석 — 다섯 기운: 나무 · 불 · 흙 · 쇠(엽전) · 물이 한 바퀴로 이어진다
   detail: (
     <>
-      {[
-        [80, 22, 0.85, 9],
-        [110, 44, 0.6, 8],
-        [99, 78, 0.4, 7],
-        [61, 78, 0.25, 7],
-        [50, 44, 0.5, 8],
-      ].map(([x, y, o, r], i, all) => {
-        const [nx, ny] = all[(i + 1) % 5];
-        return (
-          <g key={i}>
-            <line x1={x} y1={y} x2={nx} y2={ny} stroke={INK} strokeWidth="0.7" opacity="0.25" />
-            <circle cx={x} cy={y} r={r} fill={INK} opacity={o} filter="url(#mg-soft)" />
-          </g>
-        );
-      })}
+      <circle cx="80" cy="52" r="32" stroke={INK} strokeWidth="0.8" fill="none" opacity="0.3" strokeDasharray="3 4" />
+      {/* 나무 */}
+      <g transform="translate(80 20)" opacity="0.8" filter="url(#mg-brush)">
+        <path d="M0 10 L0 -8 M0 -2 L-6 -8 M0 2 L6 -5" stroke={INK} strokeWidth="2" strokeLinecap="round" fill="none" />
+      </g>
+      {/* 불 */}
+      <path d="M112 50 Q104 40 112 28 Q114 36 120 38 Q124 46 118 52 Q114 54 112 50 Z" fill="#a8392c" opacity="0.7" filter="url(#mg-brush)" />
+      {/* 흙 — 산 */}
+      <path d="M90 90 L100 74 L110 90 Z" fill={INK} opacity="0.55" filter="url(#mg-soft)" />
+      {/* 쇠 — 엽전 */}
+      <g transform="translate(58 82)">
+        <circle r="8" stroke={INK} strokeWidth="2" fill="none" opacity="0.7" filter="url(#mg-brush)" />
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="none" stroke={INK} strokeWidth="1.2" opacity="0.7" />
+      </g>
+      {/* 물 — 물방울 */}
+      <path d="M46 34 Q40 44 40 48 Q40 54 46 54 Q52 54 52 48 Q52 44 46 34 Z" fill={INK} opacity="0.35" filter="url(#mg-soft)" />
       <Seal x={142} y={8} />
     </>
   ),

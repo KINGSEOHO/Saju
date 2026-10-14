@@ -90,8 +90,31 @@ function parseRoute(): Route {
   return { name: 'home' };
 }
 
+/**
+ * 미리보기(Claude 앱에 띄우는 시안) 전용 — 지난번에 본 결과를 이 기기에 기억해 두었다가, 열자마자 그 결과로 바로 간다.
+ * 매번 생년월일을 다시 넣지 않아도 되게. 실제 사이트에서는 쓰지 않는다 (VITE_PREVIEW는 scripts/preview-artifact.mjs만 켠다).
+ */
+const PREVIEW = import.meta.env.VITE_PREVIEW === '1';
+const LAST_RESULT = 'mg_preview_last';
+if (PREVIEW) {
+  try {
+    const last = localStorage.getItem(LAST_RESULT);
+    if (last && /^#?\/?$/.test(window.location.hash)) window.history.replaceState(null, '', last);
+  } catch {
+    /* 저장이 막힌 화면에서는 처음부터 */
+  }
+}
+
 export default function App() {
   const [route, setRoute] = useState<Route>(parseRoute);
+  useEffect(() => {
+    if (!PREVIEW || route.name !== 'result') return;
+    try {
+      localStorage.setItem(LAST_RESULT, window.location.hash);
+    } catch {
+      /* noop */
+    }
+  }, [route]);
   useEffect(() => {
     const on = () => setRoute(parseRoute());
     window.addEventListener('hashchange', on);
