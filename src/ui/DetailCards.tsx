@@ -1,9 +1,10 @@
 /**
  * 세부 풀이 카드 — 처음에는 모두 뒷면(한지에 구름 무늬와 明鏡 낙관)으로 놓여 있고,
- * 누르면 뒤집혀 앞면(수묵 그림 · 이름 · 내 사주로 쓴 한 줄)이 나온다. 앞면의 '풀이 보기'를 누르면 아래에 세부 풀이가 펼쳐진다.
+ * 누르면 뒤집혀 앞면(수묵 그림 · 이름 · 내 사주로 쓴 한 줄)이 나온다. 앞면을 누르면 아래에서 풀이 창이 올라온다.
+ * 카드는 한 줄로 놓여 옆으로 넘기고(다음 카드가 살짝 보이게), 아래 화살표로도 넘긴다.
  * 그림은 붓 자국·먹 번짐·여백으로만 그린 수묵화 풍. 카드는 종이라서 어두운 화면에서도 한지 색을 쓴다(조금 낮춘 밝기).
  */
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 
 export interface CardItem {
   id: string;
@@ -210,58 +211,105 @@ function Back({ title }: { title: string }) {
   );
 }
 
-export function DetailCards({ items, open, onOpen }: { items: CardItem[]; open: string | null; onOpen: (id: string) => void }) {
+export function DetailCards({ items, onOpen }: { items: CardItem[]; onOpen: (id: string) => void }) {
   const [shown, setShown] = useState<Set<string>>(() => new Set());
+  const [at, setAt] = useState(0);
+  const rail = useRef<HTMLUListElement>(null);
   const flip = (id: string) => setShown((s) => new Set(s).add(id));
-  const all = items.every((x) => shown.has(x.id) || x.id === open);
+  const all = items.every((x) => shown.has(x.id));
+  /** 카드 한 장(+간격)의 폭 */
+  const step = () => {
+    const el = rail.current;
+    const li = el?.children[1] as HTMLElement | undefined;
+    const first = el?.children[0] as HTMLElement | undefined;
+    return li && first ? li.offsetLeft - first.offsetLeft : (el?.clientWidth ?? 1);
+  };
+  const go = (n: number) => {
+    const i = Math.max(0, Math.min(items.length - 1, n));
+    rail.current?.scrollTo({ left: i * step(), behavior: 'smooth' });
+  };
   return (
     <div>
       <InkDefs />
-      <ul className="grid grid-cols-2 gap-3" data-cards>
-        {items.map((x) => {
-          const up = shown.has(x.id) || open === x.id;
+      <ul
+        ref={rail}
+        data-cards
+        className="no-scrollbar -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-1"
+        onScroll={(e) => setAt(Math.round(e.currentTarget.scrollLeft / step()))}
+        aria-label="세부 풀이 카드 — 옆으로 넘겨 보세요"
+      >
+        {items.map((x, i) => {
+          const up = shown.has(x.id);
           return (
-            <li key={x.id} className="aspect-[3/4.3]" style={{ perspective: '1000px' }}>
+            <li key={x.id} className="aspect-[3/4] w-[70%] max-w-[270px] shrink-0 snap-start" style={{ perspective: '1000px' }} aria-label={`${i + 1} / ${items.length}`}>
               <div className="relative h-full w-full transition-transform duration-500 motion-reduce:transition-none" style={{ transformStyle: 'preserve-3d', transform: up ? 'rotateY(180deg)' : 'none' }}>
-                <button type="button" className="absolute inset-0 rounded-2xl text-left" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }} onClick={() => flip(x.id)} aria-label={`${x.title} 카드 뒤집기`} tabIndex={up ? -1 : 0} aria-hidden={up}>
+                <button type="button" className="absolute inset-0 rounded-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }} onClick={() => flip(x.id)} aria-label={`${x.title} 카드 뒤집기`} tabIndex={up ? -1 : 0} aria-hidden={up}>
                   <Back title={x.title} />
                 </button>
-                <div
-                  className={`absolute inset-0 flex flex-col overflow-hidden rounded-2xl border ${open === x.id ? 'ring-2 ring-accent' : ''}`}
-                  style={{ background: 'var(--card-face)', borderColor: 'var(--card-edge)', transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                <button
+                  type="button"
+                  tabIndex={up ? 0 : -1}
                   aria-hidden={!up}
+                  onClick={() => onOpen(x.id)}
+                  aria-label={`${x.title} 풀이 보기`}
+                  className="absolute inset-0 flex flex-col items-center overflow-hidden rounded-2xl border text-center"
+                  style={{ background: 'var(--card-face)', borderColor: 'var(--card-edge)', transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
                 >
                   <svg viewBox="0 0 160 100" className="w-full shrink-0" role="img" aria-label={`${x.title} 그림`}>
                     {ART[x.id]}
                   </svg>
-                  <div className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-                    <p className="text-ui font-bold" style={{ color: INK }}>
+                  <span className="flex min-h-0 flex-1 flex-col items-center px-4 pt-1 pb-4">
+                    <span className="text-title3 font-bold" style={{ color: INK }}>
                       {x.title}
-                    </p>
-                    <p className="mt-1 line-clamp-3 text-cap leading-snug" style={{ color: '#4a463e' }}>
+                    </span>
+                    <span className="mt-1.5 line-clamp-3 text-label leading-snug" style={{ color: '#4a463e' }}>
                       {x.line}
-                    </p>
-                    <button
-                      type="button"
-                      tabIndex={up ? 0 : -1}
-                      onClick={() => onOpen(x.id)}
-                      className="mt-auto h-9 rounded-lg text-label font-semibold"
-                      style={{ background: open === x.id ? 'transparent' : INK, color: open === x.id ? INK : '#f4efe4', border: `1px solid ${INK}` }}
-                    >
-                      {open === x.id ? '아래에 펼쳤어요' : '풀이 보기'}
-                    </button>
-                  </div>
-                </div>
+                    </span>
+                    <span className="mt-auto inline-flex items-center gap-2 text-label font-semibold" style={{ color: INK }}>
+                      풀이 보기
+                      <span className="flex size-7 items-center justify-center rounded-full" style={{ background: INK, color: '#f4efe4' }} aria-hidden>
+                        <svg viewBox="0 0 12 12" className="size-3">
+                          <path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                    </span>
+                  </span>
+                </button>
               </div>
             </li>
           );
         })}
       </ul>
+      <div className="mt-4 flex items-center justify-center gap-4">
+        <Arrow dir={-1} disabled={at <= 0} onClick={() => go(at - 1)} />
+        <span className="w-12 text-center text-cap text-sub tabular-nums" aria-live="polite">
+          {Math.min(at, items.length - 1) + 1} / {items.length}
+        </span>
+        <Arrow dir={1} disabled={at >= items.length - 1} onClick={() => go(at + 1)} />
+      </div>
       {!all && (
-        <button type="button" className="link mt-4 text-label" onClick={() => setShown(new Set(items.map((x) => x.id)))}>
-          카드 모두 뒤집기
-        </button>
+        <div className="mt-3 text-center">
+          <button type="button" className="link text-label" onClick={() => setShown(new Set(items.map((x) => x.id)))}>
+            카드 모두 뒤집기
+          </button>
+        </div>
       )}
     </div>
+  );
+}
+
+function Arrow({ dir, disabled, onClick }: { dir: 1 | -1; disabled: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir < 0 ? '이전 카드' : '다음 카드'}
+      className="flex size-9 items-center justify-center rounded-full bg-fill text-ink transition-opacity disabled:opacity-35"
+    >
+      <svg viewBox="0 0 12 12" className="size-3" aria-hidden>
+        <path d={dir < 0 ? 'M7.5 2L3.5 6l4 4' : 'M4.5 2l4 4-4 4'} stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
   );
 }

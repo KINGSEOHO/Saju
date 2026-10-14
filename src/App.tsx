@@ -22,6 +22,7 @@ import { ElementStrip } from './ui/Charts.tsx';
 import { BottomBar, Chevron, Disclosure, Gloss, GLOSSARY, Lead, Term } from './ui/common.tsx';
 import { ConcernBridge } from './ui/ConcernBridge.tsx';
 import { DetailCards } from './ui/DetailCards.tsx';
+import { popSheetState, pushSheetState, Sheet } from './ui/Sheet.tsx';
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx';
 import { Faq } from './ui/Faq.tsx';
 import { ReviewForm } from './ui/Feedback.tsx';
@@ -266,12 +267,12 @@ type RowId = Sec | ConcernId;
 const DETAILS: { id: Sec; title: string; desc: string }[] = [
   { id: 'report', title: '풀이 리포트', desc: '나는 어떤 사람인지 — 성향 · 연애 · 일 · 돈 · 건강' },
   { id: 'luck', title: '운의 흐름', desc: '이번 달 · 올해 · 10년 대운' },
-  { id: 'cross', title: '교차 검증', desc: '사주·운·띠·MBTI·직업이 함께 가리키는 것' },
+  { id: 'webtoon', title: '인생 웹툰', desc: '내 사주로 그린 개그 웹툰 4화' },
   { id: 'mbti', title: 'MBTI × 사주', desc: '겉(MBTI)과 속(사주)이 같은 점과 다른 점' },
   { id: 'job', title: '지금 하는 일과 나', desc: '지금 하는 일과의 궁합, 지금 준비할 것' },
-  { id: 'webtoon', title: '인생 웹툰', desc: '내 사주로 그린 개그 웹툰 4화' },
-  { id: 'chart', title: '만세력', desc: '원국 상세표 · 시간 보정 내역 · 용어 사전' },
+  { id: 'cross', title: '교차 검증', desc: '사주·운·띠·MBTI·직업이 함께 가리키는 것' },
   { id: 'detail', title: '전문 분석', desc: '다섯 기운 · 힘의 세기 · 필요한 기운 · 신살' },
+  { id: 'chart', title: '만세력', desc: '원국 상세표 · 시간 보정 내역 · 용어 사전' },
 ];
 
 function Loading({ children }: { children: ReactNode }) {
@@ -367,13 +368,13 @@ function Row({ id, title, desc, open, onToggle, children }: { id: RowId; title: 
   );
 }
 
-/** 결론 바로 아래의 고민 리포트 지름길 — 누르면 아래 고민 리포트 칸에서 그 고민이 열리고 그 자리로 간다 */
+/** 이번 달 운세 아래의 고민 리포트 지름길 — 누르면 아래 고민 리포트 칸에서 그 고민이 열리고 그 자리로 간다 */
 function ConcernShortcuts({ a, onPick }: { a: SajuAnalysis; onPick: (id: ConcernId) => void }) {
   const season = seasonOf(a);
   return (
-    <nav className="no-print mt-6" aria-label="고민 리포트 바로 가기">
-      <p className="text-label font-semibold text-ink">지금 고민이 있다면</p>
-      <div className="mt-2.5 flex flex-wrap gap-2">
+    <nav className="no-print mt-10" aria-label="고민 리포트 바로 가기">
+      <p className="text-center text-label font-semibold text-ink">지금 고민이 있다면</p>
+      <div className="mt-2.5 flex flex-wrap justify-center gap-2">
         {concernsFor(a).map((c) => {
           const hero = c.id === 'year' && season.newYear;
           return (
@@ -392,14 +393,6 @@ function ConcernShortcuts({ a, onPick }: { a: SajuAnalysis; onPick: (id: Concern
   );
 }
 
-/** 고민 리포트 칸 제목으로 (머리말 아래로) */
-function scrollToConcerns() {
-  const el = document.getElementById('concerns');
-  if (!el) return;
-  const head = document.querySelector<HTMLElement>('[data-sticky-head]')?.offsetHeight ?? 56;
-  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - head - 16, behavior: 'smooth' });
-}
-
 function Result({ input }: { input: BirthInput }) {
   const [now] = useState(() => Date.now());
   const result = useMemo((): { a: SajuAnalysis } | { error: string } => {
@@ -411,6 +404,8 @@ function Result({ input }: { input: BirthInput }) {
   }, [input, now]);
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState<RowId | null>(null);
+  /** 아래에서 올라온 풀이 창에 띄운 세부 풀이 */
+  const [sheet, setSheet] = useState<Sec | null>(null);
   const [jump, setJump] = useState<{ id: RowId; n: number } | null>(null);
 
   useEffect(() => {
@@ -458,9 +453,21 @@ function Result({ input }: { input: BirthInput }) {
     setOpen((cur) => (cur === id ? null : id));
     setJump({ id, n: Date.now() });
   };
+  // 세부 풀이는 아래에서 올라오는 창으로, 고민 리포트는 아래 칸에서 펼친다
   const openSection = (id: RowId) => {
-    setOpen(id);
-    setJump({ id, n: Date.now() });
+    if (DETAILS.some((d) => d.id === id)) {
+      pushSheetState();
+      setSheet(id as Sec);
+      return;
+    }
+    const go = () => {
+      setSheet(null);
+      setOpen(id);
+      setJump({ id, n: Date.now() });
+    };
+    // 풀이 창에서 고민 리포트로 넘어갈 때는 창의 기록을 걷은 뒤(스크롤 복원이 끝난 뒤) 옮긴다
+    if (popSheetState()) window.addEventListener('popstate', () => requestAnimationFrame(go), { once: true });
+    else go();
   };
   const edit = () => {
     saveDraft(inputToDraft(input));
@@ -533,53 +540,19 @@ function Result({ input }: { input: BirthInput }) {
         </div>
       </div>
 
-      <section className="pt-8" aria-labelledby="conclusion">
+      <section className="pt-10 text-center" aria-labelledby="conclusion">
         <p className="kicker">{input.name ? `${input.name}님의 사주` : '사주로 본 나'}</p>
         <h1 id="conclusion" className="mt-2 text-display text-ink">
           {cross.card.headline}
         </h1>
-        <p className="mt-3 font-serif text-read text-sub">{cross.card.subline}</p>
+        <p className="mx-auto mt-3 max-w-[30em] font-serif text-read text-sub">{cross.card.subline}</p>
         <button type="button" className="link no-print mt-3 text-label" onClick={() => openSection('cross')}>
           이 결론의 근거 보기
         </button>
       </section>
 
-      <ConcernShortcuts a={a} onPick={openSection} />
-
-      <div className="mt-10">
-        <PillarTable a={a} />
-      </div>
-
-      <section className="mt-10" aria-labelledby="elements-strip">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 id="elements-strip" className="font-sans text-label font-semibold text-ink">
-            다섯 기운의 세기
-          </h2>
-          <span className="text-micro text-sub">태어난 계절과 숨은 기운까지 반영</span>
-        </div>
-        <div className="mt-4">
-          <ElementStrip percent={a.elements.percent} me={STEMS[p.day.stem].element} />
-        </div>
-      </section>
-
-      <dl className="mt-8 border-t border-line">
-        {facts.map((f) => (
-          <div key={f.label} className="flex items-baseline justify-between gap-4 border-b border-line py-3.5">
-            <dt className="text-label text-sub">{f.label}</dt>
-            <dd className="text-right">
-              <div className="font-serif text-[17px] font-bold text-ink">{f.value}</div>
-              {f.sub && (
-                <div className="mt-0.5 text-micro text-sub">
-                  <Term t={f.term}>{f.sub}</Term>
-                </div>
-              )}
-            </dd>
-          </div>
-        ))}
-      </dl>
-
       {a.warnings.some((w) => w.kind !== 'unknownTime') && (
-        <div className="mt-6 border-l-2 border-ink pl-4">
+        <div className="mt-8 border-l-2 border-ink pl-4">
           <p className="text-label font-semibold text-ink">태어난 시각이 경계에 가까워요</p>
           <p className="mt-1 text-label text-sub">계산 기준에 따라 사주가 달라질 수 있어요.</p>
           <button type="button" className="link no-print mt-1 text-label" onClick={() => openSection('chart')}>
@@ -590,10 +563,20 @@ function Result({ input }: { input: BirthInput }) {
 
       <HitsCard key={encodeInput(input)} a={a} />
 
+      <section className="mt-14" aria-labelledby="details">
+        <h2 id="details" className="text-center text-title2 text-ink">
+          카드를 넘기며 나를 읽어 보세요
+        </h2>
+        <p className="mt-1 text-center text-label text-sub">한 번 누르면 뒤집히고, 한 번 더 누르면 풀이가 열려요.</p>
+        <div className="mt-6">
+          <DetailCards items={DETAILS.map((d) => ({ id: d.id, title: d.title, line: cardLine[d.id] }))} onOpen={(id) => openSection(id as Sec)} />
+        </div>
+      </section>
+
       {(strengths.length > 0 || weaknesses.length > 0) && (
         <>
           <section className="mt-14">
-            <h2 className="text-title2 text-ink">이런 점이 강해요</h2>
+            <h2 className="text-center text-title2 text-ink">이런 점이 강해요</h2>
             <ol className="mt-5 space-y-5">
               {strengths.slice(0, 3).map((s, i) => (
                 <li key={i} className="flex gap-4">
@@ -606,7 +589,7 @@ function Result({ input }: { input: BirthInput }) {
             </ol>
           </section>
           <section className="mt-12">
-            <h2 className="text-title2 text-ink">이런 점은 조심하세요</h2>
+            <h2 className="text-center text-title2 text-ink">이런 점은 조심하세요</h2>
             <ol className="mt-5 space-y-5">
               {weaknesses.slice(0, 3).map((s, i) => (
                 <li key={i} className="flex gap-4">
@@ -648,36 +631,52 @@ function Result({ input }: { input: BirthInput }) {
         </section>
       )}
 
-      <ShareSection a={a} d={shareData} />
+      <ConcernShortcuts a={a} onPick={openSection} />
 
-      <section className="mt-16" aria-labelledby="details">
-        <h2 id="details" className="text-title2 text-ink">
-          세부 풀이
+      <section className="mt-16" aria-labelledby="board">
+        <h2 id="board" className="text-center text-title2 text-ink">
+          내 사주 원판
         </h2>
-        <p className="mt-1 text-label text-sub">
-          카드를 눌러 뒤집으면 내 사주로 쓴 한 줄이 나와요. ‘풀이 보기’를 누르면 아래에 펼쳐져요. 고민이 있다면{' '}
-          <button type="button" className="link no-print" onClick={scrollToConcerns}>
-            고민 리포트로 바로 가기
-          </button>
-        </p>
-        <div className="mt-5">
-          <DetailCards items={DETAILS.map((d) => ({ id: d.id, title: d.title, line: cardLine[d.id] }))} open={DETAILS.some((d) => d.id === open) ? open : null} onOpen={(id) => openSection(id as Sec)} />
+        <p className="mt-1 text-center text-label text-sub">위의 풀이가 나온 바탕이에요. 태어난 해·달·날·시의 여덟 글자와 다섯 기운의 세기예요.</p>
+        <div className="mt-6">
+          <PillarTable a={a} />
         </div>
-        {DETAILS.filter((d) => d.id === open).map((d) => (
-          <ul key={d.id} className="mt-6 border-t border-line">
-            <Row id={d.id} title={d.title} desc={d.desc} open onToggle={() => toggle(d.id)}>
-              <DetailContent id={d.id} a={a} report={report} onConcern={openSection} />
-            </Row>
-          </ul>
-        ))}
+
+        <div className="mt-8">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="font-sans text-label font-semibold text-ink">다섯 기운의 세기</h3>
+            <span className="text-micro text-sub">태어난 계절과 숨은 기운까지 반영</span>
+          </div>
+          <div className="mt-4">
+            <ElementStrip percent={a.elements.percent} me={STEMS[p.day.stem].element} />
+          </div>
+        </div>
+
+        <dl className="mt-8 border-t border-line">
+          {facts.map((f) => (
+            <div key={f.label} className="flex items-baseline justify-between gap-4 border-b border-line py-3.5">
+              <dt className="text-label text-sub">{f.label}</dt>
+              <dd className="text-right">
+                <div className="font-serif text-[17px] font-bold text-ink">{f.value}</div>
+                {f.sub && (
+                  <div className="mt-0.5 text-micro text-sub">
+                    <Term t={f.term}>{f.sub}</Term>
+                  </div>
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
+      <ShareSection a={a} d={shareData} />
+
       <section className="mt-16" aria-labelledby="concerns">
-        <p className="kicker">고민 리포트</p>
-        <h2 id="concerns" className="mt-2 text-title2 text-ink">
+        <p className="kicker text-center">고민 리포트</p>
+        <h2 id="concerns" className="mt-2 text-center text-title2 text-ink">
           지금 어떤 고민이 있어요?
         </h2>
-        <p className="mt-1 text-label text-sub">세부 풀이가 ‘나는 어떤 사람인지’라면, 고민 리포트는 ‘그래서 언제, 어떻게’를 알려 드려요.</p>
+        <p className="mt-1 text-center text-label text-sub">세부 풀이가 ‘나는 어떤 사람인지’라면, 고민 리포트는 ‘그래서 언제, 어떻게’를 알려 드려요.</p>
         {/* 지금은 베타라 산 기록이 없어 시안에서만 보인다. 결제를 붙이면 산 것이 있을 때 늘 보이게 바꾼다 */}
         {PAYWALL_DEMO && (
           <div className="mt-5">
@@ -696,6 +695,13 @@ function Result({ input }: { input: BirthInput }) {
       </section>
 
       <ReviewForm a={a} />
+      {DETAILS.filter((d) => d.id === sheet).map((d) => (
+        <Sheet key={d.id} kicker="세부 풀이" title={d.title} onClose={() => popSheetState() || setSheet(null)} onGone={() => setSheet(null)}>
+          <ErrorBoundary inline resetKey={d.id}>
+            <DetailContent id={d.id} a={a} report={report} onConcern={openSection} />
+          </ErrorBoundary>
+        </Sheet>
+      ))}
     </div>
   );
 }

@@ -76,11 +76,11 @@ export function HitsCard({ a }: { a: SajuAnalysis }) {
 
   return (
     <section className="no-print mt-14" aria-labelledby="hits-title">
-      <p className="kicker">명경이가 맞혀 볼게요</p>
-      <h2 id="hits-title" className="mt-1 text-title2 text-ink">
+      <p className="kicker text-center">명경이가 맞혀 볼게요</p>
+      <h2 id="hits-title" className="mt-1 text-center text-title2 text-ink">
         사주만 보고, 평소의 당신을 맞혀 볼게요
       </h2>
-      <p className="mt-1 text-label text-sub">답하면 왜 그렇게 봤는지 알려 드려요.</p>
+      <p className="mt-1 text-center text-label text-sub">답하면 왜 그렇게 봤는지 알려 드려요.</p>
 
       <div className="mt-5 flex gap-1" aria-hidden>
         {hits.map((x, i) => (

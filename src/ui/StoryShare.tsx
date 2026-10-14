@@ -484,10 +484,10 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
   return (
     <section className="no-print mt-14" aria-labelledby="share-title">
       <CastArt a={a} refEl={castRef} />
-      <h2 id="share-title" className="text-title2 text-ink">
+      <h2 id="share-title" className="text-center text-title2 text-ink">
         친구에게 자랑하기
       </h2>
-      <p className="mt-1 text-label text-sub">명경이가 털어 본 내 사주를 한 장으로 만들어 드려요. 생년월일과 시간은 넣지 않아요.</p>
+      <p className="mt-1 text-center text-label text-sub">명경이가 털어 본 내 사주를 한 장으로 만들어 드려요. 생년월일과 시간은 넣지 않아요.</p>
       <ShareButtons kit={kit} />
     </section>
   );

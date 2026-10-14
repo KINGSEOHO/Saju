@@ -64,6 +64,13 @@ export function stickyHeight(): number {
 /** 요소의 시작이 머리말 바로 아래에 오도록 부드럽게 스크롤 */
 export function scrollToStart(el: HTMLElement | null | undefined, gap = 12) {
   if (!el) return;
+  // 아래에서 올라오는 풀이 창 안이면 그 창을 스크롤한다
+  const box = el.closest<HTMLElement>('[data-scroller]');
+  if (box) {
+    const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 64 - gap;
+    box.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    return;
+  }
   const top = el.getBoundingClientRect().top + window.scrollY - stickyHeight() - gap;
   window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }

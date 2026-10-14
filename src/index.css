@@ -261,3 +261,38 @@
     display: none !important;
   }
 }
+
+/* 아래에서 올라오는 풀이 창 */
+.sheet-backdrop {
+  background: rgb(20 19 17 / 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: sheet-fade 0.25s ease-out;
+}
+.sheet-panel {
+  animation: sheet-up 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-backdrop,
+  .sheet-panel {
+    animation: none;
+  }
+}
+
+/* 옆으로 넘기는 카드 줄 — 스크롤 막대는 숨긴다 */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
