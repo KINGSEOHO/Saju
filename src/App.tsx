@@ -6,6 +6,7 @@ import { flushQueue } from './lib/api.ts';
 import { track } from './lib/funnel.ts';
 import { clearDraft, inputToDraft, saveDraft } from './lib/birthDraft.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
+import { loadRecent, removeRecent, saveRecent, type Recent } from './lib/recent.ts';
 import { CONCERNS, concernsFor, type ConcernId } from './report/concernList.ts';
 import { crossReport } from './report/cross.ts';
 import { generateReport, type Report } from './report/generate.ts';
@@ -107,6 +108,10 @@ if (PREVIEW) {
 
 export default function App() {
   const [route, setRoute] = useState<Route>(parseRoute);
+  // 결과를 열면 이 기기의 '최근 본 사주'에 남긴다 (첫 화면에서 바로 불러오기)
+  useEffect(() => {
+    if (route.name === 'result') saveRecent(window.location.hash, route.input);
+  }, [route]);
   useEffect(() => {
     if (!PREVIEW || route.name !== 'result') return;
     try {
@@ -191,9 +196,48 @@ const FEATURES: [string, string][] = [
   ['내 사주로 그린 개그 웹툰', '결과 화면에서 4화까지 볼 수 있어요.'],
 ];
 
+/** 이 기기에 남은 최근 본 사주 — 누르면 입력 없이 바로 결과로. 새 정보는 아래 '내 사주 보기'로 */
+function RecentList() {
+  const [list, setList] = useState<Recent[]>(loadRecent);
+  if (!list.length) return null;
+  return (
+    <section className="wrap pt-8" aria-labelledby="recent-h">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="recent-h" className="text-title3 text-ink">
+          최근 본 사주
+        </h2>
+        <span className="text-cap text-sub">이 휴대폰에만 저장돼요</span>
+      </div>
+      <ul className="mt-3 border-t border-line">
+        {list.map((r) => (
+          <li key={r.hash} className="flex items-center gap-2 border-b border-line">
+            <a href={r.hash} className="min-w-0 flex-1 py-3.5 text-ui font-semibold text-ink">
+              {r.label}
+              <span className="ml-2 text-cap font-normal text-accent">불러오기</span>
+            </a>
+            <button
+              type="button"
+              className="shrink-0 px-2 py-3 text-cap text-sub"
+              aria-label={`${r.label} 기록 지우기`}
+              onClick={() => {
+                removeRecent(r.hash);
+                setList(loadRecent());
+              }}
+            >
+              지우기
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-cap text-sub">다른 사람이나 새 정보로 보려면 아래 ‘내 사주 보기’를 누르세요.</p>
+    </section>
+  );
+}
+
 function Home() {
   return (
     <>
+      <RecentList />
       <div className="wrap pt-12 pb-4">
         <p className="kicker">정밀 만세력 · 근거 있는 풀이</p>
         <h1 className="mt-3 text-display text-ink">
