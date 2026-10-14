@@ -5,7 +5,8 @@
  *  - 바탕은 흰색과 따뜻한 회색. 구분은 옅은 면과 1px 선으로만 한다.
  *  - 포인트 색은 송연록(松煙綠) 하나. 오행 막대도 이 색의 농담으로만 칠한다.
  *  - 그림자·그라데이션·반투명(유리) 효과·네온은 쓰지 않는다.
- *  - 명조(함초롱바탕): 제목·사주 원국·풀이 본문 / 고딕(Pretendard): 버튼·입력·라벨·안내
+ *  - 글자는 고딕(Pretendard) 하나로 읽힌다. 명조(함초롱바탕)는 한자(사주 원국·간지)와 로고에만 쓴다 (hanja)
+ *    — 화면에서 긴 명조 본문은 획이 가늘어 읽기 힘들다는 리뷰를 받아 바꿨다
  */
 
 /*
@@ -33,7 +34,9 @@
   --color-*: initial;
 
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-  --font-serif: 'HCR Batang', 'Noto Serif KR', 'AppleMyungjo', 'Batang', serif;
+  /* 예전에 명조였던 자리(font-serif)도 이제 고딕으로 — 명조는 --font-hanja만 */
+  --font-serif: var(--font-sans);
+  --font-hanja: 'HCR Batang', 'Noto Serif KR', 'AppleMyungjo', 'Batang', serif;
 
   /* 글자 크기 — 모바일 기준 */
   --text-display: 1.875rem; /* 30 결과의 결론 */
@@ -47,8 +50,8 @@
   --text-title2--letter-spacing: -0.01em;
   --text-title3: 1.125rem; /* 18 소제목 */
   --text-title3--line-height: 1.5;
-  --text-read: 1.0625rem; /* 17 풀이 본문(명조) */
-  --text-read--line-height: 1.8;
+  --text-read: 1.0625rem; /* 17 풀이 본문 */
+  --text-read--line-height: 1.75;
   --text-ui: 1rem; /* 16 입력·선택지·안내 */
   --text-ui--line-height: 1.6;
   --text-label: 0.875rem; /* 14 라벨 */
@@ -90,8 +93,8 @@
   --c-line: #e4e3e0; /* 구분선 */
   --c-line-strong: #343331; /* 원국 표 위아래 선 */
   --c-ink: #1e1d1b; /* 제목·강조 */
-  --c-ink-2: #343331; /* 본문 */
-  --c-sub: #6a6966; /* 보조 글자 */
+  --c-ink-2: #2b2a28; /* 본문 */
+  --c-sub: #5a5956; /* 보조 글자 */
   --c-faint: #a9a7a5; /* 흐린 글자·비활성 */
   --c-accent: #33574d; /* 송연록 */
   --c-accent-strong: #20443a;
@@ -113,8 +116,8 @@
     --c-line: #2f2e2c;
     --c-line-strong: #cfcdcb;
     --c-ink: #f1efec;
-    --c-ink-2: #e4e3e0;
-    --c-sub: #a9a7a5;
+    --c-ink-2: #e8e7e4;
+    --c-sub: #b9b7b4;
     --c-faint: #6a6966;
     --c-accent: #86a79d;
     --c-accent-strong: #b1c6c0;
@@ -163,7 +166,7 @@
 
 /* 명조로 쓰는 글자 (한자·원국) */
 @utility hanja {
-  font-family: var(--font-serif);
+  font-family: var(--font-hanja);
 }
 
 /* 화면 폭: 모바일은 꽉 차게, PC는 가운데 560px */
@@ -171,7 +174,7 @@
   @apply mx-auto w-full max-w-[560px] px-5;
 }
 
-/* 풀이 본문: 명조 17px, 줄 간격 1.8, 한 줄이 너무 길지 않게 */
+/* 풀이 본문: 고딕 17px, 줄 간격 1.75, 한 줄이 너무 길지 않게 */
 @utility read {
   @apply font-serif text-read text-ink-2;
   max-width: 34em;

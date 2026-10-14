@@ -114,7 +114,7 @@ export function FeaturedReading({
           {label} <span className="font-normal text-sub">· {sub}</span>
         </p>
         <div className="flex items-baseline gap-2">
-          <span className="font-serif text-[17px] font-bold text-ink">{pillarHanja(pillar)}</span>
+          <span className="hanja text-[17px] font-bold text-ink">{pillarHanja(pillar)}</span>
           <ScorePill score={score} />
         </div>
       </div>
@@ -158,7 +158,7 @@ function MonthRow({ a, w }: { a: SajuAnalysis; w: Wolun }) {
         <div>
           <div className="text-ui font-semibold text-ink">{lbl.title}</div>
           <div className="text-cap text-sub">
-            {lbl.since} · <span className="font-serif">{pillarHanja(w.pillar)}</span>
+            {lbl.since} · <span className="hanja">{pillarHanja(w.pillar)}</span>
           </div>
         </div>
         <ScorePill score={w.score} />
@@ -292,7 +292,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
                     <div className="flex items-start justify-between gap-3">
                       <div className="text-label">
                         <b className={`tabular-nums ${now ? 'text-accent' : 'text-ink'}`}>{s.year}</b> <span className="text-sub">만 {s.age}세</span>{' '}
-                        <span className="font-serif font-bold text-ink">{pillarHanja(s.pillar)}</span>{' '}
+                        <span className="hanja font-bold text-ink">{pillarHanja(s.pillar)}</span>{' '}
                         <span className="text-micro text-sub">
                           {s.stemTenGod}/{s.branchTenGod}
                         </span>
@@ -344,7 +344,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
                 <li key={x.pillar.index} className="border-b border-line py-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <span className="font-serif text-title3 font-bold text-ink">{pillarHanja(x.pillar)}</span> <span className="text-label text-sub">{pillarKo(x.pillar)}</span>
+                      <span className="hanja text-title3 font-bold text-ink">{pillarHanja(x.pillar)}</span> <span className="text-label text-sub">{pillarKo(x.pillar)}</span>
                       {current && <span className="tag ml-2 bg-accent text-on-accent">지금</span>}
                       <div className="text-cap text-sub">
                         만 {Math.floor(x.startAge)}세부터 · {x.startYear}~{x.endYear}년

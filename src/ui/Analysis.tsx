@@ -211,7 +211,7 @@ export function StrengthPanel({ a }: { a: SajuAnalysis }) {
                 <div key={r} className={`rounded-xl px-0.5 py-2.5 text-center ${s.box}`}>
                   <div className={`text-[11px] leading-tight font-semibold ${s.sub}`}>{ROLE_LABEL[r]}</div>
                   <div className="mt-1 font-serif text-[17px] font-bold whitespace-nowrap">{EL_WORD[e]}</div>
-                  <div className={`font-serif text-micro ${s.sub}`}>{ELEMENT_HANJA[e]}</div>
+                  <div className={`hanja text-micro ${s.sub}`}>{ELEMENT_HANJA[e]}</div>
                   <div className={`mt-0.5 text-[10px] ${s.sub}`}>
                     <Term t={r} />
                   </div>

@@ -143,7 +143,7 @@ export function Term({ t, children }: { t: string; children?: ReactNode }) {
       }}
       onPointerEnter={(e) => e.pointerType === 'mouse' && !box && open(false)}
       onPointerLeave={(e) => e.pointerType === 'mouse' && box && !box.pinned && close()}
-      className="cursor-help underline decoration-faint decoration-dotted underline-offset-[5px] outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-accent"
+      className="cursor-help underline decoration-line decoration-2 underline-offset-[5px] outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-accent"
     >
       {children ?? t}
       {box &&

@@ -112,7 +112,7 @@ export default function App() {
       <header data-sticky-head className="no-print sticky top-0 z-30 border-b border-line bg-bg">
         <div className="wrap flex h-14 items-center justify-between">
           <a href="#/" className="flex items-baseline gap-2">
-            <span className="font-serif text-[19px] font-bold text-ink">명경사주</span>
+            <span className="hanja text-[19px] font-bold text-ink">명경사주</span>
             <span className="text-micro text-sub">베타 · 무료</span>
           </a>
           {route.name === 'result' && (

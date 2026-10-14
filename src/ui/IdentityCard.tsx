@@ -20,7 +20,7 @@ export function IdentityCardView({ card, title }: { card: IdentityCard; title: s
   return (
     <div>
       <figure className="rounded-2xl bg-subtle px-5 pt-8 pb-7">
-        <p className="text-center text-micro font-semibold tracking-[0.25em] text-accent">MY 명경 카드</p>
+        <p className="text-center text-label font-semibold text-accent">나의 명경 카드</p>
         <h3 className="mx-auto mt-4 max-w-[22em] text-center text-title1 text-ink">{card.headline}</h3>
         <p className="mx-auto mt-2 max-w-[26em] text-center font-serif text-ui text-sub">{card.subline}</p>
         <dl className="mt-7 grid grid-cols-2 border-y border-line">

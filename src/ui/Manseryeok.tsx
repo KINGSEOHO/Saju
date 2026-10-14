@@ -34,7 +34,7 @@ export function PillarTable({ a }: { a: SajuAnalysis }) {
   const cell = (key: string, i: number) => `${i > 0 ? 'border-l border-line' : ''} ${key === 'day' ? 'bg-accent-soft' : ''}`;
   const hanja = (ch: string, reading: string) => (
     <div className="flex flex-col items-center">
-      <span className="font-serif text-[40px] leading-none font-bold text-ink">{ch}</span>
+      <span className="hanja text-[40px] leading-none font-bold text-ink">{ch}</span>
       <span className="mt-2 text-micro text-sub">{reading}</span>
     </div>
   );
@@ -180,7 +180,7 @@ export function Manseryeok({ a }: { a: SajuAnalysis }) {
               <div className="flex flex-col gap-1">
                 {c.hidden.map((h) => (
                   <span key={h.stem} title={`${h.days}일`}>
-                    <span className="font-serif font-bold text-ink">{STEMS[h.stem].hanja}</span> {h.tenGod}
+                    <span className="hanja font-bold text-ink">{STEMS[h.stem].hanja}</span> {h.tenGod}
                   </span>
                 ))}
               </div>

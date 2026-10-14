@@ -220,9 +220,11 @@ export function CrossPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
 
       <div>
         <h3 className="text-title3 text-ink">종합 요약</h3>
-        <p className="read mt-3">
-          <Lead text={x.summary} />
-        </p>
+        {x.paragraphs.map((t, i) => (
+          <p key={i} className="read mt-3">
+            {i === 0 ? <Lead text={t} /> : <Gloss text={t} />}
+          </p>
+        ))}
       </div>
 
       <TtiSection x={x} />

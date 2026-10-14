@@ -305,6 +305,8 @@ export interface CrossReport {
   card: IdentityCard;
   glance: string[];
   summary: string;
+  /** 같은 요약을 읽기 쉽게 나눈 문단 — 어떤 사람인지 · 지금 시기 · MBTI와 띠 */
+  paragraphs: string[];
   mbti: MbtiCross | null;
   job: JobAnalysis | null;
   tti: TtiInfo;
@@ -432,8 +434,10 @@ export function crossReport(a: SajuAnalysis, report: Report): CrossReport {
     const warn = names(chr, true);
     parts.push(`반면 ${josa(andList(warn.length ? warn : ['사주']), '이/가')} ${warn.length >= 2 ? '함께 ' : ''}경고하는 약점이 있는데, 바로 ${josa(CHALLENGE_PHRASE[ch.id], '이에요/예요')}.`);
   }
+  const cut1 = parts.length;
   if (d) parts.push(`만 ${Math.floor(ageNow)}세인 지금은 ${DECADE_THEME[groupOf(d.stemTenGod)].label}의 10년(${d.startYear}~${d.endYear})을 지나고 있어요.`);
   if (job) parts.push(`직업 면에서는 ${josa(job.headline, '이에요/예요')}.`);
+  const cut2 = parts.length;
   if (mbti) parts.push(`MBTI(${mbti.type})와 사주는 ${mbti.agree === 4 ? '네 가지 축이 모두 같아요' : mbti.agree === 0 ? '네 가지 축이 모두 달라요' : `네 가지 축 중 ${mbti.agree}개가 같아요`}.`);
   // ‘내 띠의 해’처럼 이미 ‘해’로 끝나면 ‘…해’인 해예요’로 겹치지 않게
   const yearLine = tti.thisYear.line === '무난한 해' ? '띠로 보아 무난한 해예요' : /해$/.test(tti.thisYear.line) ? josa(`‘${tti.thisYear.line}’`, '이에요/예요') : `‘${tti.thisYear.line}’인 해예요`;
@@ -445,6 +449,7 @@ export function crossReport(a: SajuAnalysis, report: Report): CrossReport {
     card: { headline, subline, outer, inner, tags, cards, consensus },
     glance,
     summary: parts.join(' '),
+    paragraphs: [parts.slice(0, cut1), parts.slice(cut1, cut2), parts.slice(cut2)].map((x) => x.join(' ')).filter(Boolean),
     mbti,
     job,
     tti,
