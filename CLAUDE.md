@@ -16,7 +16,7 @@
 | 브랜치 | 쓰임 |
 | --- | --- |
 | `draft/concern-report` | 시안. 로컬에서 먼저 작업하고 커밋하는 곳 (푸시하지 않음) |
-| `claude/wonderful-maxwell-o98pwg` | 실제 사이트. 푸시하면 GitHub Pages로 바로 배포됨 (https://kingseoho.github.io/Saju) |
+| `claude/wonderful-maxwell-o98pwg` | 실제 사이트. 푸시하면 GitHub Pages로 바로 배포됨 (새 주소 https://mgsaju.io.kr — 예전 github.io 주소는 새 주소로 넘어감) |
 
 - 배포: 시안 브랜치를 실제 브랜치로 fast-forward 한 뒤 `git push -u origin claude/wonderful-maxwell-o98pwg`.
 - 배포 확인은 GitHub Actions의 "Deploy to GitHub Pages" 실행 결과로 해요 (작업 환경에서 github.io에 직접 접속이 안 돼요).
@@ -83,7 +83,7 @@
 
 1. 지인 리뷰 받고 고치기
 2. 사업자등록 (업종 724000)
-3. 도메인
+3. 도메인 (mgsaju.io.kr, 가비아 — 구매 완료. DNS·Pages 연결)
 4. PG 신청 (사주·운세는 유의업종이라 업종 가능 여부부터 문의)
 5. 통신판매업 신고
 6. 약관·개인정보처리방침·환불 안내 페이지
