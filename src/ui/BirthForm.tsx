@@ -241,6 +241,12 @@ export function BirthFlow({ step }: { step: number }) {
               </label>
             )}
             <Hint error={date.error} note={date.note} />
+            <p className="mt-8 text-cap text-sub">
+              입력한 정보는 이 기기 안에서만 계산하고 서버로 보내지 않아요.{' '}
+              <a href="#/privacy" className="underline">
+                개인정보처리방침
+              </a>
+            </p>
           </Question>
         )}
 
@@ -358,7 +364,12 @@ export function BirthFlow({ step }: { step: number }) {
               </label>
               <JobPicker value={d.job} onChange={(job) => update({ job })} />
             </div>
-            <p className="mt-8 text-cap text-sub">입력한 정보는 이 기기 안에서만 계산하고 서버로 보내지 않아요.</p>
+            <p className="mt-8 text-cap text-sub">
+              입력한 정보는 이 기기 안에서만 계산하고 서버로 보내지 않아요.{' '}
+              <a href="#/privacy" className="underline">
+                개인정보처리방침
+              </a>
+            </p>
           </Question>
         )}
       </div>
