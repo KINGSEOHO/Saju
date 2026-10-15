@@ -48,6 +48,14 @@ db.exec(`
     is_public INTEGER NOT NULL DEFAULT 0,
     meta TEXT
   );
+  CREATE TABLE IF NOT EXISTS opinions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    session_id TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    text TEXT NOT NULL,
+    meta TEXT
+  );
   CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -67,6 +75,7 @@ const PRICE_ORDER = ['free_only', 'p990', 'p1900', 'p1990', 'p2900', 'p3900', 'p
 const PRICES = new Set(PRICE_ORDER);
 const FEATURES = new Set(['monthly', 'compat', 'daeun_detail', 'pdf', 'expert', 'career_deep', 'date_pick', 'name']);
 const COMPARES = new Set(['much_better', 'better', 'same', 'worse', 'never']);
+const TOPICS = new Set(['wrong', 'bug', 'idea', 'other']);
 // 단계별 측정(src/lib/funnel.ts)과 같은 이름
 const FUNNEL_TYPES = ['visit', 'analyze', 'concern_open', 'match_result', 'detail_view', 'lock_view', 'pay_click', 'paid'];
 const EVENT_TYPES = new Set(['share', 'print', 'premium_interest', ...FUNNEL_TYPES]);
@@ -141,6 +150,7 @@ const insFeedback = db.prepare('INSERT INTO feedback (session_id, section, ratin
 const insReview = db.prepare(
   'INSERT INTO reviews (session_id, overall, accuracy, detail, text, price, features, compare, is_public, meta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 );
+const insOpinion = db.prepare('INSERT INTO opinions (session_id, topic, text, meta) VALUES (?, ?, ?, ?)');
 const insEvent = db.prepare('INSERT INTO events (session_id, type, meta) VALUES (?, ?, ?)');
 
 function postFeedback(b) {
@@ -167,6 +177,13 @@ function postReview(b) {
     b.public === true ? 1 : 0,
     cleanMeta(b.meta),
   );
+  return [201, { ok: true }];
+}
+
+function postOpinion(b) {
+  const text = typeof b.text === 'string' ? b.text.trim() : '';
+  if (!TOPICS.has(b.topic) || text.length < 2) return [400, { error: 'invalid opinion' }];
+  insOpinion.run(sid(b.sessionId), b.topic, str(text, 2000), cleanMeta(b.meta));
   return [201, { ok: true }];
 }
 
@@ -215,6 +232,7 @@ function stats() {
     meta: r.meta ? JSON.parse(r.meta) : {},
   }));
   const recentComments = q('SELECT created_at, section, rating, comment FROM feedback WHERE comment IS NOT NULL ORDER BY id DESC LIMIT 30');
+  const recentOpinions = q('SELECT created_at, topic, text FROM opinions ORDER BY id DESC LIMIT 30');
   // 단계별 측정 — 최근 90일 원본을 넘기고, 계산은 관리 화면(src/lib/stats.ts의 computeFunnel)이 한다
   const funnelEvents = q(
     `SELECT created_at, session_id, type, meta FROM events WHERE type IN (${FUNNEL_TYPES.map(() => '?').join(',')}) AND created_at >= datetime('now', '-90 days') ORDER BY id`,
@@ -262,6 +280,7 @@ function stats() {
     daily,
     recentReviews,
     recentComments,
+    recentOpinions,
     funnelEvents,
     decision: { ready, notes, wtpPaidShare, medianPrice },
   };
@@ -312,7 +331,7 @@ const server = createServer(async (req, res) => {
       if (req.method === 'POST') {
         if (rateLimited(ip)) return send(res, 429, { error: 'too many requests' });
         const body = await readJson(req);
-        const route = { '/api/feedback': postFeedback, '/api/reviews': postReview, '/api/events': postEvent }[url.pathname];
+        const route = { '/api/feedback': postFeedback, '/api/reviews': postReview, '/api/opinions': postOpinion, '/api/events': postEvent }[url.pathname];
         if (!route) return send(res, 404, { error: 'not found' });
         const [status, out] = route(body);
         return send(res, status, out);

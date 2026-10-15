@@ -7,6 +7,7 @@ import { track } from './lib/funnel.ts';
 import { clearDraft, inputToDraft, saveDraft } from './lib/birthDraft.ts';
 import { decodeInput, encodeInput } from './lib/share.ts';
 import { loadRecent, removeRecent, saveRecent, type Recent } from './lib/recent.ts';
+import { STORAGE } from './lib/storageKeys.ts';
 import { CONCERNS, concernsFor, type ConcernId } from './report/concernList.ts';
 import { crossReport } from './report/cross.ts';
 import { generateReport, type Report } from './report/generate.ts';
@@ -25,6 +26,7 @@ import { DetailCards } from './ui/DetailCards.tsx';
 import { popSheetState, pushSheetState, Sheet } from './ui/Sheet.tsx';
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx';
 import { Faq } from './ui/Faq.tsx';
+import { BusinessFooter, Legal, type LegalDoc } from './ui/Legal.tsx';
 import { ReviewForm } from './ui/Feedback.tsx';
 import { HitsCard } from './ui/Hits.tsx';
 import { ImageSheet } from './ui/ImageSheet.tsx';
@@ -76,11 +78,13 @@ const CrossTabs = lazy(() =>
   ),
 );
 
-type Route = { name: 'home' } | { name: 'start'; step: number } | { name: 'result'; input: BirthInput } | { name: 'admin' };
+type Route = { name: 'home' } | { name: 'start'; step: number } | { name: 'result'; input: BirthInput } | { name: 'admin' } | { name: 'legal'; doc: LegalDoc };
 
 function parseRoute(): Route {
   const h = window.location.hash.replace(/^#/, '');
   if (h.startsWith('/admin')) return { name: 'admin' };
+  const legal = h.match(/^\/(terms|privacy|refund)\b/);
+  if (legal) return { name: 'legal', doc: legal[1] as LegalDoc };
   if (h.startsWith('/start')) {
     const n = Number(h.split('/')[2]);
     return { name: 'start', step: Number.isInteger(n) && n >= 1 && n <= FLOW_STEPS ? n : 1 };
@@ -97,7 +101,7 @@ function parseRoute(): Route {
  * 매번 생년월일을 다시 넣지 않아도 되게. 실제 사이트에서는 쓰지 않는다 (VITE_PREVIEW는 scripts/preview-artifact.mjs만 켠다).
  */
 const PREVIEW = import.meta.env.VITE_PREVIEW === '1';
-const LAST_RESULT = 'mg_preview_last';
+const LAST_RESULT = STORAGE.previewLast;
 if (PREVIEW) {
   try {
     const last = localStorage.getItem(LAST_RESULT);
@@ -122,7 +126,11 @@ export default function App() {
     }
   }, [route]);
   useEffect(() => {
-    const on = () => setRoute(parseRoute());
+    const on = () => {
+      const r = parseRoute();
+      setRoute(r);
+      if (r.name === 'legal') window.scrollTo(0, 0);
+    };
     window.addEventListener('hashchange', on);
     flushQueue();
     // 단계별 측정의 첫 단계 — 관리 화면으로 들어온 것은 세지 않는다 (한 번 방문에 한 번)
@@ -163,6 +171,7 @@ export default function App() {
         <ErrorBoundary resetKey={route}>
           {route.name === 'home' && <Home />}
           {route.name === 'result' && <Result input={route.input} />}
+          {route.name === 'legal' && <Legal doc={route.doc} />}
           {route.name === 'admin' && (
             <div className="wrap py-8">
               <Admin />
@@ -172,11 +181,14 @@ export default function App() {
       </main>
       <ImageSheet />
       <footer className={`no-print border-t border-line ${route.name === 'home' ? 'pb-28' : ''}`}>
-        <p className="wrap py-8 text-cap text-sub">
+        <p className="wrap pt-8 text-cap text-sub">
           명경사주(明鏡四柱) — 맑은 거울처럼 있는 그대로.
           <br />
           사주 해석은 전통적 경향에 대한 참고 자료이며 의학·법률·투자 판단을 대신하지 않아요.
         </p>
+        <div className="wrap pb-8">
+          <BusinessFooter />
+        </div>
       </footer>
       {route.name === 'home' && (
         <BottomBar>

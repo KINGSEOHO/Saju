@@ -54,6 +54,8 @@ function previewLocked(): boolean {
 /** 버튼을 누른 뒤 한 번 더 확인 — 무료는 하나뿐이라 실수로 쓰지 않게, 유료는 금액을 다시 보여 준다 */
 function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: string; busy: boolean; onYes: () => void; onNo: () => void; onRestore?: () => void }) {
   const free = o.kind === 'free' || o.kind === 'partnerFree';
+  // 돈이 나가는 결제는 상품·금액 확인과 청약철회 제한(전자상거래법 제17조 제2항 제5호)에 먼저 동의받는다
+  const [agree, setAgree] = useState(false);
   return (
     <div className="panel mt-4" role="alertdialog" aria-label="잠금 해제 확인">
       <p className="text-ui font-bold text-ink">
@@ -68,12 +70,29 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             ? '결제 화면으로 넘어가는 자리예요. 시안이라 실제로 결제되지 않고 바로 열려요.'
             : '결제 화면으로 넘어가요.'}
       </p>
+      {!free && (
+        <label className="mt-4 flex cursor-pointer items-start gap-3 text-cap text-ink-2" data-pay-agree>
+          <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+          <span>
+            <b className="text-ink">(필수)</b> 만 14세 이상이며, 상품({what})과 금액({o.cost.toLocaleString('ko-KR')}원)을 확인했어요. 디지털 콘텐츠라{' '}
+            <b className="text-ink">리포트를 연 뒤에는 단순 변심으로 환불되지 않는다</b>는{' '}
+            <a href="#/refund" target="_blank" rel="noreferrer" className="underline">
+              환불 안내
+            </a>
+            와{' '}
+            <a href="#/terms" target="_blank" rel="noreferrer" className="underline">
+              이용약관
+            </a>
+            에 동의해요.
+          </span>
+        </label>
+      )}
       <div className="mt-4 grid grid-cols-2 gap-2">
         <button type="button" className="btn-secondary" onClick={onNo} disabled={busy}>
           {free ? '다시 생각할게요' : '취소'}
         </button>
         {/* 한 번 누르면 끝날 때까지 잠근다 — 두 번 눌러 두 번 결제되지 않게 */}
-        <button type="button" className="btn-primary" onClick={onYes} disabled={busy} aria-busy={busy}>
+        <button type="button" className="btn-primary" onClick={onYes} disabled={busy || (!free && !agree)} aria-busy={busy}>
           {busy ? '결제하는 중…' : free ? '무료로 열기' : PAYWALL_DEMO ? '결제하고 열기' : '결제하기'}
         </button>
       </div>

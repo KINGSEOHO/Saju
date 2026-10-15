@@ -7,10 +7,11 @@ import { SHEET_URL } from '../config/backend.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { matchJob } from '../report/job.ts';
 import { parseMbti } from '../report/mbti.ts';
+import { STORAGE } from './storageKeys.ts';
 import { computeFunnel, computeStats, type RawData, type Stats } from './stats.ts';
 
-const QUEUE_KEY = 'mg_pending_v1';
-const SESSION_KEY = 'mg_session_v1';
+const QUEUE_KEY = STORAGE.pending;
+const SESSION_KEY = STORAGE.session;
 
 export function sessionId(): string {
   try {
@@ -46,7 +47,7 @@ export function chartMeta(a: SajuAnalysis) {
   };
 }
 
-type Kind = 'feedback' | 'reviews' | 'events';
+type Kind = 'feedback' | 'reviews' | 'opinions' | 'events';
 
 /** ok: 저장됨 · retry: 네트워크 문제(나중에 재전송) · rejected: 서버가 형식을 거부(재전송해도 소용없음) */
 type PostResult = 'ok' | 'retry' | 'rejected';

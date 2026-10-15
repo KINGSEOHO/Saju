@@ -5,6 +5,7 @@
  */
 import { useState } from 'react';
 import type { ConcernGaeun, GaeunItem } from '../report/gaeun.ts';
+import { STORAGE_PREFIX } from '../lib/storageKeys.ts';
 import { Gloss, Lead } from './common.tsx';
 
 /** 가까이할 것 / 멀리할 것 한 묶음 */
@@ -37,7 +38,7 @@ function today() {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
-const routineKey = (id: string) => `gaeun-routine-${id}-${today()}`;
+const routineKey = (id: string) => `${STORAGE_PREFIX.gaeunRoutine}${id}-${today()}`;
 
 function GaeunRoutine({ id, routine }: { id: string; routine: { text: string; basis: string }[] }) {
   const [done, setDone] = useState<number[]>(() => {

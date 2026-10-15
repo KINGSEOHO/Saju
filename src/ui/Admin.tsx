@@ -8,6 +8,7 @@ import type { Funnel, Stats } from '../lib/stats.ts';
 
 const SECTION_KO: Record<string, string> = { summary: '종합', personality: '성향', love: '연애·결혼', career: '직업·이직', wealth: '재물', health: '건강', gaeun: '개운법', webtoon: '인생 웹툰' };
 const PRICE_KO = PRICE_LABEL;
+const TOPIC_KO: Record<string, string> = { wrong: '풀이가 안 맞아요', bug: '오류·불편', idea: '이런 게 있으면', other: '기타' };
 const FEATURE_KO = Object.fromEntries(FEATURE_OPTIONS.map((p) => [p.id, p.label]));
 const COMPARE_KO: Record<string, string> = { much_better: '훨씬 낫다', better: '조금 낫다', same: '비슷하다', worse: '못하다', never: '비교 경험 없음' };
 
@@ -274,6 +275,18 @@ export function Admin() {
                   {r.text && <p className="mt-1 text-ink-2">{r.text}</p>}
                 </li>
               ))}
+            </ul>
+            <h3 className="mt-10 text-title3 text-ink">의견·제보</h3>
+            <ul className="mt-2 border-t border-line text-label">
+              {(stats.recentOpinions ?? []).map((r, i) => (
+                <li key={i} className="border-b border-line py-3">
+                  <span className="text-cap text-sub">
+                    {r.created_at} · {TOPIC_KO[r.topic] ?? r.topic}
+                  </span>
+                  <p className="mt-1 whitespace-pre-wrap text-ink-2">{r.text}</p>
+                </li>
+              ))}
+              {!stats.recentOpinions?.length && <li className="py-3 text-cap text-sub">아직 없어요. (스프레드시트 스크립트를 최신으로 다시 배포해야 쌓여요)</li>}
             </ul>
             <h3 className="mt-10 text-title3 text-ink">섹션 코멘트</h3>
             <ul className="mt-2 border-t border-line text-label">

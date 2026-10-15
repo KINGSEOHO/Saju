@@ -15,6 +15,7 @@
  */
 import { useEffect, useState } from 'react';
 import { checkPurchase, overpaid, type Purchase, type SeasonKey } from './entitlements.ts';
+import { STORAGE } from './storageKeys.ts';
 
 export interface Account {
   /** 보이지 않는 계정 번호 */
@@ -68,10 +69,10 @@ export function normalizeCode(input: string): string | null {
 // ---------------------------------------------------------------------------
 // 시안용 — 이 기기 안에서 서버를 흉내 낸다 (STORE가 서버의 구매 기록 표 역할)
 // ---------------------------------------------------------------------------
-const DEVICE = 'mg_demo_device';
-const STORE = 'mg_demo_purchases';
+const DEVICE = STORAGE.demoDevice;
+const STORE = STORAGE.demoPurchases;
 /** 합쳐진 예전 코드 → 새 코드 */
-const ALIAS = 'mg_demo_alias';
+const ALIAS = STORAGE.demoAlias;
 const read = <T>(k: string, d: T): T => {
   try {
     const v = localStorage.getItem(k);

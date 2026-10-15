@@ -3,6 +3,7 @@
  * 서버로는 보내지 않는다. 남기는 것은 결과 주소(입력값이 든 #/r?…)와 목록에 보일 이름·생년월일·성별뿐이고, 언제든 지울 수 있다.
  */
 import type { BirthInput } from '../engine/index.ts';
+import { STORAGE } from './storageKeys.ts';
 
 export interface Recent {
   /** 결과 주소 (#/r?…) */
@@ -11,7 +12,7 @@ export interface Recent {
   at: number;
 }
 
-const KEY = 'mg_recent';
+const KEY = STORAGE.recent;
 const MAX = 6;
 
 export function loadRecent(): Recent[] {

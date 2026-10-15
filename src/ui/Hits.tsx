@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { buildHits, type Hit } from '../report/hits.ts';
 import { Gloss } from './common.tsx';
+import { STORAGE_PREFIX } from '../lib/storageKeys.ts';
 
 type Ans = 'yes' | 'some' | 'no';
 /** 맞아요 = 포인트 색, 조금요 = 옅은 포인트 색, 아니에요 = 먹색 */
@@ -15,7 +16,7 @@ const KIND: Record<Hit['kind'], string> = { trait: '평소의 나', past: '지�
 
 function storeKey(a: SajuAnalysis) {
   const i = a.input;
-  return `myeong-hits:${i.calendar}-${i.year}-${i.month}-${i.day}-${i.hour ?? 'x'}-${i.minute ?? 'x'}-${i.gender}`;
+  return `${STORAGE_PREFIX.hits}${i.calendar}-${i.year}-${i.month}-${i.day}-${i.hour ?? 'x'}-${i.minute ?? 'x'}-${i.gender}`;
 }
 function load(key: string): Record<string, Ans> {
   try {

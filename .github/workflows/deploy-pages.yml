@@ -30,6 +30,13 @@ jobs:
           VITE_SHEET_URL: ${{ vars.SHEET_URL }}
           # 카카오 개발자 콘솔의 JavaScript 키 (없으면 휴대폰 공유 창으로 대신 보냄)
           VITE_KAKAO_KEY: ${{ vars.KAKAO_KEY }}
+          # 사이트 아래 사업자 정보 (저장소 변수에만 두고 코드에는 적지 않는다 — src/config/business.ts)
+          VITE_BIZ_OWNER: ${{ vars.BIZ_OWNER }}
+          VITE_BIZ_REG_NO: ${{ vars.BIZ_REG_NO }}
+          VITE_BIZ_MAIL_ORDER_NO: ${{ vars.BIZ_MAIL_ORDER_NO }}
+          VITE_BIZ_ADDRESS: ${{ vars.BIZ_ADDRESS }}
+          VITE_BIZ_PHONE: ${{ vars.BIZ_PHONE }}
+          VITE_BIZ_EMAIL: ${{ vars.BIZ_EMAIL }}
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

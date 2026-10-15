@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { FEATURE_OPTIONS, PRICE_OPTIONS } from '../config/plans.ts';
+import { useState, type FormEvent, type ReactNode } from 'react';
+import { BUSINESS } from '../config/business.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { chartMeta, flushQueue, send, sessionId } from '../lib/api.ts';
 import type { SectionId } from '../report/generate.ts';
@@ -49,7 +49,13 @@ export function SectionRating({ a, section, question = '이 풀이, 실제 당�
   return (
     <div className="no-print mt-14 border-t border-line pt-8">
       <p className="text-ui font-semibold text-ink">{question}</p>
-      <p className="mt-1 text-cap text-sub">평가는 풀이를 더 정확하게 고치는 데 쓰여요. 생년월일은 보내지 않아요.</p>
+      <p className="mt-1 text-cap text-sub">
+        평가는 풀이를 더 정확하게 고치는 데 쓰여요. 이름·생년월일은 보내지 않고, 이름 없는 사주 요약만 함께 저장돼요(
+        <a href="#/privacy" className="underline">
+          개인정보처리방침
+        </a>
+        ). 한 줄 의견에는 이름·연락처를 적지 말아 주세요.
+      </p>
       <div className="mt-4 grid grid-cols-5 gap-1.5" role="radiogroup" aria-label={question}>
         {ACC_LABELS.map((l, i) => {
           const on = rating === i + 1;
@@ -117,146 +123,227 @@ function Scale({ value, onChange, label, low, high }: { value: number; onChange:
   );
 }
 
+/** 후기·의견을 보낼 때 받는 동의 — 개인정보 보호법 제15조 (항목·목적·보관 기간·거부할 권리와 불이익) */
+function Consents({ consent, setConsent, adult, setAdult, extra }: { consent: boolean; setConsent: (v: boolean) => void; adult: boolean; setAdult: (v: boolean) => void; extra?: ReactNode }) {
+  return (
+    <div className="panel space-y-3 text-cap text-ink-2">
+      <label className="flex cursor-pointer items-start gap-3">
+        <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={adult} onChange={(e) => setAdult(e.target.checked)} />
+        <span>
+          <b className="text-ink">(필수) 만 14세 이상이에요.</b>
+        </span>
+      </label>
+      <label className="flex cursor-pointer items-start gap-3">
+        <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+        <span>
+          <b className="text-ink">(필수) 개인정보 수집·이용에 동의해요.</b>
+        </span>
+      </label>
+      <dl className="ml-8 space-y-1 border-l border-line pl-3 text-micro leading-relaxed text-sub">
+        <div>
+          <dt className="inline font-semibold">항목</dt>{' '}
+          <dd className="inline">점수·적은 글, 무작위 기기 식별값, 이름 없는 사주 요약(일간·일주·성별·연령대·신강약·격국·용신·MBTI·직업 분야). 이름·생년월일·출생 시각은 받지 않아요.</dd>
+        </div>
+        <div>
+          <dt className="inline font-semibold">목적</dt> <dd className="inline">풀이 정확도 개선과 문의 응대, (공개에 동의하면) 후기 게시</dd>
+        </div>
+        <div>
+          <dt className="inline font-semibold">보관</dt> <dd className="inline">받은 날부터 3년 또는 삭제를 요청할 때까지</dd>
+        </div>
+        <div>
+          <dt className="inline font-semibold">거부할 권리</dt> <dd className="inline">동의하지 않을 수 있어요. 그러면 후기·의견만 보낼 수 없고, 다른 기능은 그대로 쓸 수 있어요.</dd>
+        </div>
+        <div>
+          저장은 Google 스프레드시트(미국 서버)에 해요.{' '}
+          <a href="#/privacy" className="underline">
+            개인정보처리방침
+          </a>
+        </div>
+      </dl>
+      {extra}
+    </div>
+  );
+}
+
+const TOPICS = [
+  { id: 'wrong', label: '풀이가 안 맞아요' },
+  { id: 'bug', label: '오류·불편' },
+  { id: 'idea', label: '이런 게 있으면' },
+  { id: 'other', label: '기타' },
+] as const;
+
+/** 결과 화면 맨 아래 — 후기(점수와 한마디)와 의견·제보(고칠 점) */
 export function ReviewForm({ a }: { a: SajuAnalysis }) {
+  const [tab, setTab] = useState<'review' | 'opinion'>('review');
+  return (
+    <section className="no-print mt-20 border-t border-line pt-10" aria-labelledby="review">
+      <h2 id="review" className="scroll-mt-24 text-center text-title2 text-ink">
+        후기와 의견
+      </h2>
+      <p className="mt-1 text-center text-label text-sub">써 보신 느낌을 남겨 주세요. 틀린 풀이나 불편한 점은 바로 고쳐요.</p>
+      <div className="seg mt-6" role="tablist">
+        {(
+          [
+            ['review', '후기 남기기'],
+            ['opinion', '의견·제보'],
+          ] as const
+        ).map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`seg-item ${tab === id ? 'seg-on' : ''}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-6">{tab === 'review' ? <ReviewTab a={a} /> : <OpinionTab a={a} />}</div>
+    </section>
+  );
+}
+
+function Done({ title, body, state, onSent }: { title: string; body: string; state: SendState; onSent: () => void }) {
+  return (
+    <div className="text-center">
+      <p className="text-title3 text-ink">{title}</p>
+      {state === 'queued' ? <QueuedNote onSent={onSent} /> : <p className="mt-2 text-label text-sub">{body}</p>}
+    </div>
+  );
+}
+
+function ReviewTab({ a }: { a: SajuAnalysis }) {
   const [overall, setOverall] = useState(0);
   const [accuracy, setAccuracy] = useState(0);
-  const [detail, setDetail] = useState(0);
   const [text, setText] = useState('');
-  const [price, setPrice] = useState<string>('');
-  const [features, setFeatures] = useState<string[]>([]);
-  const [compare, setCompare] = useState<string>('');
   const [publicOk, setPublicOk] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [adult, setAdult] = useState(false);
   const [state, setState] = useState<SendState>('idle');
   const [err, setErr] = useState<string | null>(null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setErr(null);
-    if (!overall || !accuracy) return setErr('전체 만족도와 정확도를 골라 주세요.');
-    if (!consent) return setErr('리뷰 저장을 위한 개인정보 수집·이용에 동의해 주세요.');
+    if (!overall || !accuracy) return setErr('만족도와 정확도를 골라 주세요.');
+    if (!adult || !consent) return setErr('필수 항목에 동의해 주세요.');
     setState('sending');
     const r = await send('reviews', {
       sessionId: sessionId(),
       overall,
       accuracy,
-      detail: detail || null,
+      detail: null,
       text: text.trim() || null,
-      price: price || null,
-      features,
-      compare: compare || null,
-      public: publicOk,
+      price: null,
+      features: [],
+      compare: null,
+      public: publicOk && !!text.trim(),
       meta: chartMeta(a),
     });
     if (r === 'rejected') {
       setState('idle');
-      return setErr('리뷰를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      return setErr('후기를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
     }
     setState(r);
   }
 
-  if (state === 'sent') {
-    return (
-      <section className="mt-20 border-t border-line pt-10">
-        <h2 className="text-title2 text-ink">리뷰 고마워요</h2>
-        <p className="read mt-2">보내 주신 의견은 풀이를 고치고 앞으로 만들 기능을 정하는 데 그대로 쓰여요.</p>
-      </section>
-    );
-  }
-  if (state === 'queued') {
-    return (
-      <section className="mt-20 border-t border-line pt-10">
-        <h2 className="text-title2 text-ink">리뷰를 받았어요</h2>
-        <QueuedNote onSent={() => setState('sent')} />
-      </section>
-    );
-  }
+  if (state === 'sent' || state === 'queued') return <Done title="후기 고마워요" body="남겨 주신 후기는 풀이를 더 정확하게 고치는 데 그대로 쓰여요." state={state} onSent={() => setState('sent')} />;
 
   return (
-    <form onSubmit={submit} className="mt-20 space-y-8 border-t border-line pt-10">
-      <div>
-        <h2 id="review" className="scroll-mt-24 text-title2 text-ink">
-          베타 리뷰 남기기
-        </h2>
-        <p className="mt-1 text-label text-sub">지금은 모든 분석이 무료예요. 솔직한 평가가 앞으로 어떤 기능을 어떻게 만들지 정해요.</p>
-      </div>
+    <form onSubmit={submit} className="space-y-7">
       <Scale label="전체 만족도" value={overall} onChange={setOverall} low="아쉬워요" high="아주 좋아요" />
-      <Scale label="정확도 · 나와 맞는 정도" value={accuracy} onChange={setAccuracy} low="안 맞아요" high="소름 돋아요" />
-      <Scale label="상세함 (선택)" value={detail} onChange={setDetail} low="부족해요" high="충분해요" />
+      <Scale label="나와 맞는 정도" value={accuracy} onChange={setAccuracy} low="안 맞아요" high="소름 돋아요" />
       <label className="block">
-        <span className="mb-2 block text-label font-semibold text-ink">다른 사주 사이트·앱과 비교하면?</span>
-        <select className="field" value={compare} onChange={(e) => setCompare(e.target.value)}>
-          <option value="">선택 안 함</option>
-          <option value="much_better">훨씬 낫다</option>
-          <option value="better">조금 낫다</option>
-          <option value="same">비슷하다</option>
-          <option value="worse">못하다</option>
-          <option value="never">다른 곳을 써 본 적 없다</option>
-        </select>
-      </label>
-      <label className="block">
-        <span className="mb-2 block text-label font-semibold text-ink">자유 의견</span>
+        <span className="mb-2 block text-label font-semibold text-ink">한마디 (선택)</span>
         <textarea
-          className="field h-auto min-h-32 py-3"
-          maxLength={2000}
+          className="field h-auto min-h-28 py-3"
+          maxLength={1000}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="맞았던 점, 틀렸던 점, 더 알고 싶은 점을 적어 주세요."
+          placeholder="맞았던 점, 인상 깊었던 풀이를 적어 주세요. 이름·연락처는 적지 말아 주세요."
         />
       </label>
-      <fieldset>
-        <legend className="text-label font-semibold text-ink">이 정도 상세 리포트라면 한 번에 얼마까지 낼 수 있나요?</legend>
-        <div className="seg mt-2" role="radiogroup">
-          {PRICE_OPTIONS.map((p) => (
-            <button
-              type="button"
-              key={p.id}
-              role="radio"
-              aria-checked={price === p.id}
-              onClick={() => setPrice(p.id)}
-              className={`seg-item px-1 whitespace-nowrap tabular-nums ${price === p.id ? 'seg-on' : ''}`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend className="text-label font-semibold text-ink">돈을 내고라도 보고 싶은 기능 (여러 개 고를 수 있어요)</legend>
-        <div className="mt-2 border-t border-line">
-          {FEATURE_OPTIONS.map((f) => (
-            <label key={f.id} className="flex cursor-pointer items-center gap-3 border-b border-line py-3.5 text-ui text-ink">
-              <input
-                type="checkbox"
-                className="size-5 shrink-0 accent-accent"
-                checked={features.includes(f.id)}
-                onChange={(e) => setFeatures((cur) => (e.target.checked ? [...cur, f.id] : cur.filter((x) => x !== f.id)))}
-              />
-              {f.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <div className="panel space-y-3 text-cap text-ink-2">
-        <label className="flex cursor-pointer items-start gap-3">
-          <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          <span>
-            <b className="text-ink">(필수) 개인정보 수집·이용 동의</b> — 수집 항목: 점수·의견·가격 의향, 익명 명식 요약(일주·성별·연령대·신강약·격국·용신). 이름·생년월일·출생 시각은 수집하지
-            않아요. 목적: 서비스 개선과 유료 기능 설계. 보관: 서비스 종료 또는 삭제 요청 때까지.
-          </span>
-        </label>
-        <label className="flex cursor-pointer items-start gap-3">
-          <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={publicOk} onChange={(e) => setPublicOk(e.target.checked)} />
-          <span>(선택) 자유 의견을 익명 후기로 사이트에 공개해도 괜찮아요.</span>
-        </label>
-      </div>
+      <Consents
+        consent={consent}
+        setConsent={setConsent}
+        adult={adult}
+        setAdult={setAdult}
+        extra={
+          <label className="flex cursor-pointer items-start gap-3 border-t border-line pt-3">
+            <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={publicOk} onChange={(e) => setPublicOk(e.target.checked)} />
+            <span>(선택) 한마디를 이름 없이 사이트 후기로 실어도 괜찮아요. 동의하지 않아도 후기는 보낼 수 있어요.</span>
+          </label>
+        }
+      />
       {err && (
         <p role="alert" className="text-label font-semibold text-ink">
           {err}
         </p>
       )}
       <button type="submit" className="btn-primary w-full" disabled={state === 'sending'}>
-        {state === 'sending' ? '보내는 중…' : '리뷰 보내기'}
+        {state === 'sending' ? '보내는 중…' : '후기 보내기'}
+      </button>
+    </form>
+  );
+}
+
+function OpinionTab({ a }: { a: SajuAnalysis }) {
+  const [topic, setTopic] = useState<string>('');
+  const [text, setText] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [adult, setAdult] = useState(false);
+  const [state, setState] = useState<SendState>('idle');
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    if (!topic) return setErr('어떤 내용인지 골라 주세요.');
+    if (text.trim().length < 5) return setErr('내용을 조금 더 적어 주세요.');
+    if (!adult || !consent) return setErr('필수 항목에 동의해 주세요.');
+    setState('sending');
+    const r = await send('opinions', { sessionId: sessionId(), topic, text: text.trim(), meta: chartMeta(a) });
+    if (r === 'rejected') {
+      setState('idle');
+      return setErr('의견을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
+    setState(r);
+  }
+
+  if (state === 'sent' || state === 'queued') return <Done title="의견 고마워요" body="확인하고 고칠게요. 고친 내용은 사이트 업데이트로 반영돼요." state={state} onSent={() => setState('sent')} />;
+
+  return (
+    <form onSubmit={submit} className="space-y-7">
+      <fieldset>
+        <legend className="text-label font-semibold text-ink">어떤 내용인가요?</legend>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {TOPICS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={topic === t.id}
+              onClick={() => setTopic(t.id)}
+              className={`h-10 rounded-full border px-4 text-label font-semibold transition-colors ${topic === t.id ? 'border-accent bg-accent text-on-accent' : 'border-line text-ink active:bg-fill'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <label className="block">
+        <span className="mb-2 block text-label font-semibold text-ink">내용</span>
+        <textarea
+          className="field h-auto min-h-32 py-3"
+          maxLength={2000}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="어느 화면의 어떤 부분인지 적어 주시면 빨리 고칠 수 있어요. 이름·연락처는 적지 말아 주세요."
+        />
+      </label>
+      <p className="text-cap text-sub">답장이 필요한 문의{BUSINESS.email ? `는 ${BUSINESS.email}로` : '(환불 등)는 사이트 아래 연락처로'} 보내 주세요. 이 칸으로는 답장을 드릴 수 없어요.</p>
+      <Consents consent={consent} setConsent={setConsent} adult={adult} setAdult={setAdult} />
+      {err && (
+        <p role="alert" className="text-label font-semibold text-ink">
+          {err}
+        </p>
+      )}
+      <button type="submit" className="btn-primary w-full" disabled={state === 'sending'}>
+        {state === 'sending' ? '보내는 중…' : '의견 보내기'}
       </button>
     </form>
   );

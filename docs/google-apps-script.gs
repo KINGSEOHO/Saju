@@ -41,6 +41,11 @@ var TABLES = {
       ['text', '의견'], ['price', '지불의향'], ['features', '원하는기능'], ['compare', '타서비스비교'], ['is_public', '공개동의'],
     ],
   },
+  // 의견·제보 (2026-10 추가) — 새 시트로 따로 쌓는다
+  opinions: {
+    title: '의견',
+    cols: [['created_at', '시각'], ['session_id', '세션'], ['topic', '종류'], ['text', '내용']],
+  },
   events: {
     title: '이벤트',
     cols: [['created_at', '시각'], ['session_id', '세션'], ['type', '종류']],
@@ -52,6 +57,7 @@ var SECTIONS = ['summary', 'personality', 'love', 'career', 'wealth', 'health', 
 var PRICES = ['free_only', 'p990', 'p1900', 'p1990', 'p2900', 'p3900', 'p4900', 'p6900', 'p9900', 'p19900', 'p29900'];
 var FEATURES = ['monthly', 'compat', 'daeun_detail', 'pdf', 'expert', 'career_deep', 'date_pick', 'name'];
 var COMPARES = ['much_better', 'better', 'same', 'worse', 'never'];
+var TOPICS = ['wrong', 'bug', 'idea', 'other'];
 // 단계별 측정: 접속 → 결과 봄 → 고민 펼침 → (궁합 결과) → 상세·가격 화면 봄 → 결제 버튼 → 결제 완료
 var EVENTS = ['analyze', 'share', 'print', 'premium_interest', 'visit', 'concern_open', 'match_result', 'detail_view', 'lock_view', 'pay_click', 'paid'];
 
@@ -115,6 +121,10 @@ function doPost(e) {
         PRICES.indexOf(b.price) >= 0 ? b.price : '', feats.join(','),
         COMPARES.indexOf(b.compare) >= 0 ? b.compare : '', b.public === true ? 1 : 0,
       ];
+    } else if (b.kind === 'opinions') {
+      var text = typeof b.text === 'string' ? b.text.trim() : '';
+      if (TOPICS.indexOf(b.topic) < 0 || text.length < 2) return json({ error: 'invalid opinion' });
+      row = [now, sid, b.topic, safe(text, 2000)];
     } else if (b.kind === 'events') {
       if (EVENTS.indexOf(b.type) < 0) return json({ error: 'invalid event' });
       row = [now, sid, b.type];

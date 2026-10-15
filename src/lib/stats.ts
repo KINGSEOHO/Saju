@@ -12,6 +12,8 @@ export interface RawData {
     price: string; features: string; compare: string; is_public: number; meta: Meta;
   }[];
   events: { created_at: string; session_id: string; type: string; meta: Meta }[];
+  /** 의견·제보 — 예전 스크립트에는 없다 */
+  opinions?: { created_at: string; topic: string; text: string; meta: Meta }[];
 }
 
 export interface Bucket {
@@ -33,6 +35,7 @@ export interface Stats {
   daily: { day: string; analyses: number; reviews: number }[];
   recentReviews: { created_at: string; overall: number; accuracy: number; text: string | null; price: string | null; meta: Meta }[];
   recentComments: { created_at: string; section: string; rating: number; comment: string }[];
+  recentOpinions: { created_at: string; topic: string; text: string }[];
   decision: { ready: boolean; notes: string[]; wtpPaidShare: number | null; medianPrice: string | null };
   funnel: Funnel;
 }
@@ -208,6 +211,7 @@ export function computeStats(raw: RawData): Stats {
     recentReviews: [...rv].reverse().slice(0, 30).map((r) => ({
       created_at: fmtTime(r.created_at), overall: Number(r.overall), accuracy: Number(r.accuracy), text: r.text || null, price: r.price || null, meta: r.meta ?? {},
     })),
+    recentOpinions: [...(raw.opinions ?? [])].reverse().slice(0, 30).map((o) => ({ created_at: fmtTime(o.created_at), topic: String(o.topic), text: String(o.text) })),
     recentComments: [...fb].reverse().filter((f) => f.comment).slice(0, 30).map((f) => ({ created_at: fmtTime(f.created_at), section: f.section, rating: Number(f.rating), comment: String(f.comment) })),
     decision: { ready, notes, wtpPaidShare, medianPrice },
     funnel: computeFunnel(ev),
