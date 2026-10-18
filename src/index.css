@@ -155,6 +155,16 @@
     overflow-wrap: anywhere;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
+    caret-color: var(--c-accent);
+  }
+  /* 브라우저가 그리는 부분도 사이트 색으로 — 글자 고르기, 키보드 포커스 */
+  ::selection {
+    background-color: var(--c-accent-tint);
+    color: var(--c-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
   }
   h1,
   h2,
