@@ -120,7 +120,7 @@ export function HitsCard({ a }: { a: SajuAnalysis }) {
             </div>
           )}
           <div className="mt-5 flex items-center justify-between">
-            <button type="button" disabled={idx === 0} onClick={() => setIdx(idx - 1)} className="h-10 text-label font-semibold text-sub disabled:opacity-0">
+            <button type="button" disabled={idx === 0} onClick={() => setIdx(idx - 1)} className="h-11 min-w-11 px-2 text-label font-semibold text-sub disabled:opacity-0">
               이전
             </button>
             <button

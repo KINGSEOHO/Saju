@@ -72,6 +72,7 @@
   --color-ink-2: var(--c-ink-2);
   --color-sub: var(--c-sub);
   --color-faint: var(--c-faint);
+  --color-placeholder: var(--c-placeholder);
   --color-accent: var(--c-accent);
   --color-accent-strong: var(--c-accent-strong);
   --color-accent-soft: var(--c-accent-soft);
@@ -95,7 +96,8 @@
   --c-ink: #1e1d1b; /* 제목·강조 */
   --c-ink-2: #2b2a28; /* 본문 */
   --c-sub: #5a5956; /* 보조 글자 */
-  --c-faint: #a9a7a5; /* 흐린 글자·비활성 */
+  --c-faint: #a9a7a5; /* 흐린 글자·비활성 (읽어야 하는 글자에는 쓰지 않는다) */
+  --c-placeholder: #6f6d6a; /* 입력칸 예시 글자 — 흰 바탕에서 4.5:1 이상 */
   --c-accent: #33574d; /* 송연록 */
   --c-accent-strong: #20443a;
   --c-accent-soft: #f5f7f7;
@@ -123,6 +125,7 @@
     --c-ink-2: #e8e7e4;
     --c-sub: #b9b7b4;
     --c-faint: #6a6966;
+    --c-placeholder: #8f8d8a;
     --c-accent: #86a79d;
     --c-accent-strong: #b1c6c0;
     --c-accent-soft: #171e1c;
@@ -200,7 +203,7 @@
 }
 
 @utility field {
-  @apply h-14 w-full rounded-xl border border-line bg-subtle px-4 text-ui text-ink transition-colors outline-none placeholder:text-faint focus:border-accent focus:bg-bg disabled:text-faint;
+  @apply h-14 w-full rounded-xl border border-line bg-subtle px-4 text-ui text-ink transition-colors outline-none placeholder:text-placeholder focus:border-accent focus:bg-bg disabled:text-faint;
 }
 
 @utility btn {
@@ -215,6 +218,10 @@
 }
 @utility btn-small {
   @apply btn h-10 rounded-xl bg-fill px-4 text-label text-ink active:bg-line;
+}
+/* 글자만 있는 작은 버튼 — 보이는 크기는 그대로, 누르는 범위만 위아래로 넓힌다 (최소 44px) */
+@utility tap {
+  @apply relative after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''];
 }
 @utility link {
   @apply font-semibold text-accent underline-offset-4 hover:underline;
@@ -250,7 +257,7 @@
   @apply flex gap-5 overflow-x-auto border-b border-line [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
 }
 @utility tab {
-  @apply -mb-px shrink-0 border-b-2 border-transparent py-2.5 text-ui font-semibold whitespace-nowrap text-faint transition-colors;
+  @apply -mb-px shrink-0 border-b-2 border-transparent py-2.5 text-ui font-semibold whitespace-nowrap text-sub transition-colors;
 }
 @utility tab-on {
   @apply border-ink text-ink;

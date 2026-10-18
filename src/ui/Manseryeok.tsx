@@ -38,7 +38,7 @@ export function PillarTable({ a }: { a: SajuAnalysis }) {
       <span className="mt-2 text-micro text-sub">{reading}</span>
     </div>
   );
-  const unknown = <span className="text-label text-faint">모름</span>;
+  const unknown = <span className="text-label text-sub">모름</span>;
   return (
     <figure>
       <table className="w-full table-fixed border-collapse border-y-[1.5px] border-line-strong text-center">

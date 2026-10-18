@@ -217,7 +217,7 @@ export function WebtoonPanel({ a, report }: { a: SajuAnalysis; report: Report })
             <button key={t.id} type="button" role="tab" aria-selected={id === t.id} onClick={() => choose(t.id)} className={`seg-item px-1 py-2 ${id === t.id ? 'seg-on' : ''}`}>
               <span className="block text-micro font-semibold">{t.no}화</span>
               <span className="block text-[13px] leading-tight">{t.label}</span>
-              {locked && <span className="mt-0.5 block text-[10px] font-normal text-faint">MBTI 필요</span>}
+              {locked && <span className="mt-0.5 block text-[11px] font-normal text-sub">MBTI 필요</span>}
             </button>
           );
         })}

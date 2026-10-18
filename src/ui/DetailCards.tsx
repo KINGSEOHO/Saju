@@ -205,7 +205,7 @@ function Back({ title }: { title: string }) {
       <span className="relative mt-4 text-label font-semibold" style={{ color: INK }}>
         {title}
       </span>
-      <span className="relative mt-1 text-micro" style={{ color: '#5f5a50' }}>
+      <span className="relative mt-1 text-micro" style={{ color: '#4d483f' }}>
         눌러서 뒤집기
       </span>
     </div>
@@ -295,7 +295,7 @@ export function DetailCards({ items, onOpen }: { items: CardItem[]; onOpen: (id:
       </div>
       {!all && (
         <div className="mt-3 text-center">
-          <button type="button" className="link text-label" onClick={() => {
+          <button type="button" className="link tap text-label" onClick={() => {
               setCascade(true);
               setShown(new Set(items.map((x) => x.id)));
             }}>
@@ -314,7 +314,7 @@ function Arrow({ dir, disabled, onClick }: { dir: 1 | -1; disabled: boolean; onC
       onClick={onClick}
       disabled={disabled}
       aria-label={dir < 0 ? '이전 카드' : '다음 카드'}
-      className="flex size-9 items-center justify-center rounded-full bg-fill text-ink transition-[opacity,scale] duration-150 ease-out active:scale-[0.97] disabled:opacity-35 disabled:active:scale-100"
+      className="flex size-11 items-center justify-center rounded-full bg-fill text-ink transition-[opacity,scale] duration-150 ease-out active:scale-[0.97] disabled:opacity-35 disabled:active:scale-100"
     >
       <svg viewBox="0 0 12 12" className="size-3" aria-hidden>
         <path d={dir < 0 ? 'M7.5 2L3.5 6l4 4' : 'M4.5 2l4 4-4 4'} stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />

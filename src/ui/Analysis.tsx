@@ -115,7 +115,7 @@ export function ElementsPanel({ a }: { a: SajuAnalysis }) {
       </p>
       <div className="mt-6 grid grid-cols-5 border-t border-l border-line text-center">
         {(['비견', '겁재', '식신', '상관', '편재', '정재', '편관', '정관', '편인', '정인'] as const).map((t) => (
-          <div key={t} className={`border-r border-b border-line px-0.5 py-2.5 ${tgc[t] ? 'text-ink' : 'text-faint'}`}>
+          <div key={t} className={`border-r border-b border-line px-0.5 py-2.5 ${tgc[t] ? 'text-ink' : 'text-sub'}`}>
             <div className="font-serif text-[15px] font-bold">{t}</div>
             <div className="mt-0.5 text-[10px] leading-tight">{TEN_GOD_PLAIN[t]}</div>
             <div className="mt-1 text-label font-bold tabular-nums">{tgc[t]}</div>

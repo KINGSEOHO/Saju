@@ -156,7 +156,7 @@ export default function App() {
           {route.name === 'result' && (
             <button
               type="button"
-              className="text-label font-semibold text-sub"
+              className="tap text-label font-semibold text-sub"
               onClick={() => {
                 clearDraft();
                 goToStep(1);
@@ -543,10 +543,10 @@ function Result({ input }: { input: BirthInput }) {
           {[input.name, input.gender === 'male' ? '남성' : '여성', born, input.placeName, `만 ${a.age}세`].filter(Boolean).join(' · ')}
         </p>
         <div className="flex shrink-0 gap-3 text-cap font-semibold">
-          <button type="button" className="text-accent" onClick={edit}>
+          <button type="button" className="tap text-accent" onClick={edit}>
             정보 수정
           </button>
-          <button type="button" className="text-accent" onClick={share}>
+          <button type="button" className="tap text-accent" onClick={share}>
             {copied ? '복사됨' : '링크 복사'}
           </button>
         </div>
@@ -558,7 +558,7 @@ function Result({ input }: { input: BirthInput }) {
           {cross.card.headline}
         </h1>
         <p className="mx-auto mt-3 max-w-[30em] font-serif text-read text-sub">{cross.card.subline}</p>
-        <button type="button" className="link no-print mt-3 text-label" onClick={() => openSection('cross')}>
+        <button type="button" className="link tap no-print mt-3 text-label" onClick={() => openSection('cross')}>
           이 결론의 근거 보기
         </button>
       </section>
@@ -567,7 +567,7 @@ function Result({ input }: { input: BirthInput }) {
         <div className="mt-8 border-l-2 border-ink pl-4">
           <p className="text-label font-semibold text-ink">태어난 시각이 경계에 가까워요</p>
           <p className="mt-1 text-label text-sub">계산 기준에 따라 사주가 달라질 수 있어요.</p>
-          <button type="button" className="link no-print mt-1 text-label" onClick={() => openSection('chart')}>
+          <button type="button" className="link tap no-print mt-1 text-label" onClick={() => openSection('chart')}>
             만세력에서 확인하기
           </button>
         </div>
@@ -637,7 +637,7 @@ function Result({ input }: { input: BirthInput }) {
             </div>
           </dl>
           <SwitchNote a={a} w={month.w} />
-          <button type="button" className="link no-print mt-4 text-label" onClick={() => openSection('luck')}>
+          <button type="button" className="link tap no-print mt-4 text-label" onClick={() => openSection('luck')}>
             월별 풀이 전체 보기
           </button>
         </section>
