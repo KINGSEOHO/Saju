@@ -19,9 +19,17 @@ describe('구매 코드', () => {
 // ---------------------------------------------------------------------------
 // 코드를 넣어도 산 것이 사라지지 않는다 (시안의 흉내 서버로 확인)
 // ---------------------------------------------------------------------------
-import { beforeEach } from 'vitest';
+import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { demoApi } from '../src/lib/account.ts';
+import { OFFER_RULES } from '../src/config/plans.ts';
 import { concernOffers, entOf, isOpen, PAID_CONCERNS, partnerOffers, purchaseOf, type Purchase, type SeasonKey } from '../src/lib/entitlements.ts';
+
+/** 이 파일은 첫 결제 혜택·차액 결제를 켠 규칙을 검사한다 (승인 뒤 켤 때를 대비해 그대로 지킨다) */
+const ON = { welcome: true, topup: true };
+// 흉내 서버(demoApi.pay)도 같은 규칙으로 다시 확인하게 — 이 파일 동안만 켠다
+const SAVED = { ...OFFER_RULES };
+beforeAll(() => void Object.assign(OFFER_RULES, ON));
+afterAll(() => void Object.assign(OFFER_RULES, SAVED));
 
 const mem = new Map<string, string>();
 Object.assign(globalThis, {
@@ -94,7 +102,7 @@ const Y27: SeasonKey = { year: 2027, title: '2027 신년운세' };
 /** 지금 화면에 보이는 선택지 중 하나로 결제 */
 async function payOffer(id: Purchase['item'], kind: string, list?: Purchase[]) {
   const e = entOf(list ?? (await demoApi.purchases()), S, Y27);
-  const o = concernOffers(e, id, undefined).find((x) => x.kind === kind)!;
+  const o = concernOffers(e, id, undefined, ON).find((x) => x.kind === kind)!;
   expect(o, `${id} ${kind}`).toBeTruthy();
   return { o, r: await demoApi.pay(purchaseOf(o, S, id, undefined, Y27.year), Y27) };
 }
@@ -113,7 +121,7 @@ describe('중복 결제 막기', () => {
 
   it('다른 탭에서 먼저 하나를 산 뒤 옛 값으로 전부 열기를 누르면, 값이 바뀌었다고 다시 고르게 한다', async () => {
     const stale = entOf([], S, Y27);
-    const oldAll = concernOffers(stale, 'love').find((x) => x.kind === 'all')!;
+    const oldAll = concernOffers(stale, 'love', undefined, ON).find((x) => x.kind === 'all')!;
     expect(oldAll.cost).toBe(9900);
     await payOffer('career', 'one'); // 다른 탭에서 첫 결제 1,900원
     const r = await demoApi.pay(purchaseOf(oldAll, S, 'love', undefined, 2027), Y27);
@@ -150,7 +158,7 @@ describe('중복 결제 막기', () => {
     expect(isOpen(e, 'career') && isOpen(e, 'love')).toBe(true);
     // 환불한 돈은 차액에 넣지 않는다 — 나머지 전부는 9,900 − 5,800 = 4,100원
     expect(e.spent).toBe(5800);
-    expect(concernOffers(e, 'money').find((x) => x.kind === 'all')?.cost).toBe(4100);
+    expect(concernOffers(e, 'money', undefined, ON).find((x) => x.kind === 'all')?.cost).toBe(4100);
     // 같은 코드를 또 넣어도 두 번 환불하지 않는다
     expect(await demoApi.redeem(codeA)).toEqual({ ok: true, merged: 0, code: codeA });
   });

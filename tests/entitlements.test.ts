@@ -19,12 +19,15 @@ import {
 } from '../src/lib/entitlements.ts';
 import type { ConcernId } from '../src/report/concernList.ts';
 
+/** 이 파일은 첫 결제 혜택·차액 결제를 켠 규칙을 검사한다 (승인 뒤 켤 때를 대비해 그대로 지킨다) */
+const ON = { welcome: true, topup: true };
+
 const S = 'saju1';
 const Y27: SeasonKey = { year: 2027, title: '2027 신년운세' };
 const Y28: SeasonKey = { year: 2028, title: '2028 신년운세' };
 
 function buy(list: Purchase[], id: ConcernId, kind: string, season = Y27) {
-  const o = concernOffers(entOf(list, S, season), id).find((x) => x.kind === kind);
+  const o = concernOffers(entOf(list, S, season), id, undefined, ON).find((x) => x.kind === kind);
   expect(o, `${id} ${kind}`).toBeTruthy();
   return { list: [...list, purchaseOf(o!, S, id, undefined, season.year)], o: o! };
 }
@@ -37,13 +40,13 @@ describe('가격', () => {
   });
 
   it('무료로 통째로 열어 주는 고민은 없다 — 처음 선택지는 첫 결제 혜택(1,900원)과 전부 열기', () => {
-    const career = concernOffers(entOf([], S, Y27), 'career');
+    const career = concernOffers(entOf([], S, Y27), 'career', undefined, ON);
     expect(career.map((o) => o.label)).toEqual(['첫 결제 1,900원에 이 고민 열기', '9,900원에 전부 열기']);
     expect(career[0]).toMatchObject({ kind: 'one', cost: 1900, note: '처음 한 번만이에요 · 다음부터는 3,900원', promo: { name: '첫 결제 혜택', was: 3900 } });
     expect(career[1].note).toBe('2027 신년운세와 고민 4개가 모두 열려요 · 하나씩 사면 22,500원.');
     expect(career.every((o) => o.cost > 0)).toBe(true);
     // 신년운세에서는 전부 열기를 주 버튼으로 (3,000원만 더 내면 고민 4개까지)
-    const year = concernOffers(entOf([], S, Y27), 'year');
+    const year = concernOffers(entOf([], S, Y27), 'year', undefined, ON);
     expect(year.map((o) => o.label)).toEqual(['9,900원에 전부 열기', '6,900원에 2027 신년운세 열기']);
   });
 });
@@ -53,12 +56,12 @@ describe('첫 결제 혜택', () => {
     let r = buy([], 'career', 'one');
     expect(r.o.cost).toBe(1900);
     expect(r.list[0]).toMatchObject({ kind: 'one', item: 'career', amount: 1900 });
-    const love = concernOffers(entOf(r.list, S, Y27), 'love');
+    const love = concernOffers(entOf(r.list, S, Y27), 'love', undefined, ON);
     expect(love.map((o) => o.label)).toEqual(['3,900원 더 내고 이 고민 열기', '8,000원 더 내고 나머지 전부 열기']);
     expect(love[0].note).toBe('지금까지 1,900원 · 열면 합계 5,800원');
     r = buy(r.list, 'love', 'one');
     // 하나 더 사면 9,700원이 되어 나머지가 200원만 남으므로, 하나 대신 나머지 전부만 남는다
-    const money = concernOffers(entOf(r.list, S, Y27), 'money');
+    const money = concernOffers(entOf(r.list, S, Y27), 'money', undefined, ON);
     expect(money.map((o) => o.label)).toEqual(['4,100원 더 내고 나머지 전부 열기']);
     expect(money[0].note).toBe('2027 신년운세와 고민 2개가 모두 열려요 · 합계 9,900원.');
     r = buy(r.list, 'money', 'all');
@@ -68,14 +71,14 @@ describe('첫 결제 혜택', () => {
   });
 
   it('신년운세와 궁합은 정가, 혜택은 계정에서 한 번뿐이고 다른 사주로 바꿔도 다시 나오지 않는다', () => {
-    expect(concernOffers(entOf([], S, Y27), 'year').some((o) => o.promo)).toBe(false);
+    expect(concernOffers(entOf([], S, Y27), 'year', undefined, ON).some((o) => o.promo)).toBe(false);
     expect(partnerOffers(entOf([], S, Y27), 'p1')[0].cost).toBe(4900);
     const r = buy([], 'career', 'one');
     expect(entOf(r.list, S, Y27).first).toBe(false);
-    expect(concernOffers(entOf(r.list, 'saju2', Y27), 'career').map((o) => o.label)).toEqual(['3,900원에 이 고민 열기', '9,900원에 전부 열기']);
+    expect(concernOffers(entOf(r.list, 'saju2', Y27), 'career', undefined, ON).map((o) => o.label)).toEqual(['3,900원에 이 고민 열기', '9,900원에 전부 열기']);
     // 궁합을 먼저 산 계정도 이미 결제한 계정이다
     const p = [purchaseOf(partnerOffers(entOf([], S, Y27), 'p1')[0], S, null, 'p1')];
-    expect(concernOffers(entOf(p, S, Y27), 'career')[0].label).toBe('3,900원에 이 고민 열기');
+    expect(concernOffers(entOf(p, S, Y27), 'career', undefined, ON)[0].label).toBe('3,900원에 이 고민 열기');
     // 예전 시안의 무료 기록만 있으면 아직 결제한 적이 없다
     expect(entOf([{ kind: 'free', item: 'love', target: S, amount: 0, at: 1 }], S, Y27).first).toBe(true);
   });
@@ -88,12 +91,12 @@ describe('하나씩 사도 9,900원보다 더 내지 않는다', () => {
   it('이직 3,900 → 연애 3,900 더 → 나머지는 차액 2,100원', () => {
     let r = buy(paidBefore, 'career', 'one');
     expect(r.o.cost).toBe(3900);
-    const love = concernOffers(entOf(r.list, S, Y27), 'love');
+    const love = concernOffers(entOf(r.list, S, Y27), 'love', undefined, ON);
     expect(love.map((o) => o.label)).toEqual(['3,900원 더 내고 이 고민 열기', '6,000원 더 내고 나머지 전부 열기']);
     expect(love[0].note).toBe('지금까지 3,900원 · 열면 합계 7,800원');
     r = buy(r.list, 'love', 'one');
     // 하나 더 사면 11,700원이 되어 '전부 열기'보다 비싸지므로, 나머지 전부만 남는다
-    const money = concernOffers(entOf(r.list, S, Y27), 'money');
+    const money = concernOffers(entOf(r.list, S, Y27), 'money', undefined, ON);
     expect(money.map((o) => o.label)).toEqual(['2,100원 더 내고 나머지 전부 열기']);
     expect(money[0].note).toBe('2027 신년운세와 고민 2개가 모두 열려요 · 합계 9,900원.');
     r = buy(r.list, 'money', 'all');
@@ -105,7 +108,7 @@ describe('하나씩 사도 9,900원보다 더 내지 않는다', () => {
   it('신년운세 6,900원을 산 뒤에는 3,000원만 더 내면 전부 열린다', () => {
     const r = buy([], 'year', 'one');
     expect(r.o.cost).toBe(6900);
-    const career = concernOffers(entOf(r.list, S, Y27), 'career');
+    const career = concernOffers(entOf(r.list, S, Y27), 'career', undefined, ON);
     expect(career.map((o) => [o.kind, o.cost])).toEqual([['all', 3000]]);
     expect(career[0].note).toBe('고민 4개가 모두 열려요 · 합계 9,900원.');
   });
@@ -125,14 +128,14 @@ describe('신년운세는 해마다 따로', () => {
     expect(isOpen(e28, 'career')).toBe(true);
     expect(isOpen(e28, 'year')).toBe(false);
     // 다음 해에는 그해 신년운세만 사면 된다 (지난해에 낸 돈으로 깎아 주지 않는다)
-    expect(concernOffers(e28, 'year').map((o) => [o.kind, o.cost])).toEqual([['one', 6900]]);
+    expect(concernOffers(e28, 'year', undefined, ON).map((o) => [o.kind, o.cost])).toEqual([['one', 6900]]);
   });
 
   it('지난해 신년운세 값은 올해 묶음 차액에 넣지 않는다', () => {
     const r = buy([], 'year', 'one', Y27);
     const e28 = entOf(r.list, S, Y28);
     expect(e28.spent).toBe(0);
-    expect(concernOffers(e28, 'career').find((o) => o.kind === 'all')?.cost).toBe(9900);
+    expect(concernOffers(e28, 'career', undefined, ON).find((o) => o.kind === 'all')?.cost).toBe(9900);
   });
 });
 
@@ -176,16 +179,16 @@ describe('중복 결제 막기', () => {
 
   it('결제 직전 확인 — 이미 열렸으면 owned, 화면에 남은 옛 값이면 price', () => {
     const one = buy([], 'career', 'one');
-    expect(checkPurchase([], one.list[0], Y27)).toBe('ok');
-    expect(checkPurchase(one.list, one.list[0], Y27)).toBe('owned');
+    expect(checkPurchase([], one.list[0], Y27, undefined, ON)).toBe('ok');
+    expect(checkPurchase(one.list, one.list[0], Y27, undefined, ON)).toBe('owned');
     // 첫 결제 혜택을 쓴 뒤 다른 고민을 1,900원으로 결제하려 하면 값이 틀렸다
-    expect(checkPurchase(one.list, { ...one.list[0], item: 'love' }, Y27)).toBe('price');
+    expect(checkPurchase(one.list, { ...one.list[0], item: 'love' }, Y27, undefined, ON)).toBe('price');
     const all = buy(one.list, 'love', 'all');
     expect(all.o.cost).toBe(8000);
-    expect(checkPurchase(one.list, { ...all.list[1], amount: 9900 }, Y27)).toBe('price');
-    expect(checkPurchase(all.list, all.list[1], Y27)).toBe('owned');
+    expect(checkPurchase(one.list, { ...all.list[1], amount: 9900 }, Y27, undefined, ON)).toBe('price');
+    expect(checkPurchase(all.list, all.list[1], Y27, undefined, ON)).toBe('owned');
     const p1 = purchaseOf(partnerOffers(entOf([], S, Y27), 'p1')[0], S, null, 'p1');
-    expect(checkPurchase([p1], p1, Y27)).toBe('owned');
+    expect(checkPurchase([p1], p1, Y27, undefined, ON)).toBe('owned');
   });
 
   it('한 계정 안에서 화면이 권하는 대로 사면 겹친 결제가 없다', () => {
@@ -226,5 +229,22 @@ describe('중복 결제 막기', () => {
     const e = entOf(after, S, Y27);
     expect(e.spent).toBe(3900);
     expect(isOpen(e, 'career')).toBe(true);
+  });
+});
+
+describe('출시 규칙 (PG 심사용 고정 상품표)', () => {
+  it('첫 결제 혜택이 없고, 값은 3,900 · 6,900 · 9,900 · 4,900 중 하나뿐이다', () => {
+    const career = concernOffers(entOf([], S, Y27), 'career');
+    expect(career.map((o) => [o.kind, o.cost])).toEqual([
+      ['one', 3900],
+      ['all', 9900],
+    ]);
+    expect(career.some((o) => o.promo)).toBe(false);
+    expect(concernOffers(entOf([], S, Y27), 'year').map((o) => o.cost)).toEqual([9900, 6900]);
+  });
+  it('하나를 산 뒤에는 차액 결제 없이 하나씩만 판다', () => {
+    const one: Purchase = { kind: 'one', item: 'career', target: S, amount: 3900, at: 1, year: 2027 };
+    expect(concernOffers(entOf([one], S, Y27), 'love').map((o) => [o.kind, o.cost])).toEqual([['one', 3900]]);
+    expect(checkPurchase([one], { ...one, kind: 'all', item: 'love', amount: 6000 }, Y27)).toBe('price');
   });
 });

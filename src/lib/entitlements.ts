@@ -16,7 +16,7 @@
  *    산 것이 있어 값이 바뀌었으면 새 값으로 다시 고르게 한다.
  *  - 두 기기의 기록을 합쳤을 때 겹쳐 낸 돈은 overpaid로 계산해 환불한다 (이미 연 것을 또 샀거나 묶음 가격을 넘겨 낸 만큼).
  */
-import { PRICES } from '../config/plans.ts';
+import { OFFER_RULES, PRICES, type OfferRules } from '../config/plans.ts';
 import { CONCERNS, type ConcernId } from '../report/concernList.ts';
 
 export type PurchaseKind = 'one' | 'all' | 'partner' | 'free' | 'partnerFree';
@@ -154,7 +154,7 @@ const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
 const MIN_REST = 1000;
 
 /** 잠긴 고민 하나에서 보여 줄 선택지 — 첫째가 주 버튼 */
-export function concernOffers(e: Ent, id: ConcernId, prices = PRICES): Offer[] {
+export function concernOffers(e: Ent, id: ConcernId, prices = PRICES, rules: OfferRules = OFFER_RULES): Offer[] {
   if (id === 'match' || isOpen(e, id)) return [];
   const yearName = e.season.title;
   const yearOpen = isOpen(e, 'year');
@@ -162,12 +162,19 @@ export function concernOffers(e: Ent, id: ConcernId, prices = PRICES): Offer[] {
   // 고민 4개가 이미 다 열린 사람에게 남은 것은 그해 신년운세뿐
   if (id === 'year' && e.all) return [{ kind: 'one', cost: prices.year, label: `${won(prices.year)}에 ${yearName} 열기`, note: '고민 4개는 이미 열려 있어요.' }];
   // 첫 결제 혜택은 고민 4개에만 (신년운세는 시즌 상품이라 정가)
-  const welcome = e.first && id !== 'year';
+  const welcome = rules.welcome && e.first && id !== 'year';
   const single = id === 'year' ? prices.year : welcome ? prices.first : prices.concern;
   const allCost = Math.max(prices.all - e.spent, 0);
   // '전부 열기'로 함께 열리는 것
   const rest = [...(yearOpen ? [] : [yearName]), ...(lockedCore ? [`고민 ${lockedCore}개`] : [])].join('와 ');
   const out: Offer[] = [];
+  // 차액 결제를 끈 동안: 정해진 값으로만 판다 — 아무것도 안 샀으면 하나(3,900·6,900) 또는 전부(9,900), 하나라도 샀으면 하나씩만
+  if (!rules.topup) {
+    out.push({ kind: 'one', cost: single, label: `${won(single)}에 ${id === 'year' ? yearName : '이 고민'} 열기` });
+    if (e.spent === 0 && !e.all)
+      out.push({ kind: 'all', cost: prices.all, label: `${won(prices.all)}에 전부 열기`, note: `${rest}가 모두 열려요 · 하나씩 사면 ${won(prices.year + prices.concern * CORE_CONCERNS.length)}.` });
+    return out.length > 1 && id === 'year' ? [out[1], out[0]] : out;
+  }
   // 하나만 — 사고 나서도 '전부 열기'까지 1,000원 이상 남을 때만 (첫 결제 혜택은 늘)
   if (welcome) {
     out.push({
@@ -214,7 +221,7 @@ export type PayCheck = 'ok' | 'owned' | 'price';
  * 결제 승인 직전에 서버가 계정의 최신 기록으로 다시 계산한다. 다른 탭·다른 기기에서 먼저 산 것이 있어도
  * 이미 열린 것에는 돈을 받지 않고, 화면에 남아 있던 옛 값으로 결제되지 않게 한다.
  */
-export function checkPurchase(list: Purchase[], p: Purchase, season: SeasonKey, prices = PRICES): PayCheck {
+export function checkPurchase(list: Purchase[], p: Purchase, season: SeasonKey, prices = PRICES, rules: OfferRules = OFFER_RULES): PayCheck {
   if (p.item === 'match') {
     const [saju, pk] = p.target.split('>');
     const e = entOf(list, saju, season, prices);
@@ -224,10 +231,12 @@ export function checkPurchase(list: Purchase[], p: Purchase, season: SeasonKey, 
   const e = entOf(list, p.target, season, prices);
   if (p.kind === 'all') {
     if (e.all && isOpen(e, 'year')) return 'owned';
+    // 차액 결제를 끈 동안에는 아무것도 안 산 사람만 정가 9,900원으로 산다
+    if (!rules.topup) return !e.all && e.spent === 0 && p.amount === prices.all ? 'ok' : 'price';
     return !e.all && Math.max(prices.all - e.spent, 0) === p.amount ? 'ok' : 'price';
   }
   if (isOpen(e, p.item)) return 'owned';
-  return concernOffers(e, p.item, prices).some((o) => o.kind === p.kind && o.cost === p.amount) ? 'ok' : 'price';
+  return concernOffers(e, p.item, prices, rules).some((o) => o.kind === p.kind && o.cost === p.amount) ? 'ok' : 'price';
 }
 
 const NO_SEASON: SeasonKey = { year: 0, title: '' };

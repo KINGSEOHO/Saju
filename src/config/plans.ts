@@ -38,6 +38,14 @@ export const PRICES = {
   /** 첫 결제 혜택 — 아직 한 번도 결제하지 않은 계정이 고민 하나(신년운세 빼고)를 처음 열 때만 */
   first: 1900,
 };
+/**
+ * 결제 규칙 스위치 — PG 심사에 맞춰 출시 때는 '정해진 상품표' 그대로 판다 (2026-10 결정).
+ *  - welcome: 첫 결제 1,900원 혜택. PG 승인 뒤에 켠다 (켤 때 정가 3,900원도 함께 보여 준다).
+ *  - topup: '전부 열기'에서 이미 산 금액을 빼 주는 차액 결제. 출시 때는 끈다 — 결제 금액이 사람마다 달라지지 않게.
+ */
+export const OFFER_RULES = { welcome: false, topup: false };
+export type OfferRules = typeof OFFER_RULES;
+
 /** 미리보기에서만 결제 흐름을 흉내 낸다 (node scripts/preview-artifact.mjs --paywall) */
 export const PAYWALL_DEMO = import.meta.env.VITE_PAYWALL_DEMO === '1';
 
