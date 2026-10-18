@@ -75,7 +75,8 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
         )}
       </div>
       {open && list.length > 0 && (
-        <div id={`${id}-list`} role="listbox" className="absolute z-30 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-line bg-bg p-2">
+        // 화면 위에 띄우지 않고 그 자리에 펼친다 — 띄우면 목록 아래가 바닥 버튼 뒤로 숨고 페이지가 더 내려가지 않았다
+        <div id={`${id}-list`} role="listbox" className="mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-line bg-bg p-2">
           <div className="flex flex-wrap gap-1.5">
             {list.map((j) => (
               <button
