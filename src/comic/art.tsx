@@ -16,7 +16,7 @@ import type { Actor, Bg, Half, Line, Mark, Panel, PropSpec, Sfx, Shot, TextBeat 
 export const PW = 600;
 export const FONT =
   "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', 'Noto Sans CJK KR', sans-serif";
-export const SERIF = "'Noto Serif KR', 'Nanum Myeongjo', AppleMyungjo, Batang, 'Noto Serif CJK KR', serif";
+export const SERIF = "'HCR Batang', 'Noto Serif KR', 'Nanum Myeongjo', AppleMyungjo, Batang, 'Noto Serif CJK KR', serif";
 const WHITE = '#ffffff';
 const TEXT = '#231f1d';
 

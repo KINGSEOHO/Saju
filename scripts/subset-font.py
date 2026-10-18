@@ -20,3 +20,5 @@ for name, out in [('HCRBatang.ttf', 'HCRBatang.woff2'), ('HCRBatang-bold.ttf', '
     s = subset.Subsetter(opts); s.populate(unicodes=keep); s.subset(f)
     f.flavor = 'woff2'; f.save(os.path.join(out_dir, out))
     print(out, len(keep), os.path.getsize(os.path.join(out_dir, out)))
+# 글꼴에 넣은 한자 목록 — tests/fonts.test.ts가 코드의 한자가 모두 들어 있는지 본다
+open(os.path.join(out_dir, 'hanja.txt'), 'w', encoding='utf-8').write(''.join(sorted(chr(u) for u in han if u in cmap)) + '\n')
