@@ -10,7 +10,7 @@ import { crossReport } from '../report/cross.ts';
 import type { Report } from '../report/generate.ts';
 import { ExtrasForm } from './Cross.tsx';
 import { SectionRating } from './Feedback.tsx';
-import { Chevron, scrollToStart, SectionTitle } from './common.tsx';
+import { Chevron, scrollMotion, scrollToStart, SectionTitle } from './common.tsx';
 
 const TABS: { id: EpisodeId; no: number; label: string }[] = [
   { id: 'persona', no: 1, label: '나라는 사람' },
@@ -65,7 +65,7 @@ function Carousel({ count, children, last, onLast }: { count: number; children: 
     const el = track.current;
     if (!el) return;
     const n = Math.max(0, Math.min(count - 1, i));
-    el.scrollTo({ left: n * el.clientWidth, behavior: 'smooth' });
+    el.scrollTo({ left: n * el.clientWidth, behavior: scrollMotion() });
   };
   const onScroll = () => {
     const el = track.current;
@@ -95,7 +95,7 @@ function Carousel({ count, children, last, onLast }: { count: number; children: 
       </div>
       <div className="no-print mt-4 px-5 sm:px-0">
         <div className="h-0.5 bg-line" aria-hidden>
-          <div className="h-0.5 bg-accent transition-[width]" style={{ width: `${((cur + 1) / count) * 100}%` }} />
+          <div className="h-0.5 origin-left bg-accent transition-transform duration-300 ease-out motion-reduce:transition-none" style={{ transform: `scaleX(${(cur + 1) / count})` }} />
         </div>
         <div className="mt-3 flex items-center justify-between gap-3">
           <button type="button" onClick={() => go(cur - 1)} disabled={cur === 0} className="btn-small w-24 disabled:opacity-40" aria-label="이전 컷">

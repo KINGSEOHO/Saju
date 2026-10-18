@@ -202,7 +202,7 @@ export function BirthFlow({ step }: { step: number }) {
         </div>
         <div className="wrap">
           <div className="h-0.5 bg-line" role="progressbar" aria-valuemin={1} aria-valuemax={FLOW_STEPS} aria-valuenow={step}>
-            <div className="h-0.5 bg-accent transition-[width]" style={{ width: `${(step / FLOW_STEPS) * 100}%` }} />
+            <div className="h-0.5 bg-accent" style={{ width: `${(step / FLOW_STEPS) * 100}%` }} />
           </div>
         </div>
       </div>

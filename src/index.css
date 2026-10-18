@@ -204,7 +204,7 @@
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-1.5 rounded-[14px] px-5 font-semibold transition-colors select-none disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center gap-1.5 rounded-[14px] px-5 font-semibold transition-[color,background-color,scale] duration-150 ease-out select-none active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100;
 }
 /* 화면의 주된 행동 하나 (다음 · 결과 보기) */
 @utility btn-primary {
@@ -267,10 +267,11 @@
   background: rgb(20 19 17 / 0.45);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  animation: sheet-fade 0.25s ease-out;
+  animation: sheet-fade 0.2s ease-out;
 }
 .sheet-panel {
-  animation: sheet-up 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  /* iOS 서랍과 같은 곡선 — 처음에 빠르게 올라오고 끝에서 부드럽게 멈춘다 */
+  animation: sheet-up 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 @keyframes sheet-fade {
   from {
@@ -283,9 +284,10 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  /* 움직임 줄이기: 올라오는 움직임은 빼고 옅게 나타나기만 */
   .sheet-backdrop,
   .sheet-panel {
-    animation: none;
+    animation: sheet-fade 0.15s ease-out;
   }
 }
 

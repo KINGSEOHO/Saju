@@ -5,6 +5,7 @@
  * 그림은 붓 자국·먹 번짐·여백으로만 그린 수묵화 풍. 카드는 종이라서 어두운 화면에서도 한지 색을 쓴다(조금 낮춘 밝기).
  */
 import { useRef, useState, type ReactNode } from 'react';
+import { scrollMotion } from './common.tsx';
 
 export interface CardItem {
   id: string;
@@ -214,6 +215,8 @@ function Back({ title }: { title: string }) {
 export function DetailCards({ items, onOpen }: { items: CardItem[]; onOpen: (id: string) => void }) {
   const [shown, setShown] = useState<Set<string>>(() => new Set());
   const [at, setAt] = useState(0);
+  /** ‘모두 뒤집기’를 눌렀을 때만 보이는 카드부터 차례로 뒤집는다 */
+  const [cascade, setCascade] = useState(false);
   const rail = useRef<HTMLUListElement>(null);
   const flip = (id: string) => setShown((s) => new Set(s).add(id));
   const all = items.every((x) => shown.has(x.id));
@@ -226,7 +229,7 @@ export function DetailCards({ items, onOpen }: { items: CardItem[]; onOpen: (id:
   };
   const go = (n: number) => {
     const i = Math.max(0, Math.min(items.length - 1, n));
-    rail.current?.scrollTo({ left: i * step(), behavior: 'smooth' });
+    rail.current?.scrollTo({ left: i * step(), behavior: scrollMotion() });
   };
   return (
     <div>
@@ -242,7 +245,10 @@ export function DetailCards({ items, onOpen }: { items: CardItem[]; onOpen: (id:
           const up = shown.has(x.id);
           return (
             <li key={x.id} className="aspect-[3/4] w-[70%] max-w-[270px] shrink-0 snap-start" style={{ perspective: '1000px' }} aria-label={`${i + 1} / ${items.length}`}>
-              <div className="relative h-full w-full transition-transform duration-500 motion-reduce:transition-none" style={{ transformStyle: 'preserve-3d', transform: up ? 'rotateY(180deg)' : 'none' }}>
+              <div
+                className="relative h-full w-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+                style={{ transformStyle: 'preserve-3d', transform: up ? 'rotateY(180deg)' : 'none', transitionDelay: cascade ? `${Math.min(i, 3) * 60}ms` : undefined }}
+              >
                 <button type="button" className="absolute inset-0 rounded-2xl" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }} onClick={() => flip(x.id)} aria-label={`${x.title} 카드 뒤집기`} tabIndex={up ? -1 : 0} aria-hidden={up}>
                   <Back title={x.title} />
                 </button>
@@ -289,7 +295,10 @@ export function DetailCards({ items, onOpen }: { items: CardItem[]; onOpen: (id:
       </div>
       {!all && (
         <div className="mt-3 text-center">
-          <button type="button" className="link text-label" onClick={() => setShown(new Set(items.map((x) => x.id)))}>
+          <button type="button" className="link text-label" onClick={() => {
+              setCascade(true);
+              setShown(new Set(items.map((x) => x.id)));
+            }}>
             카드 모두 뒤집기
           </button>
         </div>
@@ -305,7 +314,7 @@ function Arrow({ dir, disabled, onClick }: { dir: 1 | -1; disabled: boolean; onC
       onClick={onClick}
       disabled={disabled}
       aria-label={dir < 0 ? '이전 카드' : '다음 카드'}
-      className="flex size-9 items-center justify-center rounded-full bg-fill text-ink transition-opacity disabled:opacity-35"
+      className="flex size-9 items-center justify-center rounded-full bg-fill text-ink transition-[opacity,scale] duration-150 ease-out active:scale-[0.97] disabled:opacity-35 disabled:active:scale-100"
     >
       <svg viewBox="0 0 12 12" className="size-3" aria-hidden>
         <path d={dir < 0 ? 'M7.5 2L3.5 6l4 4' : 'M4.5 2l4 4-4 4'} stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />

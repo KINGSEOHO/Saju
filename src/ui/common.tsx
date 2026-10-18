@@ -61,6 +61,9 @@ export function stickyHeight(): number {
   return head + tabs;
 }
 
+/** 움직임 줄이기를 켠 사람에게는 스크롤도 바로 옮긴다 */
+export const scrollMotion = (): ScrollBehavior => (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+
 /** 요소의 시작이 머리말 바로 아래에 오도록 부드럽게 스크롤 */
 export function scrollToStart(el: HTMLElement | null | undefined, gap = 12) {
   if (!el) return;
@@ -68,11 +71,11 @@ export function scrollToStart(el: HTMLElement | null | undefined, gap = 12) {
   const box = el.closest<HTMLElement>('[data-scroller]');
   if (box) {
     const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 64 - gap;
-    box.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    box.scrollTo({ top: Math.max(0, top), behavior: scrollMotion() });
     return;
   }
   const top = el.getBoundingClientRect().top + window.scrollY - stickyHeight() - gap;
-  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  window.scrollTo({ top: Math.max(0, top), behavior: scrollMotion() });
 }
 
 /** 해석 문장의 성격 — 강점은 포인트 색, 약점은 먹색, 나머지는 회색 꼬리표 */

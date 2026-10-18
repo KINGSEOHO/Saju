@@ -20,7 +20,7 @@ import { Admin } from './ui/Admin.tsx';
 import { ElementsPanel, InteractionsPanel, StrengthPanel } from './ui/Analysis.tsx';
 import { BirthFlow, FLOW_STEPS, goToStep } from './ui/BirthForm.tsx';
 import { ElementStrip } from './ui/Charts.tsx';
-import { BottomBar, Chevron, Disclosure, Gloss, GLOSSARY, Lead, Term } from './ui/common.tsx';
+import { BottomBar, Chevron, Disclosure, Gloss, GLOSSARY, Lead, scrollMotion, Term } from './ui/common.tsx';
 import { ConcernBridge } from './ui/ConcernBridge.tsx';
 import { DetailCards } from './ui/DetailCards.tsx';
 import { popSheetState, pushSheetState, Sheet } from './ui/Sheet.tsx';
@@ -446,7 +446,7 @@ function Result({ input }: { input: BirthInput }) {
     const top = row.getBoundingClientRect().top + window.scrollY - head;
     // 위에 펼쳐 둔 긴 풀이가 접히면 거리가 멀어지므로, 멀 때는 바로 옮긴다
     const far = Math.abs(top - window.scrollY) > window.innerHeight * 1.5;
-    window.scrollTo({ top, behavior: far ? 'auto' : 'smooth' });
+    window.scrollTo({ top, behavior: far ? 'auto' : scrollMotion() });
   }, [jump]);
 
   if ('error' in result || !report || !cross) {
