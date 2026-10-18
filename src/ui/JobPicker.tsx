@@ -2,13 +2,23 @@
  * 직업 입력 — 누르면 언제나 전체 추천 목록이 열리고, 글자를 치면 그때만 걸러진다.
  * (브라우저 기본 datalist는 이미 고른 값으로 목록을 걸러, 한 번 고르면 다른 직업을 고를 수 없었다)
  */
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { JOB_SUGGEST } from '../report/job.ts';
 
 export function JobPicker({ value, onChange, onPick, autoFocus }: { value: string; onChange: (v: string) => void; onPick?: (v: string) => void; autoFocus?: boolean }) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  // 키보드를 내려도(입력칸에서 포커스가 빠져도) 목록은 그대로 둔다 — 목록 밖을 누르거나 하나를 고르면 닫는다
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', away);
+    return () => document.removeEventListener('pointerdown', away);
+  }, [open]);
   const q = value.trim();
   const list = typed && q ? JOB_SUGGEST.filter((j) => j.includes(q) || q.includes(j)) : JOB_SUGGEST;
   const pick = (j: string) => {
@@ -20,7 +30,7 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
     onPick?.(j);
   };
   return (
-    <div className="relative">
+    <div className="relative" ref={box}>
       <label htmlFor={id} className="mb-2 block text-label font-semibold text-ink">
         직업·하는 일
       </label>
@@ -44,7 +54,6 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
               setOpen(true);
             }
           }}
-          onBlur={() => window.setTimeout(() => setOpen(false), 180)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') setOpen(false);
           }}
@@ -75,8 +84,8 @@ export function JobPicker({ value, onChange, onPick, autoFocus }: { value: strin
         )}
       </div>
       {open && list.length > 0 && (
-        // 화면 위에 띄우지 않고 그 자리에 펼친다 — 띄우면 목록 아래가 바닥 버튼 뒤로 숨고 페이지가 더 내려가지 않았다
-        <div id={`${id}-list`} role="listbox" className="mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-line bg-bg p-2">
+        // 화면 위에 띄우지 않고, 목록 안 스크롤도 없이 그 자리에 다 펼친다 — 휴대폰에서 목록을 밀면 페이지가 내려가게
+        <div id={`${id}-list`} role="listbox" className="mt-1.5 w-full rounded-xl border border-line bg-bg p-2">
           <div className="flex flex-wrap gap-1.5">
             {list.map((j) => (
               <button

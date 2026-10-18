@@ -22,8 +22,23 @@ export function BackIcon() {
   );
 }
 
-/** 화면 아래에 고정되는 큰 버튼 자리 (아이폰 아래쪽 안전 영역까지 고려) */
+/** 휴대폰 키보드가 올라와 있는지 — 보이는 화면 높이가 크게 줄면 키보드로 본다 */
+function useKeyboardOpen() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const on = () => setOpen(window.innerHeight - vv.height > 150);
+    vv.addEventListener('resize', on);
+    return () => vv.removeEventListener('resize', on);
+  }, []);
+  return open;
+}
+
+/** 화면 아래에 고정되는 큰 버튼 자리 (아이폰 아래쪽 안전 영역까지 고려). 키보드가 올라오면 내용을 가리지 않게 숨긴다 */
 export function BottomBar({ children }: { children: ReactNode }) {
+  const keyboard = useKeyboardOpen();
+  if (keyboard) return null;
   return (
     <div className="no-print fixed inset-x-0 bottom-0 z-30 bg-bg">
       <div className="wrap pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">{children}</div>
