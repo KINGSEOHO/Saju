@@ -1,17 +1,19 @@
 /**
- * 이용약관 · 개인정보처리방침 · 환불 안내 — 주소 #/terms · #/privacy · #/refund
+ * 이용약관 · 개인정보처리방침 · 환불 안내 · 요금 안내 — 주소 #/terms · #/privacy · #/refund · #/pricing
  * 실제로 하는 일과 똑같이 적는다. 하는 일이 바뀌면(예: 결제를 열 때) 여기부터 고치고 POLICY_VERSIONS에 새 시행일을 더한다.
  */
 import { useState, type ReactNode } from 'react';
 import { BUSINESS, POLICY_DATE, POLICY_VERSIONS } from '../config/business.ts';
+import { BETA_FREE, PRICES } from '../config/plans.ts';
 import { clearAllLocal, deviceIdForRequest } from '../lib/storageKeys.ts';
 
-export type LegalDoc = 'terms' | 'privacy' | 'refund';
+export type LegalDoc = 'terms' | 'privacy' | 'refund' | 'pricing';
 
 export const LEGAL_TITLE: Record<LegalDoc, string> = {
   terms: '이용약관',
   privacy: '개인정보처리방침',
   refund: '환불 안내',
+  pricing: '요금 안내',
 };
 
 const pending = '등록 준비 중';
@@ -83,7 +85,9 @@ function Terms() {
       <Sec n={5} h="유료 서비스와 결제">
         <p>유료 서비스의 내용과 가격은 결제 전에 화면에 표시해요. 이용자는 상품과 금액을 확인하고, 환불 안내에 동의한 뒤 결제해요.</p>
         <p>
-          산 리포트는 같은 사람(같은 양력 생일)에게 계속 열려요. 출생 시각·출생지·음력 여부를 고쳐도 다시 결제하지 않아요. 신년운세는 산 해의 풀이에 해당해요. ‘전체 묶음’(9,900원)은 아직 아무것도 사지 않았을 때 살 수 있어요. 모든 상품은 정해진 값으로만 결제되며 자동 결제·정기 결제는 없어요.
+          상품마다 이름·내용·가격·이용 기간은 ‘요금 안내’에 적은 그대로예요. 리포트는 결제하면 바로 화면에 열리고, 결제한 날부터 1년 동안 같은 사람(같은 양력 생일)에게 다시 열려요. 출생
+          시각·출생지·음력 여부를 고쳐도 다시 결제하지 않아요. 신년운세 리포트는 산 해의 풀이예요. ‘전체 묶음’은 아직 아무것도 사지 않았을 때 살 수 있어요. 모든 상품은 정해진 값으로만 결제되며 자동
+          결제·정기 결제·충전은 없어요.
         </p>
         <p>
           만 19세 미만 미성년자가 법정대리인의 동의 없이 결제했다면 본인이나 법정대리인이 결제를 취소할 수 있어요(민법 제5조). 다만 미성년자가 속임수로 성년이라고 믿게 했거나 법정대리인이 허락한
@@ -326,6 +330,66 @@ function Refund() {
   );
 }
 
+const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
+
+/** 파는 상품 — 이름·내용·가격·이용 기간. config/plans.ts의 PRICES와 같은 값을 쓴다 */
+const PRODUCTS: { name: string; what: ReactNode; price: number }[] = [
+  { name: '고민 리포트', what: '이직·진로, 연애·결혼, 돈, 시험·합격 가운데 고른 고민 하나의 상세 풀이 (좋은 시기·조심할 시기, 지금 할 일, 개운법)', price: PRICES.concern },
+  { name: '신년운세 리포트', what: '그해 열두 달의 흐름과 달마다 할 일·조심할 일 (해마다 따로 사요)', price: PRICES.year },
+  { name: '전체 묶음', what: '고민 리포트 4개 + 그해 신년운세 리포트 (아직 아무것도 사지 않았을 때만)', price: PRICES.all },
+  { name: '궁합·재회 리포트', what: '상대 한 명과의 궁합 상세와 재회 상세 (상대마다 따로 사요)', price: PRICES.partner },
+];
+
+function Pricing() {
+  return (
+    <>
+      {BETA_FREE && (
+        <p className="mt-6 rounded-xl bg-fill px-4 py-3 text-ui text-ink-2">
+          <b className="text-ink">결제 준비 중이에요.</b> 결제를 열기 전까지는 아래 리포트를 모두 무료로 볼 수 있어요. 결제를 열면 이 페이지와 사이트 공지로 먼저 알려 드려요.
+        </p>
+      )}
+      <Sec n={1} h="상품과 가격">
+        <Table head={['상품', '내용', '가격']} rows={PRODUCTS.map((p) => [p.name, p.what, <span className="tabular-nums whitespace-nowrap">{won(p.price)}</span>])} />
+        <p>가격은 부가가치세를 포함한 값이에요. 정해진 값으로만 결제되며, 사람마다 다른 값을 받지 않아요.</p>
+        <p>생년월일만 넣으면 무료로 보는 풀이(사주 원판, 성격, 이번 달 운, 고민마다 한 줄 답과 이유)는 결제와 상관없이 늘 무료예요.</p>
+      </Sec>
+      <Sec n={2} h="받는 방법과 이용 기간">
+        <ul className="list-disc space-y-1.5 pl-5">
+          <li>결제가 끝나면 그 화면에서 바로 리포트가 열려요. 따로 배송하거나 기다리는 것은 없어요.</li>
+          <li>결제한 날부터 1년 동안 같은 사람(같은 양력 생일)의 결과 화면에서 다시 볼 수 있어요. 출생 시각·출생지를 고쳐도 다시 결제하지 않아요.</li>
+          <li>다른 기기에서는 결제 후 받은 구매 코드(MG-XXXX-XXXX)를 넣으면 열려요.</li>
+          <li>자동 결제·정기 결제·포인트 충전은 없어요. 한 번 결제하면 그것으로 끝이에요.</li>
+        </ul>
+      </Sec>
+      <Sec n={3} h="결제 수단과 환불">
+        <p>
+          신용·체크카드와 간편결제를 쓸 수 있어요(결제를 열 때 확정해요). 환불 기준은{' '}
+          <a className="underline" href="#/refund">
+            환불 안내
+          </a>
+          를 따라요.
+        </p>
+      </Sec>
+      <Sec n={4} h="고객센터">
+        <CustomerCenter />
+      </Sec>
+    </>
+  );
+}
+
+/** 고객센터 — 연락처·운영 시간·답하는 기간 */
+function CustomerCenter() {
+  const b = BUSINESS;
+  return (
+    <ul className="space-y-1.5">
+      <li>이메일 {b.email || pending}</li>
+      <li>전화 {b.phone || pending}</li>
+      <li>운영 시간 {b.hours}</li>
+      <li>이메일 문의는 영업일 기준 3일 안에 답해요.</li>
+    </ul>
+  );
+}
+
 export function Legal({ doc }: { doc: LegalDoc }) {
   return (
     <article className="wrap pt-8 pb-20">
@@ -338,7 +402,7 @@ export function Legal({ doc }: { doc: LegalDoc }) {
       </nav>
       <h1 className="mt-6 text-display text-ink">{LEGAL_TITLE[doc]}</h1>
       <p className="mt-2 text-label text-sub">시행일 {POLICY_DATE}</p>
-      {doc === 'terms' ? <Terms /> : doc === 'privacy' ? <Privacy /> : <Refund />}
+      {doc === 'terms' ? <Terms /> : doc === 'privacy' ? <Privacy /> : doc === 'refund' ? <Refund /> : <Pricing />}
     </article>
   );
 }
@@ -367,7 +431,13 @@ export function BusinessFooter() {
         <a href="#/refund" className="text-ink-2">
           환불 안내
         </a>
+        <a href="#/pricing" className="text-ink-2">
+          요금 안내
+        </a>
       </nav>
+      <p className="text-label text-ink-2">
+        <b className="text-ink">고객센터</b> {[b.phone, b.email].filter(Boolean).join(' · ') || pending} · {b.hours}
+      </p>
       <p className="text-micro leading-relaxed text-sub">
         {rows.map(([k, v], i) => (
           <span key={k}>

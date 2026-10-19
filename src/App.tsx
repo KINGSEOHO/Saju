@@ -33,7 +33,7 @@ type Route = { name: 'home' } | { name: 'start'; step: number } | { name: 'resul
 function parseRoute(): Route {
   const h = window.location.hash.replace(/^#/, '');
   if (h.startsWith('/admin')) return { name: 'admin' };
-  const legal = h.match(/^\/(terms|privacy|refund)\b/);
+  const legal = h.match(/^\/(terms|privacy|refund|pricing)\b/);
   if (legal) return { name: 'legal', doc: legal[1] as LegalDoc };
   if (h.startsWith('/start')) {
     const n = Number(h.split('/')[2]);
@@ -101,7 +101,6 @@ export default function App() {
         <div className="wrap flex h-14 items-center justify-between">
           <a href="#/" className="flex items-baseline gap-2">
             <span className="hanja text-[19px] font-bold text-ink">명경사주</span>
-            <span className="text-micro text-sub">베타 · 무료</span>
           </a>
           {route.name === 'result' && (
             <button

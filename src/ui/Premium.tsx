@@ -246,7 +246,7 @@ export function Premium({
   /** 확인 문구에 쓰는 이름 (예: 이직·진로) */
   what?: string;
   items: string[];
-  /** 정식 가격 안내 (베타 안내 문구에만 쓴다) */
+  /** 정가 안내 (결제 준비 중 문구에만 쓴다) */
   price?: string;
   /** 잠금 여부를 밖에서 정할 때 (이용권 계산) */
   locked?: boolean;
@@ -303,7 +303,7 @@ export function Premium({
     close();
     setDone(redeemNote(r));
   };
-  // 상세(또는 잠금 화면)의 제목이 화면에 들어오면 한 번 센다 — 베타에서는 '상세까지 봄', 잠겼으면 '가격 화면 봄'
+  // 상세(또는 잠금 화면)의 제목이 화면에 들어오면 한 번 센다 — 무료로 열려 있으면 '상세까지 봄', 잠겼으면 '가격 화면 봄'
   const head = useRef<HTMLHeadingElement>(null);
   const firstCost = pay ? offers![0].cost : undefined;
   useEffect(() => {
@@ -320,7 +320,7 @@ export function Premium({
     io.observe(el);
     return () => io.disconnect();
   }, [id, locked, firstCost]);
-  const status = locked ? '잠금 해제하면 볼 수 있어요' : lockedProp === false ? '열려 있어요' : `베타 기간이라 무료로 열려 있어요${price ? ` · 정식 ${price} 예정` : ''}`;
+  const status = locked ? '잠금 해제하면 볼 수 있어요' : lockedProp === false ? '열려 있어요' : `${price ? `정가 ${price} · ` : ''}결제 준비 중이라 지금은 무료로 열려 있어요`;
   return (
     <section className="mt-14 border-t-2 border-ink pt-5" aria-label={title} data-premium={id}>
       <div className="flex flex-wrap items-center gap-2">

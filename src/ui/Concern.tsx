@@ -367,6 +367,7 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         id={id}
         title={c.detail.title}
         what={title}
+        price={`${(id === 'year' ? PRICES.year : PRICES.concern).toLocaleString('ko-KR')}원`}
         items={c.detail.items}
         locked={PAYWALL_DEMO ? !isOpen(u.ent, id) : undefined}
         offers={concernOffers(u.ent, id)}

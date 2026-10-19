@@ -16,7 +16,7 @@ import { CoupleShare } from './CoupleShare.tsx';
 import { GaeunRows } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
 import { Premium, useUnlock, type Peek } from './Premium.tsx';
-import { PAYWALL_DEMO } from '../config/plans.ts';
+import { PAYWALL_DEMO, PRICES } from '../config/plans.ts';
 import { partnerKey, partnerOffers, partnerOpen, sajuKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
 import { seasonKey } from '../report/season.ts';
@@ -468,6 +468,7 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
         title="궁합 상세 리포트"
         what={b.input.name ? `${b.input.name}님과의 궁합` : '이 사람과의 궁합'}
         {...lock}
+        price={`${PRICES.partner.toLocaleString('ko-KR')}원 (상대 1명, 궁합·재회 함께)`}
         items={['반복되는 다툼과 푸는 법', '서로에게 하면 좋은 말 · 피해야 할 말', 'MBTI로 본 대화 가이드', '앞으로 10년 — 함께 좋은 해와 흔들리는 해', '오래 가려면', '두 사람의 개운법 — 함께 갈 곳, 데이트 색, 함께 피할 것']}
         peek={compatPeek(r)}
       >
@@ -560,6 +561,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
         title="재회 상세 리포트"
         what={b.input.name ? `${b.input.name}님과의 재회` : '이 사람과의 재회'}
         {...lock}
+        price={`${PRICES.partner.toLocaleString('ko-KR')}원 (상대 1명, 궁합·재회 함께)`}
         items={['앞으로 12개월 — 연락하기 좋은 달과 피할 달', '지금 할 일 네 가지', '다시 만난다면 서로에게 하면 좋은 말 · 피할 말']}
         peek={reunionPeek(a, r)}
       >
