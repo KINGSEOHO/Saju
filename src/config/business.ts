@@ -2,14 +2,16 @@
  * 사업자 정보 — 사이트 아래(푸터)와 약관·개인정보처리방침에 나온다 (전자상거래법상 표시 의무).
  *
  * 대표자 이름·주소·번호는 이 저장소에 적지 않는다. 빌드할 때 GitHub 저장소 변수(Settings → Secrets and variables →
- * Actions → Variables)에서 들어온다: BIZ_OWNER, BIZ_REG_NO, BIZ_MAIL_ORDER_NO, BIZ_ADDRESS, BIZ_PHONE, BIZ_EMAIL, BIZ_HOURS.
+ * Actions → Variables)에서 들어온다: BIZ_NAME, BIZ_OWNER, BIZ_REG_NO, BIZ_MAIL_ORDER_NO, BIZ_ADDRESS, BIZ_PHONE, BIZ_EMAIL, BIZ_HOURS.
  * 값이 비어 있으면 그 줄은 '등록 준비 중'으로 나온다.
  */
 const env = (k: string) => ((import.meta.env as Record<string, string | undefined>)[k] ?? '').trim();
 
 export const BUSINESS = {
-  /** 상호 */
+  /** 상호 — 사업자등록증에 적힌 그대로 (서비스 이름과 다를 수 있다) */
   name: env('VITE_BIZ_NAME') || '명경사주',
+  /** 서비스 이름 */
+  service: '명경사주',
   /** 대표자 (개인정보 보호책임자를 따로 두지 않으면 대표자가 맡는다) */
   owner: env('VITE_BIZ_OWNER'),
   /** 사업자등록번호 000-00-00000 */

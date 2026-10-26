@@ -61,7 +61,7 @@ function Terms() {
     <>
       <Sec n={1} h="목적">
         <p>
-          이 약관은 {BUSINESS.name}(이하 ‘회사’)가 {BUSINESS.site}에서 제공하는 사주 풀이 서비스(이하 ‘서비스’)를 이용하는 데 필요한 회사와 이용자의 권리·의무와 책임을 정해요.
+          이 약관은 {BUSINESS.name}(이하 ‘회사’)가 {BUSINESS.site}에서 제공하는 사주 풀이 서비스 ‘{BUSINESS.service}’(이하 ‘서비스’)를 이용하는 데 필요한 회사와 이용자의 권리·의무와 책임을 정해요.
         </p>
       </Sec>
       <Sec n={2} h="약관의 게시와 변경">
@@ -412,6 +412,7 @@ export function BusinessFooter() {
   const b = BUSINESS;
   const rows: [string, string][] = [
     ['상호', b.name],
+    ...(b.name !== b.service ? ([['서비스명', b.service]] as [string, string][]) : []),
     ['대표', b.owner || pending],
     ['사업자등록번호', b.regNo || pending],
     ['통신판매업 신고', b.mailOrderNo || pending],
