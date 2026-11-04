@@ -12,6 +12,7 @@ import { encodeInput } from '../lib/share.ts';
 import { MBTI_LIST } from '../report/mbti.ts';
 import { BackIcon, BottomBar } from './common.tsx';
 import { JobPicker } from './JobPicker.tsx';
+import { markFreshResult } from '../lib/freshResult.ts';
 
 export const FLOW_STEPS = 5;
 
@@ -164,6 +165,7 @@ export function BirthFlow({ step }: { step: number }) {
     const input = draftToInput(d);
     if (!input) return;
     pushed = 0;
+    markFreshResult();
     window.location.hash = `/r?${encodeInput(input)}`;
     window.scrollTo(0, 0);
   };

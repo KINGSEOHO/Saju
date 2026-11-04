@@ -1,8 +1,9 @@
 /** 결과 화면 — 사주 계산·풀이 엔진과 함께 따로 불러온다 (첫 화면을 가볍게) */
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { PAYWALL_DEMO } from '../config/plans.ts';
+import { PAYWALL_DEMO, PRICES } from '../config/plans.ts';
 import { analyze, pillarHanja, STEMS, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
 import { groupOf } from '../engine/tenGods.ts';
+import { clearFreshResult, isFreshResult } from '../lib/freshResult.ts';
 import { track } from '../lib/funnel.ts';
 import { inputToDraft, saveDraft } from '../lib/birthDraft.ts';
 import { encodeInput } from '../lib/share.ts';
@@ -15,6 +16,7 @@ import { seasonOf } from '../report/season.ts';
 import { elWord, LEVEL_PLAIN } from '../report/plain.ts';
 import { DECADE_THEME } from '../report/storyKb.ts';
 import { ElementsPanel, InteractionsPanel, StrengthPanel } from './Analysis.tsx';
+import { Analyzing } from './Analyzing.tsx';
 import { goToStep } from './BirthForm.tsx';
 import { ElementStrip } from './Charts.tsx';
 import { Chevron, Disclosure, Gloss, GLOSSARY, Lead, scrollMotion, Term } from './common.tsx';
@@ -151,7 +153,7 @@ function ConcernContent({ id, a, report }: { id: ConcernId; a: SajuAnalysis; rep
 }
 
 /** 세부 풀이와 고민 리포트가 함께 쓰는 펼침 줄. 펼친 줄의 제목은 화면 위에 붙어 다닌다 */
-function Row({ id, title, desc, open, onToggle, children }: { id: RowId; title: string; desc: string; open: boolean; onToggle: () => void; children: ReactNode }) {
+function Row({ id, title, desc, price, open, onToggle, children }: { id: RowId; title: string; desc: string; price?: string; open: boolean; onToggle: () => void; children: ReactNode }) {
   return (
     <li className="border-b border-line">
       <button
@@ -160,13 +162,16 @@ function Row({ id, title, desc, open, onToggle, children }: { id: RowId; title: 
         data-sticky-tabs={open ? '' : undefined}
         aria-expanded={open}
         onClick={onToggle}
-        className={`flex items-center justify-between gap-3 py-4 text-left ${open ? 'sticky top-14 z-20 -mx-5 w-[calc(100%+2.5rem)] border-b border-line bg-bg px-5' : 'w-full'}`}
+        className={`flex items-center justify-between gap-3 py-4 text-left ${open ? 'sticky top-[6.25rem] z-20 -mx-5 w-[calc(100%+2.5rem)] border-b border-line bg-bg px-5' : 'w-full'}`}
       >
         <span className="min-w-0">
           <span className="block font-serif text-title3 font-bold text-ink">{title}</span>
           <span className="mt-0.5 block text-cap text-sub">{open ? '접으려면 다시 누르세요' : desc}</span>
         </span>
-        <Chevron open={open} />
+        <span className="flex shrink-0 items-center gap-2">
+          {price && <span className="text-label text-ink-2 tabular-nums">{price}</span>}
+          <Chevron open={open} />
+        </span>
       </button>
       {open && (
         <div className="pt-6 pb-12">
@@ -204,6 +209,62 @@ function ConcernShortcuts({ a, onPick }: { a: SajuAnalysis; onPick: (id: Concern
   );
 }
 
+/** 결과 화면의 세 칸 — 무료로 보는 풀이 · 고민 리포트(유료) · 내 사주 원판(전문 표) */
+type Tab = 'free' | 'concern' | 'board';
+const TABS: { id: Tab; label: string; note?: string }[] = [
+  { id: 'free', label: '무료 풀이' },
+  { id: 'concern', label: '고민 리포트', note: '유료' },
+  { id: 'board', label: '내 사주 원판' },
+];
+
+/** 머리말 + 탭 줄 높이 — 펼친 줄로 옮길 때 그만큼 내려서 멈춘다 */
+const stickyTop = () => (document.querySelector<HTMLElement>('[data-sticky-head]')?.offsetHeight ?? 56) + (document.querySelector<HTMLElement>('[data-result-tabs]')?.offsetHeight ?? 0);
+
+function ResultTabs({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
+  return (
+    <>
+      {/* 탭 줄이 붙기 전 제자리 — 탭을 바꿀 때 여기로 올린다 */}
+      <div data-tabs-anchor className="mt-10" />
+      <div data-result-tabs role="tablist" aria-label="결과 보기" className="no-print sticky top-14 z-20 -mx-5 flex h-11 border-b border-line bg-bg px-5">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => onTab(t.id)}
+            className={`flex flex-1 items-center justify-center gap-1 border-b-2 text-label font-semibold transition-colors ${tab === t.id ? 'border-ink text-ink' : 'border-transparent text-sub'}`}
+          >
+            {t.label}
+            {t.note && <span className="text-micro font-normal text-sub">{t.note}</span>}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
+/** 고민 리포트 줄 오른쪽의 정가 — config/plans.ts와 같은 값 */
+const priceOf = (id: ConcernId) => (id === 'match' ? `${won(PRICES.partner)}/1명` : won(id === 'year' ? PRICES.year : PRICES.concern));
+
+/** 고민 리포트 칸 맨 위 — 전체 묶음 안내 (결제 버튼은 각 고민 안에) */
+function BundleNote({ a }: { a: SajuAnalysis }) {
+  const year = seasonOf(a).title;
+  const each = PRICES.concern * 4 + PRICES.year;
+  return (
+    <div className="panel mt-6 flex items-center justify-between gap-4">
+      <div className="min-w-0">
+        <p className="text-label font-semibold text-ink">전체 묶음</p>
+        <p className="mt-0.5 text-cap text-sub">
+          이직·진로, 연애·결혼, 돈, 시험·합격과 {year}. 하나씩 사면 {won(each)}이에요.
+        </p>
+      </div>
+      <p className="shrink-0 font-serif text-title3 font-bold text-ink tabular-nums">{won(PRICES.all)}</p>
+    </div>
+  );
+}
+
 export default function Result({ input }: { input: BirthInput }) {
   const [now] = useState(() => Date.now());
   const result = useMemo((): { a: SajuAnalysis } | { error: string } => {
@@ -218,6 +279,10 @@ export default function Result({ input }: { input: BirthInput }) {
   /** 아래에서 올라온 풀이 창에 띄운 세부 풀이 */
   const [sheet, setSheet] = useState<Sec | null>(null);
   const [jump, setJump] = useState<{ id: RowId; n: number } | null>(null);
+  const [tab, setTab] = useState<Tab>('free');
+  /** 입력 화면에서 막 넘어왔으면 '계산하는 중' 화면을 먼저 */
+  const [intro, setIntro] = useState(isFreshResult);
+  useEffect(clearFreshResult, []);
 
   useEffect(() => {
     if ('a' in result) track('analyze', { dayStem: result.a.pillars.day.stem, gender: input.gender, timeKnown: result.a.pillars.timeKnown }, false);
@@ -241,8 +306,7 @@ export default function Result({ input }: { input: BirthInput }) {
     if (!jump) return;
     const row = document.querySelector<HTMLElement>(`[data-row="${jump.id}"]`)?.closest('li');
     if (!row) return;
-    const head = document.querySelector<HTMLElement>('[data-sticky-head]')?.offsetHeight ?? 56;
-    const top = row.getBoundingClientRect().top + window.scrollY - head;
+    const top = row.getBoundingClientRect().top + window.scrollY - stickyTop();
     // 위에 펼쳐 둔 긴 풀이가 접히면 거리가 멀어지므로, 멀 때는 바로 옮긴다
     const far = Math.abs(top - window.scrollY) > window.innerHeight * 1.5;
     window.scrollTo({ top, behavior: far ? 'auto' : scrollMotion() });
@@ -260,6 +324,7 @@ export default function Result({ input }: { input: BirthInput }) {
   }
   const a = result.a;
   const p = a.pillars;
+  if (intro) return <Analyzing a={a} onDone={() => setIntro(false)} />;
   const toggle = (id: RowId) => {
     setOpen((cur) => (cur === id ? null : id));
     setJump({ id, n: Date.now() });
@@ -273,12 +338,21 @@ export default function Result({ input }: { input: BirthInput }) {
     }
     const go = () => {
       setSheet(null);
+      setTab('concern');
       setOpen(id);
       setJump({ id, n: Date.now() });
     };
     // 풀이 창에서 고민 리포트로 넘어갈 때는 창의 기록을 걷은 뒤(스크롤 복원이 끝난 뒤) 옮긴다
     if (popSheetState()) window.addEventListener('popstate', () => requestAnimationFrame(go), { once: true });
     else go();
+  };
+  // 탭을 바꾸면 탭 줄이 화면 위에 오도록 (이미 위에 있으면 그대로)
+  const pickTab = (t: Tab) => {
+    setTab(t);
+    const anchor = document.querySelector<HTMLElement>('[data-tabs-anchor]');
+    if (!anchor) return;
+    const top = anchor.getBoundingClientRect().top + window.scrollY - (document.querySelector<HTMLElement>('[data-sticky-head]')?.offsetHeight ?? 56);
+    if (window.scrollY > top) window.scrollTo({ top, behavior: 'auto' });
   };
   const edit = () => {
     saveDraft(inputToDraft(input));
@@ -346,12 +420,14 @@ export default function Result({ input }: { input: BirthInput }) {
           <button type="button" className="tap text-accent" onClick={share}>
             {copied ? '복사됨' : '링크 복사'}
           </button>
+          <button type="button" className="tap text-accent" onClick={() => window.print()}>
+            PDF 저장
+          </button>
         </div>
       </div>
 
       <section className="pt-10 text-center" aria-labelledby="conclusion">
-        <p className="kicker">{input.name ? `${input.name}님의 사주` : '사주로 본 나'}</p>
-        <h1 id="conclusion" className="mt-2 text-display text-ink">
+        <h1 id="conclusion" className="text-display text-ink">
           {cross.card.headline}
         </h1>
         <p className="mx-auto mt-3 max-w-[30em] font-serif text-read text-sub">{cross.card.subline}</p>
@@ -370,138 +446,157 @@ export default function Result({ input }: { input: BirthInput }) {
         </div>
       )}
 
-      <HitsCard key={encodeInput(input)} a={a} />
+      <ResultTabs tab={tab} onTab={pickTab} />
 
-      <section className="mt-14" aria-labelledby="details">
-        <h2 id="details" className="text-center text-title2 text-ink">
-          카드를 넘기며 나를 읽어 보세요
-        </h2>
-        <p className="mt-1 text-center text-label text-sub">한 번 누르면 뒤집히고, 한 번 더 누르면 풀이가 열려요.</p>
-        <div className="mt-6">
-          <DetailCards items={DETAILS.map((d) => ({ id: d.id, title: d.title, line: cardLine[d.id] }))} onOpen={(id) => openSection(id as Sec)} />
-        </div>
-      </section>
-
-      {(strengths.length > 0 || weaknesses.length > 0) && (
+      {tab === 'free' && (
         <>
-          <section className="mt-14">
-            <h2 className="text-center text-title2 text-ink">이런 점이 강해요</h2>
-            <ol className="mt-5 space-y-5">
-              {strengths.slice(0, 3).map((s, i) => (
-                <li key={i} className="flex gap-4">
-                  <span className="w-4 shrink-0 font-serif text-title3 font-bold text-accent tabular-nums">{i + 1}</span>
-                  <p className="read">
-                    <Lead text={clean(s.text)} />
-                  </p>
-                </li>
-              ))}
-            </ol>
+          <HitsCard key={encodeInput(input)} a={a} />
+
+          <section className="mt-14" aria-labelledby="details">
+            <h2 id="details" className="text-center text-title2 text-ink">
+              카드를 넘기며 나를 읽어 보세요
+            </h2>
+            <p className="mt-1 text-center text-label text-sub">한 번 누르면 뒤집히고, 한 번 더 누르면 풀이가 열려요.</p>
+            <div className="mt-6">
+              <DetailCards items={DETAILS.map((d) => ({ id: d.id, title: d.title, line: cardLine[d.id] }))} onOpen={(id) => openSection(id as Sec)} />
+            </div>
           </section>
-          <section className="mt-12">
-            <h2 className="text-center text-title2 text-ink">이런 점은 조심하세요</h2>
-            <ol className="mt-5 space-y-5">
-              {weaknesses.slice(0, 3).map((s, i) => (
-                <li key={i} className="flex gap-4">
-                  <span className="w-4 shrink-0 font-serif text-title3 font-bold text-ink tabular-nums">{i + 1}</span>
-                  <p className="read">
-                    <Lead text={clean(s.text)} />
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </section>
+
+          {(strengths.length > 0 || weaknesses.length > 0) && (
+            <>
+              <section className="mt-14">
+                <h2 className="text-center text-title2 text-ink">이런 점이 강해요</h2>
+                <ol className="mt-5 space-y-5">
+                  {strengths.slice(0, 3).map((s, i) => (
+                    <li key={i} className="flex gap-4">
+                      <span className="w-4 shrink-0 font-serif text-title3 font-bold text-accent tabular-nums">{i + 1}</span>
+                      <p className="read">
+                        <Lead text={clean(s.text)} />
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+              <section className="mt-12">
+                <h2 className="text-center text-title2 text-ink">이런 점은 조심하세요</h2>
+                <ol className="mt-5 space-y-5">
+                  {weaknesses.slice(0, 3).map((s, i) => (
+                    <li key={i} className="flex gap-4">
+                      <span className="w-4 shrink-0 font-serif text-title3 font-bold text-ink tabular-nums">{i + 1}</span>
+                      <p className="read">
+                        <Lead text={clean(s.text)} />
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            </>
+          )}
+
+          {month && (
+            <section className="panel mt-12">
+              <p className="kicker">
+                이번 달 운세 <span className="font-normal text-sub">· {month.label.title}</span>
+              </p>
+              <h3 className="mt-2 text-title3 text-ink">{month.r.headline}</h3>
+              <dl className="mt-4 space-y-3 text-ui text-ink-2">
+                <div className="flex gap-3">
+                  <dt className="tag-pos mt-0.5 h-fit">좋아요</dt>
+                  <dd>
+                    <Gloss text={month.r.good[0]} />
+                  </dd>
+                </div>
+                <div className="flex gap-3">
+                  <dt className="tag-neg mt-0.5 h-fit">조심</dt>
+                  <dd>
+                    <Gloss text={month.r.caution[0]} />
+                  </dd>
+                </div>
+              </dl>
+              <SwitchNote a={a} w={month.w} />
+              <button type="button" className="link tap no-print mt-4 text-label" onClick={() => openSection('luck')}>
+                월별 풀이 전체 보기
+              </button>
+            </section>
+          )}
+
+          <ConcernShortcuts a={a} onPick={openSection} />
+          <ShareSection a={a} d={shareData} />
         </>
       )}
 
-      {month && (
-        <section className="panel mt-12">
-          <p className="kicker">
-            이번 달 운세 <span className="font-normal text-sub">· {month.label.title}</span>
+      {tab === 'concern' && (
+        <section className="mt-10" aria-labelledby="concerns">
+          <h2 id="concerns" className="text-center text-title2 text-ink">
+            지금 어떤 고민이 있어요?
+          </h2>
+          <p className="mx-auto mt-2 max-w-[30em] text-center text-label text-sub">
+            고민마다 한 줄 답과 그 이유, 지금 보이는 신호는 무료예요. 좋은 시기·피할 시기와 지금 할 일을 담은 상세 리포트가 유료예요.
           </p>
-          <h3 className="mt-2 text-title3 text-ink">{month.r.headline}</h3>
-          <dl className="mt-4 space-y-3 text-ui text-ink-2">
-            <div className="flex gap-3">
-              <dt className="tag-pos mt-0.5 h-fit">좋아요</dt>
-              <dd>
-                <Gloss text={month.r.good[0]} />
-              </dd>
+          <BundleNote a={a} />
+          {/* 지금은 베타라 산 기록이 없어 시안에서만 보인다. 결제를 붙이면 산 것이 있을 때 늘 보이게 바꾼다 */}
+          {PAYWALL_DEMO && (
+            <div className="mt-5">
+              <Suspense fallback={null}>
+                <ConcernTop a={a} />
+              </Suspense>
             </div>
-            <div className="flex gap-3">
-              <dt className="tag-neg mt-0.5 h-fit">조심</dt>
-              <dd>
-                <Gloss text={month.r.caution[0]} />
-              </dd>
-            </div>
-          </dl>
-          <SwitchNote a={a} w={month.w} />
-          <button type="button" className="link tap no-print mt-4 text-label" onClick={() => openSection('luck')}>
-            월별 풀이 전체 보기
-          </button>
+          )}
+          <ul className="mt-4 border-t border-line">
+            {concernsFor(a).map((c) => (
+              <Row key={c.id} id={c.id} title={c.title} desc={c.ask} price={priceOf(c.id)} open={open === c.id} onToggle={() => toggle(c.id)}>
+                <ConcernContent id={c.id} a={a} report={report} />
+              </Row>
+            ))}
+          </ul>
         </section>
       )}
 
-      <ConcernShortcuts a={a} onPick={openSection} />
-
-      <section className="mt-16" aria-labelledby="board">
-        <h2 id="board" className="text-center text-title2 text-ink">
-          내 사주 원판
-        </h2>
-        <p className="mt-1 text-center text-label text-sub">위의 풀이가 나온 바탕이에요. 태어난 해·달·날·시의 여덟 글자와 다섯 기운의 세기예요.</p>
-        <div className="mt-6">
-          <PillarTable a={a} />
-        </div>
-
-        <div className="mt-8">
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="font-sans text-label font-semibold text-ink">다섯 기운의 세기</h3>
-            <span className="text-micro text-sub">태어난 계절과 숨은 기운까지 반영</span>
+      {tab === 'board' && (
+        <section className="mt-10" aria-labelledby="board">
+          <h2 id="board" className="text-center text-title2 text-ink">
+            내 사주 원판
+          </h2>
+          <p className="mt-1 text-center text-label text-sub">모든 풀이가 나온 바탕이에요. 태어난 해·달·날·시의 여덟 글자와 다섯 기운의 세기예요.</p>
+          <div className="mt-6">
+            <PillarTable a={a} />
           </div>
-          <div className="mt-4">
-            <ElementStrip percent={a.elements.percent} me={STEMS[p.day.stem].element} />
-          </div>
-        </div>
 
-        <dl className="mt-8 border-t border-line">
-          {facts.map((f) => (
-            <div key={f.label} className="flex items-baseline justify-between gap-4 border-b border-line py-3.5">
-              <dt className="text-label text-sub">{f.label}</dt>
-              <dd className="text-right">
-                <div className="font-serif text-[17px] font-bold text-ink">{f.value}</div>
-                {f.sub && (
-                  <div className="mt-0.5 text-micro text-sub">
-                    <Term t={f.term}>{f.sub}</Term>
-                  </div>
-                )}
-              </dd>
+          <div className="mt-8">
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="font-sans text-label font-semibold text-ink">다섯 기운의 세기</h3>
+              <span className="text-micro text-sub">태어난 계절과 숨은 기운까지 반영</span>
             </div>
-          ))}
-        </dl>
-      </section>
-
-      <ShareSection a={a} d={shareData} />
-
-      <section className="mt-16" aria-labelledby="concerns">
-        <p className="kicker text-center">고민 리포트</p>
-        <h2 id="concerns" className="mt-2 text-center text-title2 text-ink">
-          지금 어떤 고민이 있어요?
-        </h2>
-        <p className="mt-1 text-center text-label text-sub">세부 풀이가 ‘나는 어떤 사람인지’라면, 고민 리포트는 ‘그래서 언제, 어떻게’를 알려 드려요.</p>
-        {/* 지금은 베타라 산 기록이 없어 시안에서만 보인다. 결제를 붙이면 산 것이 있을 때 늘 보이게 바꾼다 */}
-        {PAYWALL_DEMO && (
-          <div className="mt-5">
-            <Suspense fallback={null}>
-              <ConcernTop a={a} />
-            </Suspense>
+            <div className="mt-4">
+              <ElementStrip percent={a.elements.percent} me={STEMS[p.day.stem].element} />
+            </div>
           </div>
-        )}
-        <ul className="mt-4 border-t border-line">
-          {concernsFor(a).map((c) => (
-            <Row key={c.id} id={c.id} title={c.title} desc={c.ask} open={open === c.id} onToggle={() => toggle(c.id)}>
-              <ConcernContent id={c.id} a={a} report={report} />
-            </Row>
-          ))}
-        </ul>
-      </section>
+
+          <dl className="mt-8 border-t border-line">
+            {facts.map((f) => (
+              <div key={f.label} className="flex items-baseline justify-between gap-4 border-b border-line py-3.5">
+                <dt className="text-label text-sub">{f.label}</dt>
+                <dd className="text-right">
+                  <div className="font-serif text-[17px] font-bold text-ink">{f.value}</div>
+                  {f.sub && (
+                    <div className="mt-0.5 text-micro text-sub">
+                      <Term t={f.term}>{f.sub}</Term>
+                    </div>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <div className="no-print mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-label">
+            <button type="button" className="link tap" onClick={() => openSection('chart')}>
+              만세력 상세표
+            </button>
+            <button type="button" className="link tap" onClick={() => openSection('detail')}>
+              전문 분석
+            </button>
+          </div>
+        </section>
+      )}
 
       <ReviewForm a={a} />
       {DETAILS.filter((d) => d.id === sheet).map((d) => (
