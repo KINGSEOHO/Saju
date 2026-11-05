@@ -18,6 +18,7 @@ import { Gloss, Lead, TONE_STYLE, Veil } from './common.tsx';
 import { GaeunDetail, GaeunTaste } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
 import { CAN_PAY, Premium, useUnlock } from './Premium.tsx';
+import { PAY_LIVE } from '../config/backend.ts';
 
 type Unlock = ReturnType<typeof useUnlock>;
 
@@ -498,7 +499,7 @@ export function ConcernTop({ a }: { a: SajuAnalysis }) {
   const u = useUnlock(sajuKey(a), seasonKey(a));
   return (
     <>
-      {PAYWALL_DEMO && <DemoBox u={u} />}
+      {PAYWALL_DEMO && !PAY_LIVE && <DemoBox u={u} />}
       <CodeBox u={u} />
     </>
   );

@@ -21,6 +21,10 @@ export const STORAGE = {
   demoAlias: 'mg_demo_alias',
   /** 미리보기 전용 — 지난번 결과 주소 */
   previewLast: 'mg_preview_last',
+  /** 실제 결제용 구매 코드 (결제 확인 서버의 계정) */
+  account: 'mg_account_v1',
+  /** 휴대폰 결제창이 다른 주소로 넘어갔다 돌아올 때 — 결제 번호와 돌아갈 화면 (sessionStorage) */
+  payReturn: 'mg_pay_return_v1',
 } as const;
 
 /** 사람·날짜마다 이름이 달라지는 기록의 앞부분 */

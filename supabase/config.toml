@@ -1,0 +1,5 @@
+# 결제 확인 함수 — scripts/build-pay.mjs가 server/pay/supabase.ts를 index.js 하나로 묶는다
+[functions.pay]
+entrypoint = "./functions/pay/index.js"
+# 사이트는 Supabase 로그인 없이 부른다 (구매 코드로 구분). 비밀값은 함수 안에서만 쓴다
+verify_jwt = false

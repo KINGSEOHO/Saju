@@ -11,6 +11,7 @@
  *  - 결제가 끝나면 그 자리에서 구매 코드를 보여 준다.
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { PAY_LIVE } from '../config/backend.ts';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
 import { useAccount, type PayResult, type RedeemResult } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
@@ -72,7 +73,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
           ? '무료로는 고민 하나만 열 수 있어요. 다른 고민이 더 궁금하다면 그쪽에 쓰는 게 좋아요.'
           : o.kind === 'partnerFree'
             ? '무료로는 상대 한 명만 열 수 있어요. 더 궁금한 사람이 있다면 그 사람에게 쓰는 게 좋아요.'
-            : PAYWALL_DEMO
+            : PAYWALL_DEMO && !PAY_LIVE
             ? '결제 화면으로 넘어가는 자리예요. 시안이라 실제로 결제되지 않고 바로 열려요.'
             : '결제 화면으로 넘어가요.'}
       </p>
@@ -89,7 +90,11 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             <a href="#/terms" target="_blank" rel="noreferrer" className="underline">
               이용약관
             </a>
-            에 동의해요.
+            에 동의해요. 구매 기록(구매 코드 · 상품 · 금액 · 결제 번호 · 생일로 만든 사주 구분값)이 결제 확인 서버에 저장되는 것에도 동의해요(
+            <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
+              개인정보처리방침
+            </a>
+            ). 이름·생년월일은 보내지 않아요.
           </span>
         </label>
       )}
@@ -301,8 +306,12 @@ export function Premium({
     }
     setDone(
       r.reason === 'owned'
-        ? { title: '이미 결제한 리포트예요.', text: '그래서 다시 결제하지 않았어요.' }
-        : { title: '금액이 바뀌었어요.', text: '다른 화면에서 결제한 것이 반영됐어요. 아래에서 다시 골라 주세요.' },
+        ? { title: '이미 결제한 리포트예요.', text: '그래서 다시 결제하지 않았어요. 결제창에서 결제가 됐다면 자동으로 취소돼요.' }
+        : r.reason === 'price'
+          ? { title: '금액이 바뀌었어요.', text: '다른 화면에서 결제한 것이 반영됐어요. 아래에서 다시 골라 주세요.' }
+          : r.reason === 'cancel'
+            ? { title: '결제를 하지 않았어요.', text: '결제창을 닫아서 돈이 나가지 않았어요.' }
+            : { title: '결제를 마치지 못했어요.', text: '돈이 나갔는데 열리지 않았다면 구매 코드와 결제 시각을 고객센터로 알려 주세요. 확인 뒤 열어 드리거나 환불해 드려요.' },
     );
   };
   const restored = (r: RedeemResult) => {

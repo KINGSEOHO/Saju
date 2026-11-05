@@ -7,7 +7,10 @@ export function newCode(rand: () => number = Math.random): string {
 }
 /** 손님이 넣은 코드를 MG-XXXX-XXXX 꼴로 맞춘다 (소문자·공백·하이픈 빠짐 허용) */
 export function normalizeCode(input: string): string | null {
-  const s = input.toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^MG/, '');
+  const s = input
+    .toUpperCase()
+    .replace(/[^0-9A-Z]/g, '')
+    .replace(/^MG/, '');
   if (s.length !== 8 || [...s].some((c) => !ALPHABET.includes(c))) return null;
   return `MG-${s.slice(0, 4)}-${s.slice(4)}`;
 }

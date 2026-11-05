@@ -10,13 +10,15 @@
  * 중복 결제 막기: 결제는 pay로만 한다. 서버가 계정의 최신 기록으로 다시 계산해(checkPurchase) 이미 열린 것이면
  * 결제하지 않고, 값이 바뀌었으면 다시 고르게 한다. 코드를 합칠 때 겹쳐 낸 돈(overpaid)은 환불한다.
  *
- * 지금은 시안용 demoApi(이 기기 안에서 서버를 흉내)만 있다. 실제로는 Supabase 익명 계정 + 결제 확인
- * 서버(Edge Function)가 같은 모양(AccountApi)으로 들어온다. 나중에 카카오 로그인을 붙여도 같은 계정에 이어진다.
+ * 결제 확인 서버 주소(PAY_API)가 있으면 payApi(포트원 결제 + Supabase 결제 확인 함수, lib/payApi.ts),
+ * 없으면 시안용 demoApi(이 기기 안에서 서버를 흉내)를 쓴다. 둘은 같은 모양(AccountApi)이다.
  */
 import { useEffect, useState } from 'react';
 import { checkPurchase, overpaid, type Purchase, type SeasonKey } from './entitlements.ts';
 import { newCode, normalizeCode } from './code.ts';
 import { STORAGE } from './storageKeys.ts';
+import { PAY_LIVE } from '../config/backend.ts';
+import { payApi } from './payApi.ts';
 
 export interface Account {
   /** 보이지 않는 계정 번호 */
@@ -35,8 +37,8 @@ export interface RedeemResult {
   refund?: number;
 }
 
-/** 결제 결과 — 성공이면 구매 코드, 아니면 결제하지 않은 까닭 */
-export type PayResult = { ok: true; code: string } | { ok: false; reason: 'owned' | 'price' };
+/** 결제 결과 — 성공이면 구매 코드, 아니면 결제하지 않은 까닭 (cancel: 손님이 결제창을 닫음 · fail: 결제나 확인이 안 됨) */
+export type PayResult = { ok: true; code: string } | { ok: false; reason: 'owned' | 'price' | 'cancel' | 'fail' };
 
 export interface AccountApi {
   current(): Promise<Account>;
@@ -155,7 +157,7 @@ export function resetDemo() {
   window.dispatchEvent(new Event('mg-account'));
 }
 
-export const accountApi: AccountApi = demoApi;
+export const accountApi: AccountApi = PAY_LIVE ? payApi : demoApi;
 
 /** 계정·구매 기록 — 여러 칸에서 써도 함께 바뀐다 */
 export function useAccount() {

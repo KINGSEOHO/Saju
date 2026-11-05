@@ -1,0 +1,34 @@
+name: Deploy payment function
+
+# 결제 확인 함수(Supabase Edge Function)를 올린다 — 손으로만 실행 (Actions → Deploy payment function → Run workflow)
+# 필요한 값 (Settings → Secrets and variables → Actions)
+#   Secrets:   SUPABASE_ACCESS_TOKEN (Supabase 계정 → Access Tokens), PORTONE_API_SECRET (포트원 → 결제 연동 → API Secret)
+#   Variables: SUPABASE_PROJECT_REF (Supabase 프로젝트 주소의 앞부분)
+# 시크릿 값은 채팅·코드·문서에 넣지 않는다. 여기서 Supabase 함수 비밀값으로만 옮긴다.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run tests/pay.test.ts
+      - run: node scripts/build-pay.mjs
+      - name: 함수 비밀값 넣기
+        run: npx --yes supabase@2 secrets set --project-ref "$PROJECT_REF" PORTONE_API_SECRET="$PORTONE_API_SECRET" ALLOWED_ORIGINS="https://mgsaju.io.kr,http://localhost:5173"
+        env:
+          PORTONE_API_SECRET: ${{ secrets.PORTONE_API_SECRET }}
+      - name: 함수 올리기
+        run: npx --yes supabase@2 functions deploy pay --project-ref "$PROJECT_REF" --no-verify-jwt

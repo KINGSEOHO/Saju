@@ -39,6 +39,10 @@ jobs:
           VITE_BIZ_PHONE: ${{ vars.BIZ_PHONE || secrets.BIZ_PHONE }}
           VITE_BIZ_EMAIL: ${{ vars.BIZ_EMAIL || secrets.BIZ_EMAIL }}
           VITE_BIZ_HOURS: ${{ vars.BIZ_HOURS || secrets.BIZ_HOURS }}
+          # 결제 (공개돼도 되는 값만 — 포트원 API Secret은 결제 함수 비밀값에만). 결제 전(BETA_FREE)에는 쓰이지 않는다
+          VITE_PAY_API: ${{ vars.PAY_API }}
+          VITE_PORTONE_STORE_ID: ${{ vars.PORTONE_STORE_ID }}
+          VITE_PORTONE_CHANNEL_KEY: ${{ vars.PORTONE_CHANNEL_KEY }}
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

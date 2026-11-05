@@ -1,3 +1,5 @@
+import { BETA_FREE } from './plans.ts';
+
 /**
  * 리뷰 저장 위치
  *
@@ -15,5 +17,16 @@ export const SHEET_URL: string = (import.meta.env.VITE_SHEET_URL as string | und
  * 로그인·구매 기록 (Supabase) — 둘 다 사이트에 공개돼도 되는 값이다.
  * 비밀 키(service_role · sb_secret_…)는 절대 여기에 넣지 않는다.
  */
+/**
+ * 결제 — 결제 확인 함수 주소와 포트원의 상점 아이디·채널 키. 셋 다 사이트에 공개돼도 되는 값이다 (저장소 변수로 넣는다).
+ * PAY_API가 비어 있으면 시안처럼 이 기기 안에서 흉내만 낸다. 포트원 API Secret은 절대 여기에 넣지 않는다 (함수 비밀값에만).
+ */
+const ENV = import.meta.env as Record<string, string | undefined>;
+export const PAY_API = (ENV.VITE_PAY_API ?? '').replace(/\/$/, '');
+export const PORTONE_STORE_ID = ENV.VITE_PORTONE_STORE_ID ?? '';
+export const PORTONE_CHANNEL_KEY = ENV.VITE_PORTONE_CHANNEL_KEY ?? '';
+/** 실제 결제를 쓰는지 — 주소가 있고 결제를 파는 때(시안 포함)만. 베타(결제 전)에는 방문자마다 서버 계정을 만들지 않는다 */
+export const PAY_LIVE = !!PAY_API && (ENV.VITE_PAYWALL_DEMO === '1' || !BETA_FREE);
+
 export const SUPABASE_URL = 'https://xtubxywlsehlsphnnzsr.supabase.co';
 export const SUPABASE_KEY = 'sb_publishable_1SDzq-ggVfaGcd4ivrKSnA_KshOK3Tu';
