@@ -42,9 +42,10 @@ export function Analyzing({ a, onDone }: { a: SajuAnalysis; onDone: () => void }
   const ratio = Math.min(1, n / steps.length);
   return (
     <div className="wrap flex min-h-[70vh] flex-col justify-center py-12" role="status" aria-live="polite">
-      <p className="hanja text-center text-[44px] leading-none text-accent" aria-hidden>
-        命
-      </p>
+      <span aria-hidden className="seal mx-auto size-14 text-[17px]">
+        <span>明</span>
+        <span>鏡</span>
+      </span>
       <h1 className="mt-5 text-center text-title2 text-ink">{a.input.name ? `${a.input.name}님의 사주를 계산하고 있어요` : '사주를 계산하고 있어요'}</h1>
       <div className="mx-auto mt-6 h-1 w-full max-w-[22rem] overflow-hidden rounded-full bg-fill" aria-hidden>
         {/* 너비 대신 transform으로 늘린다 (움직임이 매끄럽고 화면을 다시 배치하지 않는다) */}

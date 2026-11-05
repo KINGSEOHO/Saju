@@ -99,7 +99,11 @@ export default function App() {
     <div className="flex min-h-screen flex-col">
       <header data-sticky-head className="no-print sticky top-0 z-30 border-b border-line bg-bg">
         <div className="wrap flex h-14 items-center justify-between">
-          <a href="#/" className="flex items-baseline gap-2">
+          <a href="#/" className="flex items-center gap-2">
+            <span aria-hidden className="seal size-[22px] self-center text-[9px]">
+              <span>明</span>
+              <span>鏡</span>
+            </span>
             <span className="hanja text-[19px] font-bold text-ink">명경사주</span>
           </a>
           {route.name === 'result' && (

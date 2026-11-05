@@ -426,7 +426,7 @@ export default function Result({ input }: { input: BirthInput }) {
         </div>
       </div>
 
-      <section className="pt-10 text-center" aria-labelledby="conclusion">
+      <section className="mt-6 rounded-2xl border border-paper-edge bg-paper px-5 py-9 text-center" aria-labelledby="conclusion">
         <h1 id="conclusion" className="text-display text-ink">
           {cross.card.headline}
         </h1>

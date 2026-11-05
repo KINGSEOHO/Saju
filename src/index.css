@@ -66,6 +66,10 @@
 @theme inline {
   --color-bg: var(--c-bg);
   --color-subtle: var(--c-subtle);
+  --color-paper: var(--c-paper);
+  --color-paper-edge: var(--c-paper-edge);
+  --color-seal: var(--c-seal);
+  --color-on-seal: var(--c-on-seal);
   --color-fill: var(--c-fill);
   --color-line: var(--c-line);
   --color-line-strong: var(--c-line-strong);
@@ -90,7 +94,7 @@
 
 :root {
   color-scheme: light;
-  --c-bg: #ffffff;
+  --c-bg: #fcfbf8; /* 아주 살짝 따뜻한 흰색 — 한지 카드와 이어지게 */
   --c-subtle: #f8f7f4; /* 옅은 면 */
   --c-fill: #f1efec; /* 입력칸·눌림·막대 바탕 */
   --c-line: #e4e3e0; /* 구분선 */
@@ -101,6 +105,12 @@
   --c-faint: #a9a7a5; /* 흐린 글자·비활성 (읽어야 하는 글자에는 쓰지 않는다) */
   --c-placeholder: #6f6d6a; /* 입력칸 예시 글자 — 흰 바탕에서 4.5:1 이상 */
   --c-field-edge: #8f8d8a; /* 입력칸 테두리 — 바탕과 3:1 이상이라야 칸이 보인다 */
+  /* 한지 — 결론과 박스(panel)의 바탕. 세부 풀이 카드와 같은 종이 결 */
+  --c-paper: #f6f2e9;
+  --c-paper-edge: #e4dccb;
+  /* 明鏡 낙관 — 빨강은 도장에만 쓴다 (포인트 색은 송연록 하나) */
+  --c-seal: #a8392c;
+  --c-on-seal: #f6efe2;
   --c-scrim: rgb(20 19 17 / 0.45); /* 풀이 창 뒤 화면을 가리는 막 */
   --c-accent: #33574d; /* 송연록 */
   --c-accent-strong: #20443a;
@@ -131,6 +141,10 @@
     --c-faint: #6a6966;
     --c-placeholder: #8f8d8a;
     --c-field-edge: #6f6d6a;
+    --c-paper: #1d1b17;
+    --c-paper-edge: #34302a;
+    --c-seal: #a8392c;
+    --c-on-seal: #f6efe2;
     --c-scrim: rgb(0 0 0 / 0.6);
     --c-accent: #86a79d;
     --c-accent-strong: #b1c6c0;
@@ -180,6 +194,12 @@
     /* 두 줄로 꺾일 때 줄 길이를 고르게 (한 글자만 다음 줄로 떨어지지 않게) */
     text-wrap: balance;
   }
+  /* 큰 제목(결론 한 줄 · 섹션 제목)은 명조 — 카드의 붓글씨 느낌과 이어지게. 본문은 고딕 그대로 */
+  .text-display,
+  .text-title2 {
+    font-family: var(--font-hanja);
+    letter-spacing: 0;
+  }
   button,
   input,
   select,
@@ -217,7 +237,13 @@
 
 /* 옅은 면 — 묶음을 구분할 때만 */
 @utility panel {
-  @apply rounded-2xl bg-subtle p-5;
+  @apply rounded-2xl border border-paper-edge bg-paper p-5;
+}
+/* 明鏡 낙관 — 로고 옆 · 계산하는 중 화면 */
+@utility seal {
+  @apply inline-flex flex-col items-center justify-center rounded-[3px] bg-seal font-bold text-on-seal;
+  font-family: var(--font-hanja);
+  line-height: 1.02;
 }
 
 @utility field {
