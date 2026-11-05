@@ -141,6 +141,8 @@ export function resumePayment(): void {
   }
   const paymentId = q.get('paymentId') ?? saved.paymentId;
   history.replaceState(null, '', `${location.pathname}${saved.hash ?? ''}`);
+  // 화면이 먼저 그려졌을 수 있어 주소가 바뀐 것을 알린다
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
   // code가 붙어 오면 결제를 하지 않았거나 실패한 것 — 확인할 것이 없다
   if (!paymentId || q.get('code')) return;
   void confirmPayment(paymentId)
