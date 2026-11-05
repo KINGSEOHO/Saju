@@ -256,7 +256,6 @@ function ConcernDetail({ a, c }: { a: SajuAnalysis; c: ConcernReport }) {
   );
 }
 
-
 /** 잠겼을 때 보여 줄 상세의 제목들 — ConcernDetail과 같은 순서 */
 function detailOutline(c: ConcernReport): string[] {
   const d = c.detail;
@@ -319,7 +318,11 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         {sealed && <Veil rows={2} className="mt-3" />}
         <div className="mt-4 grid grid-cols-4 gap-1" aria-label={sealed ? `${c.stances.join(' · ')} 가운데 지금 어디인지는 상세 리포트에서` : `지금은 ${c.stances[c.stance]}`}>
           {c.stances.map((s, i) => (
-            <span key={s} aria-hidden className={`rounded-lg px-0.5 py-1.5 text-center text-cap leading-tight ${!sealed && i === c.stance ? 'bg-accent font-bold text-on-accent' : 'bg-fill text-sub'}`}>
+            <span
+              key={s}
+              aria-hidden
+              className={`rounded-lg px-0.5 py-1.5 text-center text-cap leading-tight ${!sealed && i === c.stance ? 'bg-accent font-bold text-on-accent' : 'bg-fill text-sub'}`}
+            >
               {s}
             </span>
           ))}
@@ -359,11 +362,7 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
           <ul className="mt-2">
             {c.free.items.map((s, i) => (
               <li key={s.text} className="border-b border-line py-4 last:border-b-0">
-                {c.free.labels ? (
-                  <span className={SIG_TAG[s.tone]}>{c.free.labels[i]}</span>
-                ) : (
-                  s.tone !== 'neutral' && <span className={TONE_STYLE[s.tone].tag}>{TONE_STYLE[s.tone].label}</span>
-                )}
+                {c.free.labels ? <span className={SIG_TAG[s.tone]}>{c.free.labels[i]}</span> : s.tone !== 'neutral' && <span className={TONE_STYLE[s.tone].tag}>{TONE_STYLE[s.tone].label}</span>}
                 <p className={`read ${s.tone !== 'neutral' || c.free.labels ? 'mt-2' : ''}`}>
                   <Lead text={s.text} />
                 </p>

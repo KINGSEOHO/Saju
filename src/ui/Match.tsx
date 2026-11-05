@@ -11,12 +11,12 @@ import { checkDate, checkTime, formatTime, formatYmd } from '../lib/birthDraft.t
 import { checkBreakup, formatYm, loadPartner, partnerInput, savePartner, type PartnerDraft } from '../lib/partnerDraft.ts';
 import { compatReport, RELATION_LABEL, reunionReport, SCORE_NOTE, type CompatReport, type Factor, type Relation, type YearSign } from '../report/compat.ts';
 import { MBTI_LIST } from '../report/mbti.ts';
-import { Gloss, Lead } from './common.tsx';
+import { Gloss, Lead, Veil } from './common.tsx';
 import { CoupleShare } from './CoupleShare.tsx';
 import { GaeunRows } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
-import { Premium, useUnlock } from './Premium.tsx';
-import { PAYWALL_DEMO, PRICES } from '../config/plans.ts';
+import { CAN_PAY, Premium, useUnlock } from './Premium.tsx';
+import { PRICES } from '../config/plans.ts';
 import { partnerKey, partnerOffers, partnerOpen, sajuKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
 import { seasonKey } from '../report/season.ts';
@@ -380,7 +380,7 @@ function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
   const u = useUnlock(sajuKey(a), seasonKey(a));
   const pk = partnerKey(b);
   return {
-    locked: PAYWALL_DEMO ? !partnerOpen(u.ent, pk) : undefined,
+    locked: CAN_PAY ? !partnerOpen(u.ent, pk) : undefined,
     offers: partnerOffers(u.ent, pk),
     fresh: u.ent.first,
     onTake: (o: Parameters<typeof u.buy>[0]) => u.buy(o, null, pk),
@@ -388,27 +388,28 @@ function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
   };
 }
 
-
-
 function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Relation }) {
   const lock = usePartnerLock(a, b);
   const r = useMemo(() => compatReport(a, b), [a, b]);
   useEffect(() => track('match_result', { item: 'compat' }), []);
   const noMbti = !a.input.mbti && !b.input.mbti ? '두 사람' : !a.input.mbti ? '내' : '상대';
+  /** 결제를 팔 때 아직 안 연 상대는 점수만 — 풀이 글은 흐린 줄로 (실제 글은 화면에 넣지 않는다) */
+  const sealed = lock.locked === true;
   return (
     <>
       <section aria-labelledby="compat-head">
         <p className="kicker">두 사람의 궁합 · {RELATION_LABEL[rel]}</p>
         <h3 id="compat-head" className="mt-2 text-title1 text-ink">
-          {r.headline}
+          {sealed ? r.headline.split(' ')[0] : r.headline}
         </h3>
+        {sealed && <Veil rows={2} className="mt-3" />}
         <div className="mt-6 flex items-end gap-2">
           <span className="font-serif text-[56px] leading-none font-bold text-ink tabular-nums">{r.score}</span>
           <span className="pb-1.5 text-ui font-semibold text-sub">점</span>
           <span className="tag-pos mb-2 ml-auto">{r.tier}</span>
         </div>
         <TierScale score={r.score} />
-        <p className="mt-4 text-ui text-ink-2">{r.tierText}</p>
+        {sealed ? <Veil rows={2} /> : <p className="mt-4 text-ui text-ink-2">{r.tierText}</p>}
         <Notice title="점수는 참고만 하세요" text={SCORE_NOTE} />
         {r.notes.map((t) => (
           <Notice key={t} title="정확도 안내" text={t} />
@@ -417,25 +418,29 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
 
       <section className="mt-12">
         <h4 className="text-title2 text-ink">잘 맞는 점</h4>
-        <FactorList items={r.good.slice(0, 3)} empty="타고난 구조에서 특별히 끌어당기는 점은 두드러지지 않아요. 함께 쌓은 시간이 더 중요한 사이예요." />
+        {sealed ? <Veil rows={4} /> : <FactorList items={r.good.slice(0, 3)} empty="타고난 구조에서 특별히 끌어당기는 점은 두드러지지 않아요. 함께 쌓은 시간이 더 중요한 사이예요." />}
       </section>
       <section className="mt-10">
         <h4 className="text-title2 text-ink">부딪히는 점</h4>
-        <FactorList items={r.bad.slice(0, 3)} empty="타고난 구조에서 크게 부딪히는 점은 없어요." />
+        {sealed ? <Veil rows={4} /> : <FactorList items={r.bad.slice(0, 3)} empty="타고난 구조에서 크게 부딪히는 점은 없어요." />}
       </section>
 
       <section className="mt-10">
         <h4 className="text-title2 text-ink">띠와 MBTI로 보면</h4>
-        <dl className="mt-4 border-t border-line">
-          <div className="flex gap-4 border-b border-line py-4">
-            <dt className="w-12 shrink-0 text-label font-semibold text-sub">띠</dt>
-            <dd className="text-ui text-ink-2">{r.tti.text}</dd>
-          </div>
-          <div className="flex gap-4 border-b border-line py-4">
-            <dt className="w-12 shrink-0 text-label font-semibold text-sub">MBTI</dt>
-            <dd className="text-ui text-ink-2">{r.mbti ? r.mbti.summary : `${noMbti} MBTI를 넣으면 두 사람의 대화 방식까지 비교해 드려요.`}</dd>
-          </div>
-        </dl>
+        {sealed ? (
+          <Veil rows={3} />
+        ) : (
+          <dl className="mt-4 border-t border-line">
+            <div className="flex gap-4 border-b border-line py-4">
+              <dt className="w-12 shrink-0 text-label font-semibold text-sub">띠</dt>
+              <dd className="text-ui text-ink-2">{r.tti.text}</dd>
+            </div>
+            <div className="flex gap-4 border-b border-line py-4">
+              <dt className="w-12 shrink-0 text-label font-semibold text-sub">MBTI</dt>
+              <dd className="text-ui text-ink-2">{r.mbti ? r.mbti.summary : `${noMbti} MBTI를 넣으면 두 사람의 대화 방식까지 비교해 드려요.`}</dd>
+            </div>
+          </dl>
+        )}
         <p className="mt-2 text-cap text-sub">띠와 MBTI는 점수에 작게만 반영했어요. 사주의 구조가 중심이에요.</p>
       </section>
 
@@ -445,7 +450,15 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
         what={b.input.name ? `${b.input.name}님과의 궁합` : '이 사람과의 궁합'}
         {...lock}
         price={`${PRICES.partner.toLocaleString('ko-KR')}원 (상대 1명, 궁합·재회 함께)`}
-        items={['반복되는 다툼과 푸는 법', '서로에게 하면 좋은 말 · 피해야 할 말', 'MBTI로 본 대화 가이드', '앞으로 10년 — 함께 좋은 해와 흔들리는 해', '오래 가려면', '두 사람의 개운법 — 함께 갈 곳, 데이트 색, 함께 피할 것']}
+        items={[
+          '반복되는 다툼과 푸는 법',
+          '서로에게 하면 좋은 말 · 피해야 할 말',
+          'MBTI로 본 대화 가이드',
+          '앞으로 10년 — 함께 좋은 해와 흔들리는 해',
+          '오래 가려면',
+          '두 사람의 개운법 — 함께 갈 곳, 데이트 색, 함께 피할 것',
+        ]}
+        outline={['반복되는 다툼과 푸는 법', '서로에게 하면 좋은 말', ...(r.mbti ? ['MBTI 대화 가이드'] : []), '앞으로 10년', '오래 가려면', '두 사람의 개운법']}
       >
         <CompatDetail r={r} />
       </Premium>
@@ -465,6 +478,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
   const r = useMemo(() => reunionReport(a, b, breakup, months), [a, b, breakup?.year, breakup?.month, months]); // eslint-disable-line react-hooks/exhaustive-deps
   const c = useMemo(() => compatReport(a, b), [a, b]);
   useEffect(() => track('match_result', { item: 'reunion' }), []);
+  const sealed = lock.locked === true;
   const head = r.breakup ? (r.breakup.shaken ? '그때는 흔들리기 쉬운 시기였어요' : '시기보다 두 사람 사이의 문제에 가까웠어요') : '다시 만난다면, 이것부터 봐야 해요';
   return (
     <>
@@ -481,7 +495,9 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
 
       <section className="mt-12">
         <h4 className="text-title2 text-ink">헤어진 시기</h4>
-        {r.breakup ? (
+        {r.breakup && sealed ? (
+          <Veil rows={3} />
+        ) : r.breakup ? (
           <div className="mt-4">
             <span className={r.breakup.shaken ? 'tag-neg' : 'tag-mute'}>{r.breakup.when}</span>
             <p className="read mt-3">
@@ -515,20 +531,24 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
 
       <section className="mt-12">
         <h4 className="text-title2 text-ink">그래도 끌렸던 이유</h4>
-        <FactorList items={c.good.slice(0, 2)} empty="타고난 구조보다 함께한 시간과 상황이 두 사람을 이어 준 사이예요." />
+        {sealed ? <Veil rows={3} /> : <FactorList items={c.good.slice(0, 2)} empty="타고난 구조보다 함께한 시간과 상황이 두 사람을 이어 준 사이예요." />}
       </section>
       <section className="mt-10">
         <h4 className="text-title2 text-ink">다시 만나면 반복될 수 있는 문제</h4>
-        <ul className="mt-2">
-          {r.repeat.map((x) => (
-            <li key={x.title} className="border-b border-line py-5 last:border-b-0">
-              <h5 className="font-serif text-title3 font-bold text-ink">{x.title}</h5>
-              <p className="read mt-2">
-                <Lead text={x.text} />
-              </p>
-            </li>
-          ))}
-        </ul>
+        {sealed ? (
+          <Veil rows={4} />
+        ) : (
+          <ul className="mt-2">
+            {r.repeat.map((x) => (
+              <li key={x.title} className="border-b border-line py-5 last:border-b-0">
+                <h5 className="font-serif text-title3 font-bold text-ink">{x.title}</h5>
+                <p className="read mt-2">
+                  <Lead text={x.text} />
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <Premium
@@ -538,6 +558,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
         {...lock}
         price={`${PRICES.partner.toLocaleString('ko-KR')}원 (상대 1명, 궁합·재회 함께)`}
         items={['앞으로 12개월 — 연락하기 좋은 달과 피할 달', '지금 할 일 네 가지', '다시 만난다면 서로에게 하면 좋은 말 · 피할 말']}
+        outline={['연락하기 좋은 달', '연락을 피할 달', '지금 할 일', '다시 만난다면, 서로에게 하는 말']}
       >
         <Block title="연락하기 좋은 달" desc="두 사람의 배우자 자리와 손잡는 달, 인연의 기운이 드는 달이에요.">
           {r.good.length ? (
