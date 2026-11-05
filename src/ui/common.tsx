@@ -223,3 +223,18 @@ export function Lead({ text }: { text: string }) {
     </>
   );
 }
+
+/**
+ * 잠긴 내용 자리 — 실제 풀이는 화면(과 페이지)에 넣지 않고 흐린 빈 줄만 그린다.
+ * 무엇이 들어 있는지는 제목(outline)이나 목록이 말한다. 무료 부분을 잠글 때도 같은 줄을 쓴다.
+ */
+const VEIL_WIDTHS = [92, 84, 88, 62, 90, 80, 70, 86];
+export function Veil({ rows = 3, className = 'mt-4' }: { rows?: number; className?: string }) {
+  return (
+    <div aria-hidden className={`${className} space-y-3 blur-[3px] select-none`}>
+      {VEIL_WIDTHS.slice(0, rows).map((w, i) => (
+        <div key={i} className="h-3 rounded-full bg-fill" style={{ width: `${w}%` }} />
+      ))}
+    </div>
+  );
+}

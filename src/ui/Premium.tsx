@@ -15,18 +15,22 @@ import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
 import { useAccount, type PayResult, type RedeemResult } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
+import { Veil } from './common.tsx';
 import type { ConcernId } from '../report/concernList.ts';
 
 /** 결제 버튼·확인 창을 보여 줘도 되는지 — 시안이거나, 베타가 끝나 실제로 팔 때만 */
 export const CAN_PAY = PAYWALL_DEMO || !BETA_FREE;
 
-/** 잠긴 내용 자리 — 실제 풀이는 화면(과 페이지)에 넣지 않고, 흐린 빈 줄만 보여 준다. 무엇이 들어 있는지는 위 목록이 말한다 */
-const LOCKED_ROWS = [40, 92, 84, 88, 62, 36, 90, 80, 70];
-function LockedBlur() {
+/** 잠긴 상세 자리 — 제목(outline)이 있으면 제목마다 흐린 줄, 없으면 흐린 줄만 */
+function LockedBlur({ outline }: { outline?: string[] }) {
+  if (!outline?.length) return <Veil rows={8} className="mt-6" />;
   return (
-    <div aria-hidden className="mt-6 space-y-3 blur-[3px] select-none">
-      {LOCKED_ROWS.map((w, i) => (
-        <div key={i} className={`rounded-full bg-fill ${w < 45 ? 'mt-6 h-4' : 'h-3'}`} style={{ width: `${w}%` }} />
+    <div className="mt-6 space-y-10">
+      {outline.map((t, i) => (
+        <section key={t}>
+          <h4 className="text-title3 text-ink">{t}</h4>
+          <Veil rows={i % 2 ? 3 : 4} />
+        </section>
       ))}
     </div>
   );
@@ -239,6 +243,7 @@ export function Premium({
   fresh = false,
   onTake,
   onRedeem,
+  outline,
   children,
 }: {
   /** 측정에도 쓰는 이름 — 고민(career…), 궁합(compat), 재회(reunion) */
@@ -259,6 +264,8 @@ export function Premium({
   onTake?: (o: Offer) => Promise<PayResult>;
   /** 다른 기기의 구매 코드로 불러오기 */
   onRedeem?: (code: string) => Promise<RedeemResult>;
+  /** 잠겼을 때 보여 줄 상세의 제목들 — 내용은 흐린 줄로 */
+  outline?: string[];
   children: ReactNode;
 }) {
   const [note, setNote] = useState(false);
@@ -331,15 +338,17 @@ export function Premium({
       </h3>
       {locked ? (
         <div className="mt-5">
-          <ul className="space-y-2">
-            {items.map((t) => (
-              <li key={t} className="flex gap-2.5 text-ui text-ink-2">
-                <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
-                {t}
-              </li>
-            ))}
-          </ul>
-          <LockedBlur />
+          {!outline?.length && (
+            <ul className="space-y-2">
+              {items.map((t) => (
+                <li key={t} className="flex gap-2.5 text-ui text-ink-2">
+                  <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          )}
+          <LockedBlur outline={outline} />
           {done && <PayNotice n={done} />}
           {pay ? (
             asking ? (

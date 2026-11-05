@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import type { ConcernGaeun, GaeunItem } from '../report/gaeun.ts';
 import { STORAGE_PREFIX } from '../lib/storageKeys.ts';
-import { Gloss, Lead } from './common.tsx';
+import { Gloss, Lead, Veil } from './common.tsx';
 
 /** 가까이할 것 / 멀리할 것 한 묶음 */
 export function GaeunRows({ title, note, items, tone }: { title: string; note?: string; items: GaeunItem[]; tone: 'close' | 'away' }) {
@@ -110,7 +110,15 @@ export function GaeunDetail({ id, g }: { id: string; g: ConcernGaeun }) {
 }
 
 /** 무료 부분의 맛보기 — 이 고민의 개운법 한 가지 */
-export function GaeunTaste({ g }: { g: ConcernGaeun }) {
+export function GaeunTaste({ g, sealed = false }: { g: ConcernGaeun; sealed?: boolean }) {
+  // 결제를 팔 때 아직 안 산 고민은 제목만 — 내용은 흐린 줄로 (실제 글은 화면에 넣지 않는다)
+  if (sealed)
+    return (
+      <section className="mt-12 rounded-2xl border border-line px-5 py-5" aria-label={g.title}>
+        <h4 className="text-title3 text-ink">{g.title}</h4>
+        <Veil rows={3} />
+      </section>
+    );
   const t = g.taste;
   // 맛보기는 가까이할 것일 수도, 멀리할 것(예: 돈이 새는 길)일 수도 있다
   const side = g.close.includes(t) ? 'close' : g.away.includes(t) ? 'away' : null;

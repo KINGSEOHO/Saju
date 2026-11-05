@@ -4,6 +4,7 @@
  * 고민 계산 코드는 따로 불러오는 묶음이라 카드는 먼저 그리고, 한 줄 답은 불러온 뒤에 채운다.
  */
 import { useEffect, useState } from 'react';
+import { TRIM_FREE } from '../config/plans.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import type { LoveStatus } from '../report/concern.ts';
 import { concernMeta, type ConcernId } from '../report/concernList.ts';
@@ -46,7 +47,8 @@ export function ConcernBridge({ a, report, id, lead, peek = true, onGo }: { a: S
   const [answer, setAnswer] = useState<string | null>(null);
   useEffect(() => {
     // 궁합은 상대가 있어야 답이 나오고, 연애는 상태를 모르면 엉뚱한 답이 될 수 있어 미리 말하지 않는다
-    if (!peek || id === 'match' || (id === 'love' && !love)) return;
+    // 결제를 팔 때는 한 줄 답도 상세 리포트 몫이라 미리 말하지 않는다 (무엇을 알려 주는지만)
+    if (!peek || TRIM_FREE || id === 'match' || (id === 'love' && !love)) return;
     let alive = true;
     import('../report/concern.ts')
       .then((m) => {

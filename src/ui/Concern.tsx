@@ -14,10 +14,10 @@ import { concernReport, examMonthOf, LOVE_STATUS_LABEL, type ConcernReport, type
 import { concernMeta, type ConcernId } from '../report/concernList.ts';
 import type { Report, Statement, YearSignal } from '../report/generate.ts';
 import { seasonKey } from '../report/season.ts';
-import { Gloss, Lead, TONE_STYLE } from './common.tsx';
+import { Gloss, Lead, TONE_STYLE, Veil } from './common.tsx';
 import { GaeunDetail, GaeunTaste } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
-import { Premium, useUnlock } from './Premium.tsx';
+import { CAN_PAY, Premium, useUnlock } from './Premium.tsx';
 
 type Unlock = ReturnType<typeof useUnlock>;
 
@@ -257,12 +257,36 @@ function ConcernDetail({ a, c }: { a: SajuAnalysis; c: ConcernReport }) {
 }
 
 
+/** 잠겼을 때 보여 줄 상세의 제목들 — ConcernDetail과 같은 순서 */
+function detailOutline(c: ConcernReport): string[] {
+  const d = c.detail;
+  return [
+    c.id === 'exam' ? '시험이 있는 달' : '',
+    d.months?.title ?? '',
+    d.calendar?.title ?? '',
+    d.fields && d.fields.rows.length ? d.fields.title : '',
+    d.timeline?.title ?? '',
+    ...d.lists.filter((l) => l.items.length).map((l) => l.title),
+    c.gaeun?.title ?? '',
+    ...d.statements.map((s) => s.title),
+    d.story?.title ?? '',
+  ].filter(Boolean);
+}
+
+/** 답의 첫 마디 — 잠겼을 때 큰 글씨는 여기까지만 ('올해는', '지금은' …) */
+const firstWords = (t: string) => t.split(' ')[0];
+
 function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id: ConcernId; u: Unlock }) {
   const months = useMemo(() => upcomingMonths(a, 12), [a]);
   const [love, setLove] = useTabState<LoveStatus>('mg_love_status', 'single');
   const c = useMemo(() => concernReport(id, a, report, months, { love }), [id, a, report, months, love]);
   if (!c) return <p className="text-ui text-sub">이 고민의 풀이를 만들지 못했어요.</p>;
   const title = concernMeta(id, a).title;
+  /**
+   * 결제를 팔 때 아직 안 산 고민은 무료 부분도 제목만 — 답은 첫 마디, 이유·신호·맞는 방식·개운법은 흐린 줄로.
+   * 무엇을 알려 주는지만 보여 주고, 실제 글은 화면에 넣지 않는다. 실제 사이트(결제 전)는 지금처럼 다 보여 준다.
+   */
+  const sealed = CAN_PAY && !isOpen(u.ent, id);
   return (
     <>
       {id === 'love' && (
@@ -290,50 +314,66 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
           {title} · {c.ask}
         </p>
         <h3 id={`concern-${id}`} className="mt-2 text-title1 text-ink">
-          {c.answer}
+          {sealed ? firstWords(c.answer) : c.answer}
         </h3>
-        <div className="mt-4 grid grid-cols-4 gap-1" aria-label={`지금은 ${c.stances[c.stance]}`}>
+        {sealed && <Veil rows={2} className="mt-3" />}
+        <div className="mt-4 grid grid-cols-4 gap-1" aria-label={sealed ? `${c.stances.join(' · ')} 가운데 지금 어디인지는 상세 리포트에서` : `지금은 ${c.stances[c.stance]}`}>
           {c.stances.map((s, i) => (
-            <span key={s} aria-hidden className={`rounded-lg px-0.5 py-1.5 text-center text-cap leading-tight ${i === c.stance ? 'bg-accent font-bold text-on-accent' : 'bg-fill text-sub'}`}>
+            <span key={s} aria-hidden className={`rounded-lg px-0.5 py-1.5 text-center text-cap leading-tight ${!sealed && i === c.stance ? 'bg-accent font-bold text-on-accent' : 'bg-fill text-sub'}`}>
               {s}
             </span>
           ))}
         </div>
-        <p className="read mt-6">
-          <Lead text={c.why.text} />
-        </p>
-        <p className="mt-2 text-cap text-sub">
-          <Gloss text={`근거 · ${c.why.basis}`} />
-        </p>
+        {sealed ? (
+          <Veil rows={4} className="mt-6" />
+        ) : (
+          <>
+            <p className="read mt-6">
+              <Lead text={c.why.text} />
+            </p>
+            <p className="mt-2 text-cap text-sub">
+              <Gloss text={`근거 · ${c.why.basis}`} />
+            </p>
+          </>
+        )}
       </section>
 
-      <dl className="mt-8 border-t border-line">
-        {c.signals.map((s) => (
-          <YearRow key={s.label} label={s.label} y={s.y} />
-        ))}
-      </dl>
-      <p className="mt-4 text-ui font-semibold text-accent">{c.teaser}</p>
+      {sealed ? (
+        <Veil rows={3} className="mt-8" />
+      ) : (
+        <>
+          <dl className="mt-8 border-t border-line">
+            {c.signals.map((s) => (
+              <YearRow key={s.label} label={s.label} y={s.y} />
+            ))}
+          </dl>
+          <p className="mt-4 text-ui font-semibold text-accent">{c.teaser}</p>
+        </>
+      )}
 
       <section className="mt-12">
         <h4 className="text-title2 text-ink">{c.free.title}</h4>
-        {c.free.note && <p className="panel mt-4 text-label text-ink-2">{c.free.note}</p>}
-        <ul className="mt-2">
-          {c.free.items.map((s, i) => (
-            <li key={s.text} className="border-b border-line py-4 last:border-b-0">
-              {c.free.labels ? (
-                <span className={SIG_TAG[s.tone]}>{c.free.labels[i]}</span>
-              ) : (
-                s.tone !== 'neutral' && <span className={TONE_STYLE[s.tone].tag}>{TONE_STYLE[s.tone].label}</span>
-              )}
-              <p className={`read ${s.tone !== 'neutral' || c.free.labels ? 'mt-2' : ''}`}>
-                <Lead text={s.text} />
-              </p>
-            </li>
-          ))}
-        </ul>
+        {sealed && <Veil rows={4} />}
+        {!sealed && c.free.note && <p className="panel mt-4 text-label text-ink-2">{c.free.note}</p>}
+        {!sealed && (
+          <ul className="mt-2">
+            {c.free.items.map((s, i) => (
+              <li key={s.text} className="border-b border-line py-4 last:border-b-0">
+                {c.free.labels ? (
+                  <span className={SIG_TAG[s.tone]}>{c.free.labels[i]}</span>
+                ) : (
+                  s.tone !== 'neutral' && <span className={TONE_STYLE[s.tone].tag}>{TONE_STYLE[s.tone].label}</span>
+                )}
+                <p className={`read ${s.tone !== 'neutral' || c.free.labels ? 'mt-2' : ''}`}>
+                  <Lead text={s.text} />
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
-      {c.gaeun && <GaeunTaste g={c.gaeun} />}
+      {c.gaeun && <GaeunTaste g={c.gaeun} sealed={sealed} />}
 
       {c.notice && <p className="mt-6 rounded-xl bg-fill px-4 py-3 text-label text-sub">{c.notice}</p>}
 
@@ -343,7 +383,8 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         what={title}
         price={`${(id === 'year' ? PRICES.year : PRICES.concern).toLocaleString('ko-KR')}원`}
         items={c.detail.items}
-        locked={PAYWALL_DEMO ? !isOpen(u.ent, id) : undefined}
+        locked={CAN_PAY ? sealed : undefined}
+        outline={detailOutline(c)}
         offers={concernOffers(u.ent, id)}
         fresh={u.ent.first}
         onTake={(o) => u.buy(o, id)}
