@@ -2,15 +2,18 @@
  * 과금 구조 설정 (기능 플래그)
  *
  * 현재는 베타 무료(BETA_FREE = true) — 모든 섹션이 열려 있다.
- * 리뷰·정확도 평가 데이터를 보고 유료 전환 시 BETA_FREE 를 false 로 바꾸고
- * PREMIUM_SECTIONS 에 잠글 섹션을 지정한다. 설계 근거는 docs/MONETIZATION.md 참고.
+ * 유료 전환 시 BETA_FREE 를 false 로 바꾸면 고민 리포트 상세가 잠기고, 무료 칸에서 '언제' 이야기를 덜어 낸다(TRIM_FREE).
+ * 설계 근거는 docs/MONETIZATION.md 참고.
  */
 import type { SectionId } from '../report/generate.ts';
 
 export const BETA_FREE = true;
 
-/** 유료 전환 시 잠글 후보 (지금은 '베타 무료' 배지로만 표시) */
-export const PREMIUM_SECTIONS: SectionId[] = ['love', 'career', 'wealth', 'health'];
+/**
+ * 무료 풀이 리포트에서 앞부분(이야기 첫 문단 · 핵심 첫 묶음)만 보여 줄 주제 — 나머지는 그 고민 리포트(연애·결혼 · 이직·진로 · 돈)에서.
+ * 성향·건강은 다 보여 준다 (건강은 겁을 주고 파는 인상을 주지 않도록). TRIM_FREE일 때만.
+ */
+export const PREMIUM_SECTIONS: SectionId[] = ['love', 'career', 'wealth'];
 
 /**
  * 궁합 · 재회의 상세 리포트(ui/Premium.tsx로 감싼 부분)도 BETA_FREE를 따른다.
@@ -49,6 +52,14 @@ export type OfferRules = typeof OFFER_RULES;
 
 /** 미리보기에서만 결제 흐름을 흉내 낸다 (node scripts/preview-artifact.mjs --paywall) */
 export const PAYWALL_DEMO = import.meta.env.VITE_PAYWALL_DEMO === '1';
+
+/**
+ * 결제를 팔 때(과 그 시안) 무료 칸에서 고민 리포트·신년운세와 겹치는 '언제' 이야기를 덜어 낸다.
+ *  - 풀이 리포트: 연애·일·돈은 앞부분만 (PREMIUM_SECTIONS)
+ *  - 운의 흐름: 다음 달 풀이, 올해 뒤 해마다의 한 줄 풀이를 빼고 점수만
+ * 지금 실제 사이트(베타·결제 전)는 다 보여 준다 — 살 수 없는데 무료만 줄이면 이용자에게 손해라서.
+ */
+export const TRIM_FREE = PAYWALL_DEMO || !BETA_FREE;
 
 /**
  * 리뷰에서 지불 의향을 물을 가격 (원) — 실제로 팔 가격과 같은 칸으로 묻는다

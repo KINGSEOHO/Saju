@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { TRIM_FREE } from '../config/plans.ts';
 import { BRANCHES, STEMS, pillarHanja, pillarKo, type LuckPillar, type SajuAnalysis, type Wolun } from '../engine/index.ts';
 import { groupOf } from '../engine/tenGods.ts';
 import { readLuck, type LuckReading } from '../report/luckReading.ts';
@@ -207,6 +208,8 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
   const thisYear = a.seun.find((s) => s.year === a.currentSajuYear);
   const nextYear = a.seun.find((s) => s.year === a.currentSajuYear + 1);
   const season = seasonOf(a);
+  /** 결제를 팔 때 올해 뒤의 해는 점수만 — 그해 풀이는 신년운세·고민 리포트에서 */
+  const ahead = (year: number) => TRIM_FREE && year > a.currentSajuYear;
   const tabBtn = (id: typeof tab, label: string) => (
     <button type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`tab ${tab === id ? 'tab-on' : ''}`}>
       {label}
@@ -238,14 +241,21 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
             r={readLuck(a, thisMonth, '달')}
             footer={<SwitchNote a={a} w={thisMonth} />}
           />
-          <h3 className="mt-12 text-title3 text-ink">다음 달</h3>
-          <p className="mt-1 text-label text-sub">사주의 달은 양력 1일이 아니라 절기(입춘·경칩 등)가 들어오는 날 바뀌어요. 날짜는 그 기준이에요.</p>
-          <ul className="mt-3 border-t border-line">
-            {months.slice(1, 2).map((w) => (
-              <MonthRow key={w.startMs} a={a} w={w} />
-            ))}
-          </ul>
-          <p className="mt-4 text-label text-sub">그다음 달부터의 흐름과 기회의 달·조심할 달은 고민 리포트 ‘{season.title}’에 있어요.</p>
+          {/* 결제를 팔 때는 이번 달만 무료 — 다음 달부터는 신년운세(올해 운세)에서 */}
+          {!TRIM_FREE && (
+            <>
+              <h3 className="mt-12 text-title3 text-ink">다음 달</h3>
+              <p className="mt-1 text-label text-sub">사주의 달은 양력 1일이 아니라 절기(입춘·경칩 등)가 들어오는 날 바뀌어요. 날짜는 그 기준이에요.</p>
+              <ul className="mt-3 border-t border-line">
+                {months.slice(1, 2).map((w) => (
+                  <MonthRow key={w.startMs} a={a} w={w} />
+                ))}
+              </ul>
+            </>
+          )}
+          <p className="mt-4 text-label text-sub">
+            {TRIM_FREE ? '다음 달' : '그다음 달'}부터의 흐름과 기회의 달·조심할 달은 고민 리포트 ‘{season.title}’에 있어요.
+          </p>
         </div>
       )}
 
@@ -281,7 +291,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
                 sub: String(s.year).slice(2),
                 score: s.combined,
                 highlight: s.year === nowYear,
-                tooltip: `${s.year}년 (만 ${s.age}세)\n${readLuck(a, s, '해', s.combined).headline}\n세운 ${s.score}점 · 대운 ${s.daeun?.score ?? '-'}점`,
+                tooltip: `${s.year}년 (만 ${s.age}세)\n${ahead(s.year) ? '' : `${readLuck(a, s, '해', s.combined).headline}\n`}세운 ${s.score}점 · 대운 ${s.daeun?.score ?? '-'}점`,
               }))}
             />
             <ul className="mt-6 border-t border-line">
@@ -300,8 +310,8 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
                       </div>
                       <ScorePill score={s.combined} />
                     </div>
-                    <p className="mt-1.5 font-serif text-[16px] leading-[1.7] text-ink-2">{readLuck(a, s, '해', s.combined).headline}</p>
-                    {s.flags.length > 0 && (
+                    {!ahead(s.year) && <p className="mt-1.5 font-serif text-[16px] leading-[1.7] text-ink-2">{readLuck(a, s, '해', s.combined).headline}</p>}
+                    {!ahead(s.year) && s.flags.length > 0 && (
                       <p className="mt-1 text-cap text-sub">
                         <Gloss text={s.flags.join(' · ')} />
                       </p>

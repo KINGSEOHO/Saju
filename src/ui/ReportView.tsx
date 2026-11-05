@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { BETA_FREE, PREMIUM_SECTIONS } from '../config/plans.ts';
+import { PREMIUM_SECTIONS, TRIM_FREE } from '../config/plans.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { josa } from '../engine/josa.ts';
-import { TIMING, type ConcernId } from '../report/concernList.ts';
+import { CONCERNS, TIMING, type ConcernId } from '../report/concernList.ts';
 import { generateReport, type ReportSection, type SectionId, type Statement } from '../report/generate.ts';
 import { seasonOf } from '../report/season.ts';
 import type { StoryPara } from '../report/story.ts';
@@ -98,7 +98,9 @@ function StoryView({ story, showEvidence }: { story: StoryPara[]; showEvidence: 
 }
 
 function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSection; showEvidence: boolean }) {
-  const locked = !BETA_FREE && PREMIUM_SECTIONS.includes(sec.id);
+  /** 결제를 팔 때는 연애·일·돈의 앞부분만 — 나머지는 그 고민 리포트에서 */
+  const trimmed = TRIM_FREE && PREMIUM_SECTIONS.includes(sec.id);
+  const more = CONCERNS.find((c) => c.id === NEXT('올해')[sec.id].id)?.title;
   const [mode, setMode] = useState<'story' | 'cards'>('story');
   const thisYear = new Date(a.now).getUTCFullYear();
   const timing = TIMING[sec.id];
@@ -109,72 +111,72 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
         <Gloss text={sec.headline} />
       </p>
       <div className="mt-10">
-        {!locked && (
-          <div className="mb-8 flex items-center justify-between gap-3">
-            <div className="seg w-full max-w-[17rem]" role="tablist" aria-label="보기 방식">
-              {(
-                [
-                  ['story', '이야기로 읽기'],
-                  ['cards', '핵심만 보기'],
-                ] as const
-              ).map(([id, label]) => (
-                <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => setMode(id)} className={`seg-item ${mode === id ? 'seg-on' : ''}`}>
-                  {label}
-                </button>
+        <div className="mb-8 flex items-center justify-between gap-3">
+          <div className="seg w-full max-w-[17rem]" role="tablist" aria-label="보기 방식">
+            {(
+              [
+                ['story', '이야기로 읽기'],
+                ['cards', '핵심만 보기'],
+              ] as const
+            ).map(([id, label]) => (
+              <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => setMode(id)} className={`seg-item ${mode === id ? 'seg-on' : ''}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {mode === 'story' && sec.readMinutes && <span className="shrink-0 text-cap text-sub">약 {sec.readMinutes}분</span>}
+        </div>
+        <div className="space-y-12">
+          {mode === 'story' && sec.story && <StoryView story={sec.story.filter((p) => p.title !== timing?.para).slice(0, trimmed ? 1 : undefined)} showEvidence={showEvidence} />}
+          {mode === 'cards' &&
+            sec.blocks
+              .filter((b) => b.heading !== timing?.block)
+              .slice(0, trimmed ? 1 : undefined)
+              .map((b) => (
+                <div key={b.heading}>
+                  <h3 className="text-title3 text-ink">{b.heading}</h3>
+                  <ul className="mt-2 border-t border-line">
+                    {b.items.map((s, i) => (
+                      <StatementItem key={i} s={s} showEvidence={showEvidence} />
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </div>
-            {mode === 'story' && sec.readMinutes && <span className="shrink-0 text-cap text-sub">약 {sec.readMinutes}분</span>}
-          </div>
-        )}
-        {locked ? (
-          <p className="panel text-center text-ui text-sub">이 부분은 상세 리포트에 들어 있어요.</p>
-        ) : (
-          <div className="space-y-12">
-            {mode === 'story' && sec.story && <StoryView story={sec.story.filter((p) => p.title !== timing?.para)} showEvidence={showEvidence} />}
-            {mode === 'cards' &&
-              sec.blocks
-                .filter((b) => b.heading !== timing?.block)
-                .map((b) => (
-                  <div key={b.heading}>
-                    <h3 className="text-title3 text-ink">{b.heading}</h3>
-                    <ul className="mt-2 border-t border-line">
-                      {b.items.map((s, i) => (
-                        <StatementItem key={i} s={s} showEvidence={showEvidence} />
-                      ))}
-                    </ul>
-                  </div>
+          {trimmed && more && (
+            <p className="panel text-center text-label text-sub">
+              {TAB_LABEL[sec.id]}의 나머지 풀이는 고민 리포트 ‘{more}’에 있어요.
+            </p>
+          )}
+          {sec.timeline && !timing && !trimmed && (
+            <div>
+              <h3 className="mb-5 text-title3 text-ink">{sec.timeline.title}</h3>
+              <DivergingBars
+                ariaLabel={sec.timeline.title}
+                data={sec.timeline.items.map((t) => ({
+                  key: t.year,
+                  label: String(t.year).slice(2),
+                  sub: t.verdict.length <= 4 ? t.verdict : t.verdict.slice(0, 4),
+                  score: t.score,
+                  highlight: t.year === thisYear,
+                  tooltip: `${t.year}년 ${t.pillar} · ${t.verdict}${t.notes.length ? '\n' + t.notes.join('\n') : ''}`,
+                }))}
+              />
+              <ul className="mt-6 border-t border-line">
+                {sec.timeline.items.map((t) => (
+                  <li key={t.year} className="grid grid-cols-[4.75rem_1fr] gap-3 border-b border-line py-3.5">
+                    <span className={`text-label font-semibold tabular-nums ${t.year === thisYear ? 'text-accent' : 'text-ink'}`}>
+                      {t.year} <span className="font-serif text-cap font-normal text-sub">{t.pillar}</span>
+                    </span>
+                    <div className="min-w-0">
+                      <span className={t.tone === 'positive' ? 'tag-pos' : t.tone === 'negative' ? 'tag-neg' : 'tag-mute'}>{t.verdict}</span>
+                      <p className="mt-1.5 text-label text-ink-2">{t.notes.length ? <Gloss text={t.notes.join(' · ')} /> : '특별한 신호 없음'}</p>
+                    </div>
+                  </li>
                 ))}
-            {sec.timeline && !timing && (
-              <div>
-                <h3 className="mb-5 text-title3 text-ink">{sec.timeline.title}</h3>
-                <DivergingBars
-                  ariaLabel={sec.timeline.title}
-                  data={sec.timeline.items.map((t) => ({
-                    key: t.year,
-                    label: String(t.year).slice(2),
-                    sub: t.verdict.length <= 4 ? t.verdict : t.verdict.slice(0, 4),
-                    score: t.score,
-                    highlight: t.year === thisYear,
-                    tooltip: `${t.year}년 ${t.pillar} · ${t.verdict}${t.notes.length ? '\n' + t.notes.join('\n') : ''}`,
-                  }))}
-                />
-                <ul className="mt-6 border-t border-line">
-                  {sec.timeline.items.map((t) => (
-                    <li key={t.year} className="grid grid-cols-[4.75rem_1fr] gap-3 border-b border-line py-3.5">
-                      <span className={`text-label font-semibold tabular-nums ${t.year === thisYear ? 'text-accent' : 'text-ink'}`}>
-                        {t.year} <span className="font-serif text-cap font-normal text-sub">{t.pillar}</span>
-                      </span>
-                      <div className="min-w-0">
-                        <span className={t.tone === 'positive' ? 'tag-pos' : t.tone === 'negative' ? 'tag-neg' : 'tag-mute'}>{t.verdict}</span>
-                        <p className="mt-1.5 text-label text-ink-2">{t.notes.length ? <Gloss text={t.notes.join(' · ')} /> : '특별한 신호 없음'}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
       <SectionRating key={sec.id} a={a} section={sec.id} />
     </div>
