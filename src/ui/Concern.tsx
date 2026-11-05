@@ -266,7 +266,7 @@ function detailOutline(c: ConcernReport): string[] {
     d.fields && d.fields.rows.length ? d.fields.title : '',
     d.timeline?.title ?? '',
     ...d.lists.filter((l) => l.items.length).map((l) => l.title),
-    c.gaeun?.title ?? '',
+    // 개운법은 무료 부분에 제목이 이미 있어 여기서는 빼 둔다
     ...d.statements.map((s) => s.title),
     d.story?.title ?? '',
   ].filter(Boolean);
