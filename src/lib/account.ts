@@ -15,6 +15,7 @@
  */
 import { useEffect, useState } from 'react';
 import { checkPurchase, overpaid, type Purchase, type SeasonKey } from './entitlements.ts';
+import { newCode, normalizeCode } from './code.ts';
 import { STORAGE } from './storageKeys.ts';
 
 export interface Account {
@@ -53,18 +54,7 @@ export interface AccountApi {
   redeem(code: string): Promise<RedeemResult>;
 }
 
-/** 헷갈리는 글자(0·O·1·I·L)는 뺀다 */
-const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
-export function newCode(rand: () => number = Math.random): string {
-  const pick = (n: number) => Array.from({ length: n }, () => ALPHABET[Math.floor(rand() * ALPHABET.length)]).join('');
-  return `MG-${pick(4)}-${pick(4)}`;
-}
-/** 손님이 넣은 코드를 MG-XXXX-XXXX 꼴로 맞춘다 (소문자·공백·하이픈 빠짐 허용) */
-export function normalizeCode(input: string): string | null {
-  const s = input.toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^MG/, '');
-  if (s.length !== 8 || [...s].some((c) => !ALPHABET.includes(c))) return null;
-  return `MG-${s.slice(0, 4)}-${s.slice(4)}`;
-}
+export { newCode, normalizeCode } from './code.ts';
 
 // ---------------------------------------------------------------------------
 // 시안용 — 이 기기 안에서 서버를 흉내 낸다 (STORE가 서버의 구매 기록 표 역할)
