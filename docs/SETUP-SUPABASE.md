@@ -1,3 +1,5 @@
+> ⚠️ 예전 문서예요 (카카오 로그인 계획). 로그인은 하지 않기로 했고, 결제 설정은 [SETUP-PAYMENT.md](SETUP-PAYMENT.md)를 보세요.
+
 # 로그인 · 구매 기록 (Supabase) 설정
 
 사이트 쪽 코드: `src/lib/account.ts` · 주소와 공개 키: `src/config/backend.ts`

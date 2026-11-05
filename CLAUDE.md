@@ -86,6 +86,9 @@
   - 결제 버튼은 결제가 끝날 때까지 잠가요.
   - 구매 코드(MG-XXXX-XXXX)로 기록을 합칠 때 겹쳐 낸 돈은 환불해요(`overpaid`).
   - 자세한 내용은 `docs/MONETIZATION.md`에 있어요.
+- 결제 연동: 포트원 결제창 + Supabase 결제 확인 함수(`server/pay/core.ts` 규칙 · `server/pay/supabase.ts` 입구 · `lib/payApi.ts` 화면 쪽). 설정은 `docs/SETUP-PAYMENT.md`.
+  - 금액은 서버가 다시 계산하고, 포트원에 직접 물어 확인한 뒤에만 기록해요. 겹친 결제는 자동 취소·부분 취소해요. `tests/pay.test.ts`가 지켜요.
+  - 결제 전(베타)에는 서버를 부르지 않아요(`PAY_LIVE`). 가격·규칙을 바꾸면 'Deploy payment function'도 다시 실행해요.
 
 ## 8. 코드 규칙과 확인 순서
 
