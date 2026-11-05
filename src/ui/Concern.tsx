@@ -17,7 +17,7 @@ import { seasonKey } from '../report/season.ts';
 import { Gloss, Lead, TONE_STYLE } from './common.tsx';
 import { GaeunDetail, GaeunTaste } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
-import { Premium, useUnlock, type Peek } from './Premium.tsx';
+import { Premium, useUnlock } from './Premium.tsx';
 
 type Unlock = ReturnType<typeof useUnlock>;
 
@@ -256,32 +256,6 @@ function ConcernDetail({ a, c }: { a: SajuAnalysis; c: ConcernReport }) {
   );
 }
 
-/**
- * 잠금 화면에서 먼저 보여 줄 결과 하나 — 좋은 달 중 첫 달. 신년운세는 무료에서 힘이 실리는 달을 이미 보여 주므로 조심할 달을.
- * 달이 하나도 없으면 첫 목록(지금 할 일 등)의 첫 줄.
- */
-export function concernPeek(a: SajuAnalysis, c: ConcernReport): Peek | undefined {
-  const m = c.detail.months;
-  if (m) {
-    const go = m.list.filter((x) => x.kind === 'go');
-    const avoid = m.list.filter((x) => x.kind === 'avoid');
-    const order = c.id === 'year' ? [{ list: avoid, label: m.avoidLabel, other: go, otherLabel: m.goLabel }] : [];
-    order.push({ list: go, label: m.goLabel, other: avoid, otherLabel: m.avoidLabel }, { list: avoid, label: m.avoidLabel, other: go, otherLabel: m.goLabel });
-    const pick = order.find((x) => x.list.length);
-    if (pick) {
-      const rest = [pick.list.length > 1 ? `나머지 ${pick.list.length - 1}개` : '', pick.other.length ? `${pick.otherLabel} ${pick.other.length}개` : ''].filter(Boolean);
-      return {
-        label: `먼저 보여 드려요 · ${pick.label} ${pick.list.length}개 중 1개`,
-        title: monthTitle(a, pick.list[0].w),
-        text: pick.list[0].why,
-        rest: `${rest.length ? `${rest.join('와 ')}, ` : ''}그 밖의 내용은 열면 볼 수 있어요.`,
-      };
-    }
-  }
-  const l = c.detail.lists.find((x) => x.items.length);
-  if (!l) return undefined;
-  return { label: `먼저 보여 드려요 · ${l.title}`, title: `${l.items.length}가지 중 첫째`, text: l.items[0], rest: '나머지와 그 밖의 내용은 열면 볼 수 있어요.' };
-}
 
 function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id: ConcernId; u: Unlock }) {
   const months = useMemo(() => upcomingMonths(a, 12), [a]);
@@ -374,7 +348,6 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         fresh={u.ent.first}
         onTake={(o) => u.buy(o, id)}
         onRedeem={u.redeem}
-        peek={concernPeek(a, c)}
       >
         <ConcernDetail a={a} c={c} />
       </Premium>

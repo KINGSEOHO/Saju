@@ -21,15 +21,17 @@ describe('구매 코드', () => {
 // ---------------------------------------------------------------------------
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { demoApi } from '../src/lib/account.ts';
-import { OFFER_RULES } from '../src/config/plans.ts';
+import { OFFER_RULES, PRICES } from '../src/config/plans.ts';
 import { concernOffers, entOf, isOpen, PAID_CONCERNS, partnerOffers, purchaseOf, type Purchase, type SeasonKey } from '../src/lib/entitlements.ts';
 
 /** 이 파일은 첫 결제 혜택·차액 결제를 켠 규칙을 검사한다 (승인 뒤 켤 때를 대비해 그대로 지킨다) */
 const ON = { welcome: true, topup: true };
 // 흉내 서버(demoApi.pay)도 같은 규칙으로 다시 확인하게 — 이 파일 동안만 켠다
 const SAVED = { ...OFFER_RULES };
-beforeAll(() => void Object.assign(OFFER_RULES, ON));
-afterAll(() => void Object.assign(OFFER_RULES, SAVED));
+// 차액 계산 장면은 묶음 가격 9,900원으로 짰다 — 묶음 가격을 바꿔도 합치기·환불 규칙은 같아서, 이 파일 동안만 9,900원으로 둔다
+const REAL_ALL = PRICES.all;
+beforeAll(() => void (Object.assign(OFFER_RULES, ON), (PRICES.all = 9900)));
+afterAll(() => void (Object.assign(OFFER_RULES, SAVED), (PRICES.all = REAL_ALL)));
 
 const mem = new Map<string, string>();
 Object.assign(globalThis, {

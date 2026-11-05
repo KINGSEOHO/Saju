@@ -20,14 +20,16 @@ import type { ConcernId } from '../report/concernList.ts';
 /** 결제 버튼·확인 창을 보여 줘도 되는지 — 시안이거나, 베타가 끝나 실제로 팔 때만 */
 export const CAN_PAY = PAYWALL_DEMO || !BETA_FREE;
 
-/** 잠금 화면에서 먼저 보여 주는 결과 하나 — 내 사주로 이미 계산돼 있다는 걸 보여 준다 */
-export interface Peek {
-  /** 예: 먼저 보여 드려요 · 좋은 달 3개 중 1개 */
-  label: string;
-  title: string;
-  text: string;
-  /** 예: 나머지 2개와 피할 달 3개, 그 밖의 내용은 열면 볼 수 있어요. */
-  rest: string;
+/** 잠긴 내용 자리 — 실제 풀이는 화면(과 페이지)에 넣지 않고, 흐린 빈 줄만 보여 준다. 무엇이 들어 있는지는 위 목록이 말한다 */
+const LOCKED_ROWS = [40, 92, 84, 88, 62, 36, 90, 80, 70];
+function LockedBlur() {
+  return (
+    <div aria-hidden className="mt-6 space-y-3 blur-[3px] select-none">
+      {LOCKED_ROWS.map((w, i) => (
+        <div key={i} className={`rounded-full bg-fill ${w < 45 ? 'mt-6 h-4' : 'h-3'}`} style={{ width: `${w}%` }} />
+      ))}
+    </div>
+  );
 }
 
 /** 이 사주의 이용권 + 구매 기록 — 고민 리포트와 궁합·재회가 함께 쓴다. season: 신년운세(올해 운세)를 보는 해 */
@@ -237,7 +239,6 @@ export function Premium({
   fresh = false,
   onTake,
   onRedeem,
-  peek,
   children,
 }: {
   /** 측정에도 쓰는 이름 — 고민(career…), 궁합(compat), 재회(reunion) */
@@ -258,8 +259,6 @@ export function Premium({
   onTake?: (o: Offer) => Promise<PayResult>;
   /** 다른 기기의 구매 코드로 불러오기 */
   onRedeem?: (code: string) => Promise<RedeemResult>;
-  /** 잠겼을 때 먼저 보여 줄 결과 하나 */
-  peek?: Peek;
   children: ReactNode;
 }) {
   const [note, setNote] = useState(false);
@@ -340,18 +339,7 @@ export function Premium({
               </li>
             ))}
           </ul>
-          {peek && (
-            <div className="panel mt-6" data-peek>
-              <p className="text-cap font-semibold text-accent">{peek.label}</p>
-              <p className="mt-2 font-serif text-[17px] font-bold text-ink">{peek.title}</p>
-              <p className="mt-1 text-ui text-ink-2">{peek.text}</p>
-              <p className="mt-3 text-cap text-sub">{peek.rest}</p>
-            </div>
-          )}
-          <div aria-hidden className="relative mt-6 max-h-44 overflow-hidden select-none">
-            <div className="pointer-events-none blur-[5px]">{children}</div>
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-bg to-transparent" />
-          </div>
+          <LockedBlur />
           {done && <PayNotice n={done} />}
           {pay ? (
             asking ? (

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PRICES } from '../src/config/plans.ts';
 import { analyze, type BirthInput } from '../src/engine/index.ts';
 import {
@@ -22,6 +22,16 @@ import type { ConcernId } from '../src/report/concernList.ts';
 /** 이 파일은 첫 결제 혜택·차액 결제를 켠 규칙을 검사한다 (승인 뒤 켤 때를 대비해 그대로 지킨다) */
 const ON = { welcome: true, topup: true };
 
+/**
+ * 차액·혜택 계산 규칙은 묶음 가격을 9,900원으로 두고 검사한다 — 묶음 가격을 바꿔도 계산 규칙 자체는 같아서,
+ * 숫자가 맞아떨어지게 짠 장면(몇백 원짜리 결제를 만들지 않는 경우 등)을 그대로 쓴다. 실제 가격은 '가격'·'출시 규칙'에서 본다.
+ */
+function withBundle9900() {
+  const real = PRICES.all;
+  beforeAll(() => void (PRICES.all = 9900));
+  afterAll(() => void (PRICES.all = real));
+}
+
 const S = 'saju1';
 const Y27: SeasonKey = { year: 2027, title: '2027 신년운세' };
 const Y28: SeasonKey = { year: 2028, title: '2028 신년운세' };
@@ -33,25 +43,26 @@ function buy(list: Purchase[], id: ConcernId, kind: string, season = Y27) {
 }
 
 describe('가격', () => {
-  it('고민 하나 3,900원 · 신년운세 6,900원 · 전부 9,900원 · 궁합 상대 1명 4,900원 · 첫 결제 1,900원', () => {
-    expect(PRICES).toEqual({ concern: 3900, year: 6900, all: 9900, partner: 4900, first: 1900 });
+  it('고민 하나 3,900원 · 신년운세 6,900원 · 전부 19,900원 · 궁합 상대 1명 4,900원 · 첫 결제 1,900원', () => {
+    expect(PRICES).toEqual({ concern: 3900, year: 6900, all: 19900, partner: 4900, first: 1900 });
     expect(PAID_CONCERNS).toEqual(['career', 'love', 'money', 'exam', 'year']);
     expect(CORE_CONCERNS).toEqual(['career', 'love', 'money', 'exam']);
   });
 
   it('무료로 통째로 열어 주는 고민은 없다 — 처음 선택지는 첫 결제 혜택(1,900원)과 전부 열기', () => {
     const career = concernOffers(entOf([], S, Y27), 'career', undefined, ON);
-    expect(career.map((o) => o.label)).toEqual(['첫 결제 1,900원에 이 고민 열기', '9,900원에 전부 열기']);
+    expect(career.map((o) => o.label)).toEqual(['첫 결제 1,900원에 이 고민 열기', '19,900원에 전부 열기']);
     expect(career[0]).toMatchObject({ kind: 'one', cost: 1900, note: '처음 한 번만이에요 · 다음부터는 3,900원', promo: { name: '첫 결제 혜택', was: 3900 } });
     expect(career[1].note).toBe('2027 신년운세와 고민 4개가 모두 열려요 · 하나씩 사면 22,500원.');
     expect(career.every((o) => o.cost > 0)).toBe(true);
-    // 신년운세에서는 전부 열기를 주 버튼으로 (3,000원만 더 내면 고민 4개까지)
+    // 신년운세에서는 신년운세 하나를 주 버튼으로 (전부 열기와 차이가 커서)
     const year = concernOffers(entOf([], S, Y27), 'year', undefined, ON);
-    expect(year.map((o) => o.label)).toEqual(['9,900원에 전부 열기', '6,900원에 2027 신년운세 열기']);
+    expect(year.map((o) => o.label)).toEqual(['6,900원에 2027 신년운세 열기', '19,900원에 전부 열기']);
   });
 });
 
 describe('첫 결제 혜택', () => {
+  withBundle9900();
   it('첫 결제 1,900원 → 연애 3,900원 더 → 나머지는 차액 4,100원 (몇백 원짜리 결제는 만들지 않는다)', () => {
     let r = buy([], 'career', 'one');
     expect(r.o.cost).toBe(1900);
@@ -85,6 +96,7 @@ describe('첫 결제 혜택', () => {
 });
 
 describe('하나씩 사도 9,900원보다 더 내지 않는다', () => {
+  withBundle9900();
   // 이미 결제한 적이 있는 계정 (첫 결제 혜택 없음)
   const paidBefore = [purchaseOf({ kind: 'partner', cost: 4900, label: '' }, S, null, 'p0')];
 
@@ -120,6 +132,7 @@ describe('하나씩 사도 9,900원보다 더 내지 않는다', () => {
 });
 
 describe('신년운세는 해마다 따로', () => {
+  withBundle9900();
   it('2027 신년운세를 사도 2028 신년운세는 닫혀 있다. 고민 4개는 계속 열려 있다', () => {
     const r = buy([], 'career', 'all'); // 2027 시즌에 전부 열기
     const e27 = entOf(r.list, S, Y27);
@@ -159,6 +172,7 @@ describe('궁합·재회', () => {
 });
 
 describe('중복 결제 막기', () => {
+  withBundle9900();
   const NOW = Date.UTC(2026, 9, 9);
   const base: BirthInput = { gender: 'female', calendar: 'solar', year: 1992, month: 5, day: 17, hour: null, minute: null, longitude: 126.978, timeZone: 'Asia/Seoul' };
   const key = (x: Partial<BirthInput>) => sajuKey(analyze({ ...base, ...x }, NOW));
@@ -233,14 +247,16 @@ describe('중복 결제 막기', () => {
 });
 
 describe('출시 규칙 (PG 심사용 고정 상품표)', () => {
-  it('첫 결제 혜택이 없고, 값은 3,900 · 6,900 · 9,900 · 4,900 중 하나뿐이다', () => {
+  it('첫 결제 혜택이 없고, 값은 3,900 · 6,900 · 19,900 · 4,900 중 하나뿐이다', () => {
     const career = concernOffers(entOf([], S, Y27), 'career');
     expect(career.map((o) => [o.kind, o.cost])).toEqual([
       ['one', 3900],
-      ['all', 9900],
+      ['all', 19900],
     ]);
     expect(career.some((o) => o.promo)).toBe(false);
-    expect(concernOffers(entOf([], S, Y27), 'year').map((o) => o.cost)).toEqual([9900, 6900]);
+    expect(concernOffers(entOf([], S, Y27), 'year').map((o) => o.cost)).toEqual([6900, 19900]);
+    // 묶음이 고민 하나 값 이내로만 더 비쌀 때는 신년운세에서도 묶음이 주 버튼이다
+    expect(concernOffers(entOf([], S, Y27), 'year', { ...PRICES, all: 9900 }).map((o) => o.cost)).toEqual([9900, 6900]);
   });
   it('하나를 산 뒤에는 차액 결제 없이 하나씩만 판다', () => {
     const one: Purchase = { kind: 'one', item: 'career', target: S, amount: 3900, at: 1, year: 2027 };

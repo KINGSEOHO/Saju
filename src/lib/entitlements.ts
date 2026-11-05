@@ -2,11 +2,11 @@
  * 무엇을 열었는지(이용권) — 계정에 남긴 구매 기록에서 계산한다. 가격은 config/plans.ts의 PRICES.
  *  - 고민 4개(이직·진로, 연애·결혼, 돈, 시험·합격): 하나씩 3,900원. 한 번 사면 계속 열려 있다.
  *  - 그해 신년운세(입춘이 지나면 '올해 운세'): 6,900원. 해마다 따로 산다 (report/season.ts).
- *  - 전부 열기(고민 4개 + 그해 신년운세): 9,900원. 하나씩 산 금액은 빼 주고, 합계가 9,900원을 넘지 않게 한다.
+ *  - 전부 열기(고민 4개 + 그해 신년운세): 19,900원(PRICES.all). 하나씩 산 금액은 빼 주고, 합계가 묶음 가격을 넘지 않게 한다 (차액 결제를 켰을 때).
  *    지난 시즌에 낸 신년운세 값은 빼 주지 않는다 (그건 그해 상품이라서).
  *  - 궁합·재회 상세: 상대 한 명마다 4,900원 (그 사람과의 궁합·재회가 함께 열린다).
  *  - 첫 결제 혜택: 한 번도 결제하지 않은 계정은 고민 4개 중 하나를 처음 한 번만 1,900원에 연다.
- *    낸 돈은 그대로 '전부 열기' 차액에 셈한다 (1,900원을 냈으면 나머지 전부는 8,000원).
+ *    낸 돈은 그대로 '전부 열기' 차액에 셈한다 (1,900원을 냈으면 나머지 전부는 18,000원).
  * 예전 시안의 무료 기록('free'·'partnerFree')은 그대로 열어 둔다.
  * 구매 기록에는 '무엇을(항목) · 어느 사람의 것인지(양력 생일로 만든 짧은 암호값) · 얼마에 · 언제'만 남긴다.
  *
@@ -96,7 +96,7 @@ const DEFAULT_SEASON: SeasonKey = { year: 0, title: '올해 운세' };
 /**
  * 구매 기록 → 이 사주의 이용권.
  * 두 기기의 기록을 합친 경우(구매 코드 합치기)에도 이미 연 것은 하나도 닫히지 않게 모두 더하고,
- * 이번 묶음에 낸 돈이 '전부 열기' 가격에 이르면 전부 연다 — 어떤 순서로 사도 9,900원보다 더 내지 않게.
+ * 이번 묶음에 낸 돈이 '전부 열기' 가격에 이르면 전부 연다 — 어떤 순서로 사도 묶음 가격보다 더 내지 않게.
  */
 export function entOf(list: Purchase[], saju: string, season: SeasonKey = DEFAULT_SEASON, prices = PRICES): Ent {
   const e: Ent = { season, paid: [], frees: [], years: [], all: false, spent: 0, partners: [], first: !list.some((p) => p.amount > 0) };
@@ -153,6 +153,9 @@ const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
 /** 하나를 사고 나면 '전부 열기'까지 이만큼도 안 남을 때는 하나 대신 전부 열기만 보여 준다 — 몇백 원짜리 결제를 만들지 않으려고 */
 const MIN_REST = 1000;
 
+/** 신년운세에서 '전부 열기'를 주 버튼으로 둘지 — 묶음이 고민 하나 값 이내로만 더 비쌀 때 (그보다 차이가 크면 신년운세 하나가 주 버튼) */
+const bundleFirst = (one: Offer, all: Offer, prices: typeof PRICES) => all.cost - one.cost <= prices.concern;
+
 /** 잠긴 고민 하나에서 보여 줄 선택지 — 첫째가 주 버튼 */
 export function concernOffers(e: Ent, id: ConcernId, prices = PRICES, rules: OfferRules = OFFER_RULES): Offer[] {
   if (id === 'match' || isOpen(e, id)) return [];
@@ -168,12 +171,12 @@ export function concernOffers(e: Ent, id: ConcernId, prices = PRICES, rules: Off
   // '전부 열기'로 함께 열리는 것
   const rest = [...(yearOpen ? [] : [yearName]), ...(lockedCore ? [`고민 ${lockedCore}개`] : [])].join('와 ');
   const out: Offer[] = [];
-  // 차액 결제를 끈 동안: 정해진 값으로만 판다 — 아무것도 안 샀으면 하나(3,900·6,900) 또는 전부(9,900), 하나라도 샀으면 하나씩만
+  // 차액 결제를 끈 동안: 정해진 값으로만 판다 — 아무것도 안 샀으면 하나(3,900·6,900) 또는 전부(묶음 가격), 하나라도 샀으면 하나씩만
   if (!rules.topup) {
     out.push({ kind: 'one', cost: single, label: `${won(single)}에 ${id === 'year' ? yearName : '이 고민'} 열기` });
     if (e.spent === 0 && !e.all)
       out.push({ kind: 'all', cost: prices.all, label: `${won(prices.all)}에 전부 열기`, note: `${rest}가 모두 열려요 · 하나씩 사면 ${won(prices.year + prices.concern * CORE_CONCERNS.length)}.` });
-    return out.length > 1 && id === 'year' ? [out[1], out[0]] : out;
+    return out.length > 1 && id === 'year' && bundleFirst(out[0], out[1], prices) ? [out[1], out[0]] : out;
   }
   // 하나만 — 사고 나서도 '전부 열기'까지 1,000원 이상 남을 때만 (첫 결제 혜택은 늘)
   if (welcome) {
@@ -199,7 +202,7 @@ export function concernOffers(e: Ent, id: ConcernId, prices = PRICES, rules: Off
     note: `${rest}가 모두 열려요${e.spent ? ` · 합계 ${won(prices.all)}` : ` · 하나씩 사면 ${won(prices.year + prices.concern * CORE_CONCERNS.length)}`}.`,
   });
   // 전부 열기가 더 이득이면 주 버튼으로
-  return out.length > 1 && (out[1].cost <= out[0].cost || id === 'year') ? [out[1], out[0]] : out;
+  return out.length > 1 && (out[1].cost <= out[0].cost || (id === 'year' && bundleFirst(out[0], out[1], prices))) ? [out[1], out[0]] : out;
 }
 
 export function partnerOffers(e: Ent, pk: string, prices = PRICES): Offer[] {
@@ -231,7 +234,7 @@ export function checkPurchase(list: Purchase[], p: Purchase, season: SeasonKey, 
   const e = entOf(list, p.target, season, prices);
   if (p.kind === 'all') {
     if (e.all && isOpen(e, 'year')) return 'owned';
-    // 차액 결제를 끈 동안에는 아무것도 안 산 사람만 정가 9,900원으로 산다
+    // 차액 결제를 끈 동안에는 아무것도 안 산 사람만 묶음 정가로 산다
     if (!rules.topup) return !e.all && e.spent === 0 && p.amount === prices.all ? 'ok' : 'price';
     return !e.all && Math.max(prices.all - e.spent, 0) === p.amount ? 'ok' : 'price';
   }
