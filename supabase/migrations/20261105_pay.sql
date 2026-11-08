@@ -46,3 +46,8 @@ alter table public.pay_aliases enable row level security;
 alter table public.pay_purchases enable row level security;
 alter table public.pay_orders enable row level security;
 revoke all on public.pay_accounts, public.pay_aliases, public.pay_purchases, public.pay_orders from anon, authenticated;
+
+-- 이 프로젝트처럼 '새 표 자동 공개'를 꺼 둔 경우 결제 확인 함수(service_role)도 권한을 직접 받아야 한다
+grant usage on schema public to service_role;
+grant all on public.pay_accounts, public.pay_aliases, public.pay_purchases, public.pay_orders to service_role;
+grant usage, select on all sequences in schema public to service_role;
