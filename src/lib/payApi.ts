@@ -155,7 +155,7 @@ async function payFlow(p: Purchase, season: { year: number; title: string }, buy
       return { ok: false, reason: res?.code === 'FAILURE_TYPE_PG' ? 'fail' : 'cancel', detail: `결제창: ${res?.code ?? '닫힘'} ${res?.pgCode ?? ''} ${res?.message ?? res?.pgMessage ?? ''}`.trim() };
     at('결제 확인');
     // 결제창이 돌려준 것을 그대로 적어 둔다 (txId가 없으면 결제창이 결과를 못 돌려준 것)
-    const sdkSaid = JSON.stringify({ tx: res.txId ? 'O' : 'X', type: res.transactionType ?? '-', id: res.paymentId === paymentId ? 'O' : (res.paymentId ?? '-') });
+    const sdkSaid = `${res.txId ? 'tx O' : 'tx X'} · ${res.transactionType ?? '-'} · 받은 항목 ${Object.keys(res).join(',')}`;
     return confirmPayment(paymentId, sdkSaid);
   }
 }
