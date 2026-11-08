@@ -16,6 +16,7 @@ import { CoupleShare } from './CoupleShare.tsx';
 import { GaeunRows } from './Gaeun.tsx';
 import { monthTitle, upcomingMonths } from './Luck.tsx';
 import { CAN_PAY, Premium, useUnlock } from './Premium.tsx';
+import type { Buyer } from '../lib/account.ts';
 import { PRICES } from '../config/plans.ts';
 import { partnerKey, partnerOffers, partnerOpen, sajuKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
@@ -383,7 +384,7 @@ function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
     locked: CAN_PAY ? !partnerOpen(u.ent, pk) : undefined,
     offers: partnerOffers(u.ent, pk),
     fresh: u.ent.first,
-    onTake: (o: Parameters<typeof u.buy>[0]) => u.buy(o, null, pk),
+    onTake: (o: Parameters<typeof u.buy>[0], buyer?: Buyer) => u.buy(o, null, pk, buyer),
     onRedeem: u.redeem,
   };
 }

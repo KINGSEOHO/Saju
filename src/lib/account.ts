@@ -37,6 +37,11 @@ export interface RedeemResult {
   refund?: number;
 }
 
+/** 결제할 때 결제대행사(이니시스)가 필수로 받는 구매자 정보 — 이메일 하나. 회사 서버에는 보내지 않고 결제창으로만 넘긴다 */
+export interface Buyer {
+  email: string;
+}
+
 /** 결제 결과 — 성공이면 구매 코드, 아니면 결제하지 않은 까닭 (cancel: 손님이 결제창을 닫음 · fail: 결제나 확인이 안 됨) */
 export type PayResult = { ok: true; code: string } | { ok: false; reason: 'owned' | 'price' | 'cancel' | 'fail'; /** 어느 단계에서 왜 막혔는지 (고객센터·시험 때 알려 주는 용도 — 개인정보는 들어 있지 않다) */ detail?: string };
 
@@ -47,7 +52,7 @@ export interface AccountApi {
    * 결제 — 서버가 계정의 최신 기록으로 다시 확인한 뒤에만 남긴다. 이미 열린 것('owned')이면 승인하지 않아 돈이 빠지지 않고,
    * 그사이 다른 화면에서 산 것이 있어 값이 바뀌었으면('price') 다시 고르게 한다. season: 지금 시즌 (실제 서버는 서버 시각으로 정한다)
    */
-  pay(p: Purchase, season: SeasonKey): Promise<PayResult>;
+  pay(p: Purchase, season: SeasonKey, buyer?: Buyer): Promise<PayResult>;
   /**
    * 다른 기기의 구매 코드로 그 계정의 기록을 불러온다. 이 기기에서 따로 산 것은 그 계정으로 합친다.
    * merged = 합쳐 넣은 기록 수 (실제 서버에서는 결제 확인 서버가 한 번에 옮긴다)
@@ -193,8 +198,8 @@ export function useAccount() {
     account,
     purchases,
     /** 결제 — 이미 열렸거나 값이 바뀌었으면 결제하지 않고 까닭을 돌려준다. 어느 쪽이든 기록을 다시 읽는다 */
-    pay: async (p: Purchase, season: SeasonKey) => {
-      const r = await accountApi.pay(p, season);
+    pay: async (p: Purchase, season: SeasonKey, buyer?: Buyer) => {
+      const r = await accountApi.pay(p, season, buyer);
       changed();
       return r;
     },

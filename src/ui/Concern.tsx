@@ -387,7 +387,7 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         outline={detailOutline(c)}
         offers={concernOffers(u.ent, id)}
         fresh={u.ent.first}
-        onTake={(o) => u.buy(o, id)}
+        onTake={(o, buyer) => u.buy(o, id, undefined, buyer)}
         onRedeem={u.redeem}
       >
         <ConcernDetail a={a} c={c} />

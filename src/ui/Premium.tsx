@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PAY_LIVE } from '../config/backend.ts';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
-import { useAccount, type PayResult, type RedeemResult } from '../lib/account.ts';
+import { useAccount, type Buyer, type PayResult, type RedeemResult } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
 import { Veil } from './common.tsx';
@@ -44,7 +44,7 @@ export function useUnlock(saju: string, season: SeasonKey) {
     ...acct,
     ent: entOf(acct.purchases, saju, season),
     /** 결제 — 이미 열렸거나 값이 바뀌었으면 결제하지 않고 까닭을 돌려준다 */
-    buy: (o: Offer, id: ConcernId | null, pk?: string) => acct.pay(purchaseOf(o, saju, id, pk, season.year), season),
+    buy: (o: Offer, id: ConcernId | null, pk?: string, buyer?: Buyer) => acct.pay(purchaseOf(o, saju, id, pk, season.year), season, buyer),
   };
 }
 
@@ -59,10 +59,14 @@ function previewLocked(): boolean {
 }
 
 /** 버튼을 누른 뒤 한 번 더 확인 — 무료는 하나뿐이라 실수로 쓰지 않게, 유료는 금액을 다시 보여 준다 */
-function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: string; busy: boolean; onYes: () => void; onNo: () => void; onRestore?: () => void }) {
+function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: string; busy: boolean; onYes: (buyer?: Buyer) => void; onNo: () => void; onRestore?: () => void }) {
   const free = o.kind === 'free' || o.kind === 'partnerFree';
   // 돈이 나가는 결제는 상품·금액 확인과 청약철회 제한(전자상거래법 제17조 제2항 제5호)에 먼저 동의받는다
   const [agree, setAgree] = useState(false);
+  // 실제 결제에서는 결제대행사(이니시스)가 구매자 이메일을 필수로 받는다 — 시안에서는 묻지 않는다
+  const [email, setEmail] = useState('');
+  const needEmail = !free && PAY_LIVE;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
   return (
     <div className="panel mt-4" role="alertdialog" aria-label="잠금 해제 확인">
       <p className="text-ui font-bold text-ink">
@@ -77,6 +81,30 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             ? '결제 화면으로 넘어가는 자리예요. 시안이라 실제로 결제되지 않고 바로 열려요.'
             : '결제 화면으로 넘어가요.'}
       </p>
+      {needEmail && (
+        <div className="mt-4">
+          <label htmlFor="pay-email" className="text-label font-semibold text-ink">
+            이메일 (필수)
+          </label>
+          <input
+            id="pay-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            className="field mt-2"
+            placeholder="결제 안내를 받을 이메일"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <p className="mt-2 text-cap text-sub">
+            결제대행사가 결제 처리와 결제 안내를 위해 꼭 받는 정보예요. 결제대행사에만 넘기고 명경사주 서버에는 저장하지 않아요. 보관은 전자상거래법에 따라 5년이에요. 입력하지 않으면 결제할 수 없어요(
+            <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
+              개인정보처리방침
+            </a>
+            ).
+          </p>
+        </div>
+      )}
       {!free && (
         <label className="mt-4 flex cursor-pointer items-start gap-3 text-cap text-ink-2" data-pay-agree>
           <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
@@ -94,7 +122,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
               개인정보처리방침
             </a>
-            ). 이름·생년월일은 보내지 않아요.
+            ). {needEmail ? '위 이메일을 결제대행사에 넘기는 것에도 동의해요. ' : ''}이름·생년월일은 보내지 않아요.
           </span>
         </label>
       )}
@@ -103,7 +131,13 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
           {free ? '다시 생각할게요' : '취소'}
         </button>
         {/* 한 번 누르면 끝날 때까지 잠근다 — 두 번 눌러 두 번 결제되지 않게 */}
-        <button type="button" className="btn-primary" onClick={onYes} disabled={busy || (!free && !agree)} aria-busy={busy}>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={() => onYes(needEmail ? { email: email.trim() } : undefined)}
+          disabled={busy || (!free && !agree) || (needEmail && !emailOk)}
+          aria-busy={busy}
+        >
           {busy ? '결제하는 중…' : free ? '무료로 열기' : PAYWALL_DEMO ? '결제하고 열기' : '결제하기'}
         </button>
       </div>
@@ -266,7 +300,7 @@ export function Premium({
   /** 이 화면(계정)에 결제 기록이 없는지 — 그러면 결제 전에 '전에 결제한 적 있나요?'를 묻는다 */
   fresh?: boolean;
   /** 결제 — 이미 열렸거나 값이 바뀌었으면 결제하지 않고 까닭을 돌려준다 */
-  onTake?: (o: Offer) => Promise<PayResult>;
+  onTake?: (o: Offer, buyer?: Buyer) => Promise<PayResult>;
   /** 다른 기기의 구매 코드로 불러오기 */
   onRedeem?: (code: string) => Promise<RedeemResult>;
   /** 잠겼을 때 보여 줄 상세의 제목들 — 내용은 흐린 줄로 */
@@ -291,12 +325,12 @@ export function Premium({
     setAsking(null);
     setStep('confirm');
   };
-  const payNow = async () => {
+  const payNow = async (buyer?: Buyer) => {
     if (!asking || busy) return;
     const o = asking;
     setBusy(true);
     // 시안에서는 흉내 서버가 바로 확인한다. 실제로는 결제 확인 서버가 최신 기록으로 다시 본 뒤에만 승인한다
-    const r = await onTake!(o).catch(() => null);
+    const r = await onTake!(o, buyer).catch(() => null);
     setBusy(false);
     close();
     if (!r) return setDone({ title: '결제를 마치지 못했어요.', text: '잠시 뒤 다시 해 주세요.' });
@@ -311,7 +345,10 @@ export function Premium({
           ? { title: '금액이 바뀌었어요.', text: '다른 화면에서 결제한 것이 반영됐어요. 아래에서 다시 골라 주세요.' }
           : r.reason === 'cancel'
             ? { title: '결제를 하지 않았어요.', text: `결제창을 닫아서 돈이 나가지 않았어요.${r.detail ? ` (${r.detail})` : ''}` }
-            : { title: '결제를 마치지 못했어요.', text: `돈이 나갔는데 열리지 않았다면 구매 코드와 결제 시각을 고객센터로 알려 주세요. 확인 뒤 열어 드리거나 환불해 드려요.${r.detail ? ` (${r.detail})` : ''}` },
+            : {
+                title: '결제를 마치지 못했어요.',
+                text: `돈이 나갔는데 열리지 않았다면 구매 코드와 결제 시각을 고객센터로 알려 주세요. 확인 뒤 열어 드리거나 환불해 드려요.${r.detail ? ` (${r.detail})` : ''}`,
+              },
     );
   };
   const restored = (r: RedeemResult) => {

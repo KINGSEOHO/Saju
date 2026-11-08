@@ -7,7 +7,7 @@
  * 서버로 보내는 것: 구매 코드 · 산 항목 · 사주 구분값(양력 생일로 만든 짧은 암호값) · 금액 · 시즌. 이름·생년월일은 보내지 않는다.
  */
 import { PAY_API, PAY_LIVE, PORTONE_CHANNEL_KEY, PORTONE_STORE_ID } from '../config/backend.ts';
-import type { AccountApi, PayResult, RedeemResult } from './account.ts';
+import type { AccountApi, Buyer, PayResult, RedeemResult } from './account.ts';
 import type { Purchase } from './entitlements.ts';
 import { STORAGE } from './storageKeys.ts';
 
@@ -92,10 +92,10 @@ export const payApi: AccountApi = {
     if (typeof r.code === 'string' && r.code !== readCode()) writeCode(r.code);
     return (r.purchases as Purchase[]) ?? [];
   },
-  async pay(p, season) {
+  async pay(p, season, buyer) {
     let step = '구매 코드';
     try {
-      return await payFlow(p, season, (s) => (step = s));
+      return await payFlow(p, season, buyer, (s) => (step = s));
     } catch (e) {
       return { ok: false, reason: 'fail', detail: `${step}: ${e instanceof Error ? e.message : String(e)}` };
     }
@@ -107,7 +107,7 @@ export const payApi: AccountApi = {
   },
 };
 
-async function payFlow(p: Purchase, season: { year: number; title: string }, at: (s: string) => void): Promise<PayResult> {
+async function payFlow(p: Purchase, season: { year: number; title: string }, buyer: Buyer | undefined, at: (s: string) => void): Promise<PayResult> {
   {
     const code = await myCode();
     at('주문 준비');
@@ -131,6 +131,8 @@ async function payFlow(p: Purchase, season: { year: number; title: string }, at:
       currency: 'KRW',
       payMethod: 'CARD',
       redirectUrl: returnUrl(),
+      // 이니시스 V2는 구매자 이메일이 필수 — 결제창으로만 넘기고 우리 서버에는 보내지 않는다
+      ...(buyer?.email ? { customer: { email: buyer.email } } : {}),
     });
     // 컴퓨터에서는 여기로 돌아온다 (휴대폰은 주소가 넘어가서 resumePayment가 마저 한다)
     if (!res || res.code) return { ok: false, reason: res?.code === 'FAILURE_TYPE_PG' ? 'fail' : 'cancel', detail: `결제창: ${res?.code ?? '닫힘'} ${res?.message ?? ''}`.trim() };
