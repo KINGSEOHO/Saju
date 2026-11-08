@@ -125,7 +125,7 @@ describe('결제 확인 — 포트원에 직접 물어본 뒤에만 기록한다
     const g = fakeGateway();
     const code = await newAccount(store);
     const prep = await prepare(store, { code, purchase: one('career'), season: Y27 }, NOW);
-    expect(await confirm(store, g.gw, prep.paymentId, NOW)).toEqual({ ok: false, reason: 'not_paid' });
+    expect(await confirm(store, g.gw, prep.paymentId, NOW)).toEqual({ ok: false, reason: 'not_paid', status: 'none' });
     expect((await listPurchases(store, code)).purchases).toHaveLength(0);
   });
 

@@ -107,7 +107,7 @@ const portone = (path: string, init: RequestInit = {}) =>
 const gateway: Gateway = {
   async getPayment(paymentId) {
     const r = await portone(`/payments/${q(paymentId)}`);
-    if (!r.ok) return null;
+    if (!r.ok) return { status: `HTTP_${r.status}`, total: -1, currency: '' };
     const p = (await r.json()) as { status?: string; amount?: { total?: number }; currency?: string };
     return { status: p.status ?? '', total: p.amount?.total ?? -1, currency: p.currency ?? '' };
   },
