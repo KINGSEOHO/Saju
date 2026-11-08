@@ -77,7 +77,7 @@ const returnUrl = () => `${location.origin}${location.pathname}?pay_return=1`;
 async function confirmPayment(paymentId: string): Promise<PayResult> {
   const r = await call('confirm', { paymentId });
   if (r.ok && typeof r.code === 'string') return { ok: true, code: r.code };
-  return { ok: false, reason: r.reason === 'owned' || r.reason === 'price' ? r.reason : 'fail' };
+  return { ok: false, reason: r.reason === 'owned' || r.reason === 'price' ? r.reason : 'fail', detail: `결제 확인: ${String(r.reason)} · 결제 번호 ${paymentId}` };
 }
 
 export const payApi: AccountApi = {
