@@ -5,6 +5,7 @@ import { analyze, pillarHanja, STEMS, type BirthInput, type SajuAnalysis } from 
 import { groupOf } from '../engine/tenGods.ts';
 import { clearFreshResult, isFreshResult } from '../lib/freshResult.ts';
 import { track } from '../lib/funnel.ts';
+import { STORAGE } from '../lib/storageKeys.ts';
 import { inputToDraft, saveDraft } from '../lib/birthDraft.ts';
 import { encodeInput } from '../lib/share.ts';
 import { CONCERNS, concernsFor, type ConcernId } from '../report/concernList.ts';
@@ -283,6 +284,28 @@ export default function Result({ input }: { input: BirthInput }) {
   /** 입력 화면에서 막 넘어왔으면 '계산하는 중' 화면을 먼저 */
   const [intro, setIntro] = useState(isFreshResult);
   useEffect(clearFreshResult, []);
+  // 휴대폰 결제창에서 돌아오면(페이지가 새로 열림) 결제하던 고민 리포트를 펼쳐 그 자리로 간다
+  useEffect(() => {
+    const reopen = () => {
+      let id: string | undefined;
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(STORAGE.payReturn) ?? '{}') as { paymentId?: string; open?: string };
+        if (saved.paymentId) return; // 아직 결제창에 가 있는 중
+        id = saved.open;
+        sessionStorage.removeItem(STORAGE.payReturn);
+      } catch {
+        return;
+      }
+      if (!id || !CONCERNS.some((c) => c.id === id)) return;
+      setIntro(false);
+      setTab('concern');
+      setOpen(id as ConcernId);
+      setJump({ id: id as ConcernId, n: Date.now() });
+    };
+    reopen();
+    window.addEventListener('mg-pay-open', reopen);
+    return () => window.removeEventListener('mg-pay-open', reopen);
+  }, []);
 
   useEffect(() => {
     if ('a' in result) track('analyze', { dayStem: result.a.pillars.day.stem, gender: input.gender, timeKnown: result.a.pillars.timeKnown }, false);

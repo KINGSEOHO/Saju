@@ -134,7 +134,7 @@ async function payFlow(p: Purchase, season: { year: number; title: string }, buy
     if (!prep.ok) return { ok: false, reason: prep.reason === 'owned' ? 'owned' : prep.reason === 'price' ? 'price' : 'fail', detail: `주문 준비: ${String(prep.reason)}` };
     const paymentId = prep.paymentId as string;
     try {
-      sessionStorage.setItem(STORAGE.payReturn, JSON.stringify({ paymentId, hash: location.hash }));
+      sessionStorage.setItem(STORAGE.payReturn, JSON.stringify({ paymentId, hash: location.hash, open: p.item }));
     } catch {
       /* 돌아온 주소에서 결제 번호로 확인한다 */
     }
@@ -174,7 +174,7 @@ export function resumePayment(): void {
   if (!PAY_LIVE) return;
   const q = new URLSearchParams(location.search);
   if (!q.has('pay_return')) return;
-  let saved: { paymentId?: string; hash?: string } = {};
+  let saved: { paymentId?: string; hash?: string; open?: string } = {};
   try {
     saved = JSON.parse(sessionStorage.getItem(STORAGE.payReturn) ?? '{}');
     sessionStorage.removeItem(STORAGE.payReturn);
@@ -182,6 +182,14 @@ export function resumePayment(): void {
     /* 저장된 화면이 없으면 첫 화면으로 */
   }
   const paymentId = q.get('paymentId') ?? saved.paymentId;
+  // 결제하던 고민 리포트를 다시 펼치도록 결과 화면에 남겨 둔다 (ResultPage가 읽고 지운다)
+  if (saved.open) {
+    try {
+      sessionStorage.setItem(STORAGE.payReturn, JSON.stringify({ open: saved.open }));
+    } catch {
+      /* 못 남기면 맨 위에서 시작 */
+    }
+  }
   history.replaceState(null, '', `${location.pathname}${saved.hash ?? ''}`);
   // 화면이 먼저 그려졌을 수 있어 주소가 바뀐 것을 알린다
   window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -198,5 +206,8 @@ export function resumePayment(): void {
       if (!r.ok) window.alert(`결제를 마치지 못했어요.\n(${r.detail ?? ''})`);
     })
     .catch(() => null)
-    .then(() => window.dispatchEvent(new Event('mg-account')));
+    .then(() => {
+      window.dispatchEvent(new Event('mg-account'));
+      window.dispatchEvent(new Event('mg-pay-open'));
+    });
 }
