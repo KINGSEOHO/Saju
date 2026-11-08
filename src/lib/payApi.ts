@@ -93,16 +93,35 @@ export const payApi: AccountApi = {
     return (r.purchases as Purchase[]) ?? [];
   },
   async pay(p, season) {
+    let step = '구매 코드';
+    try {
+      return await payFlow(p, season, (s) => (step = s));
+    } catch (e) {
+      return { ok: false, reason: 'fail', detail: `${step}: ${e instanceof Error ? e.message : String(e)}` };
+    }
+  },
+  async redeem(target): Promise<RedeemResult> {
+    const r = await call('redeem', { code: readCode(), target });
+    if (r.ok && typeof r.code === 'string') writeCode(r.code);
+    return { ok: !!r.ok, merged: Number(r.merged ?? 0), ...(typeof r.code === 'string' ? { code: r.code } : {}), ...(r.refund ? { refund: Number(r.refund) } : {}) };
+  },
+};
+
+async function payFlow(p: Purchase, season: { year: number; title: string }, at: (s: string) => void): Promise<PayResult> {
+  {
     const code = await myCode();
+    at('주문 준비');
     const prep = await call('prepare', { code, purchase: p, season });
-    if (!prep.ok) return { ok: false, reason: prep.reason === 'owned' ? 'owned' : prep.reason === 'price' ? 'price' : 'fail' };
+    if (!prep.ok) return { ok: false, reason: prep.reason === 'owned' ? 'owned' : prep.reason === 'price' ? 'price' : 'fail', detail: `주문 준비: ${String(prep.reason)}` };
     const paymentId = prep.paymentId as string;
     try {
       sessionStorage.setItem(STORAGE.payReturn, JSON.stringify({ paymentId, hash: location.hash }));
     } catch {
       /* 돌아온 주소에서 결제 번호로 확인한다 */
     }
+    at('결제창 스크립트');
     const PortOne = await loadSdk();
+    at('결제창 열기');
     const res = await PortOne.requestPayment({
       storeId: PORTONE_STORE_ID,
       channelKey: PORTONE_CHANNEL_KEY,
@@ -114,15 +133,11 @@ export const payApi: AccountApi = {
       redirectUrl: returnUrl(),
     });
     // 컴퓨터에서는 여기로 돌아온다 (휴대폰은 주소가 넘어가서 resumePayment가 마저 한다)
-    if (!res || res.code) return { ok: false, reason: res?.code === 'FAILURE_TYPE_PG' ? 'fail' : 'cancel' };
+    if (!res || res.code) return { ok: false, reason: res?.code === 'FAILURE_TYPE_PG' ? 'fail' : 'cancel', detail: `결제창: ${res?.code ?? '닫힘'} ${res?.message ?? ''}`.trim() };
+    at('결제 확인');
     return confirmPayment(paymentId);
-  },
-  async redeem(target): Promise<RedeemResult> {
-    const r = await call('redeem', { code: readCode(), target });
-    if (r.ok && typeof r.code === 'string') writeCode(r.code);
-    return { ok: !!r.ok, merged: Number(r.merged ?? 0), ...(typeof r.code === 'string' ? { code: r.code } : {}), ...(r.refund ? { refund: Number(r.refund) } : {}) };
-  },
-};
+  }
+}
 
 /**
  * 휴대폰 결제창에서 돌아왔을 때 — 주소의 결제 번호로 확인을 마저 하고, 결제하던 화면으로 되돌린다.

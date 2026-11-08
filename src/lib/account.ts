@@ -38,7 +38,7 @@ export interface RedeemResult {
 }
 
 /** 결제 결과 — 성공이면 구매 코드, 아니면 결제하지 않은 까닭 (cancel: 손님이 결제창을 닫음 · fail: 결제나 확인이 안 됨) */
-export type PayResult = { ok: true; code: string } | { ok: false; reason: 'owned' | 'price' | 'cancel' | 'fail' };
+export type PayResult = { ok: true; code: string } | { ok: false; reason: 'owned' | 'price' | 'cancel' | 'fail'; /** 어느 단계에서 왜 막혔는지 (고객센터·시험 때 알려 주는 용도 — 개인정보는 들어 있지 않다) */ detail?: string };
 
 export interface AccountApi {
   current(): Promise<Account>;
