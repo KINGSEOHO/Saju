@@ -76,6 +76,10 @@ function loadSdk(): Promise<PortOneSdk> {
 /** 휴대폰 결제창에서 돌아올 주소 — 화면 주소(#/r?…)는 따로 적어 두었다가 되돌린다 */
 const returnUrl = () => `${location.origin}${location.pathname}?pay_return=1`;
 
+/** 손님이 결제창을 닫았는지 — 이니시스는 닫아도 'PG 실패'로 알려 주고 메시지에 '취소'를 적는다 */
+const userCancelled = (res: { code?: string; message?: string; pgMessage?: string } | undefined) =>
+  !res || res.code !== 'FAILURE_TYPE_PG' || /취소|cancel/i.test(`${res.message ?? ''}${res.pgMessage ?? ''}`);
+
 const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
 /** 서버에 확인을 맡긴다. 결제창이 막 닫혀 포트원이 아직 '대기(READY)'라고 하면 몇 번 더 물어본다 */
@@ -154,7 +158,7 @@ async function payFlow(p: Purchase, season: { year: number; title: string }, buy
     });
     // 컴퓨터에서는 여기로 돌아온다 (휴대폰은 주소가 넘어가서 resumePayment가 마저 한다)
     if (!res || res.code)
-      return { ok: false, reason: res?.code === 'FAILURE_TYPE_PG' ? 'fail' : 'cancel', detail: `결제창: ${res?.code ?? '닫힘'} ${res?.pgCode ?? ''} ${res?.message ?? res?.pgMessage ?? ''}`.trim() };
+      return { ok: false, reason: userCancelled(res) ? 'cancel' : 'fail', detail: `결제창: ${res?.code ?? '닫힘'} ${res?.pgCode ?? ''} ${res?.message ?? res?.pgMessage ?? ''}`.trim() };
     at('결제 확인');
     // 결제창이 돌려준 것을 그대로 적어 둔다 (txId가 없으면 결제창이 결과를 못 돌려준 것)
     const sdkSaid = `${res.txId ? 'tx O' : 'tx X'} · ${res.transactionType ?? '-'} · 받은 항목 ${Object.keys(res).join(',')}`;
@@ -184,6 +188,8 @@ export function resumePayment(): void {
   // code가 붙어 오면 결제를 하지 않았거나 실패한 것 — 확인할 것이 없다
   if (!paymentId) return;
   if (q.get('code')) {
+    const msg = `${q.get('message') ?? ''}${q.get('pgMessage') ?? ''}`;
+    if (/취소|cancel/i.test(msg)) return;
     window.alert(`결제를 마치지 못했어요.\n(결제창: ${q.get('code')} ${q.get('pgCode') ?? ''} ${q.get('message') ?? q.get('pgMessage') ?? ''} · 결제 번호 ${paymentId})`);
     return;
   }
