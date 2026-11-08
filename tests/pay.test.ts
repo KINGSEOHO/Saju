@@ -49,11 +49,16 @@ function memStore() {
 function fakeGateway() {
   const paid = new Map<string, PaymentInfo>();
   const cancels: { id: string; amount: number | null }[] = [];
+  const approvals: { id: string; token: string; amount: number }[] = [];
   const gw: Gateway = {
     getPayment: async (id) => paid.get(id) ?? null,
     cancel: async (id, amount) => void cancels.push({ id, amount }),
+    async approve(id, token, amount) {
+      approvals.push({ id, token, amount });
+      if (paid.get(id)?.status === 'READY') paid.set(id, { status: 'PAID', total: amount, currency: 'KRW' });
+    },
   };
-  return { gw, paid, cancels };
+  return { gw, paid, cancels, approvals };
 }
 
 const NOW = Date.UTC(2026, 10, 5);
@@ -137,6 +142,28 @@ describe('결제 확인 — 포트원에 직접 물어본 뒤에만 기록한다
     expect(r).toMatchObject({ ok: false, reason: 'mismatch' });
     expect(g.cancels).toEqual([{ id: r.paymentId, amount: null }]);
     expect((await listPurchases(store, code)).purchases).toHaveLength(0);
+  });
+
+  it('인증만 된 결제(READY)는 승인표로 주문 금액만큼 승인한 뒤 기록한다', async () => {
+    const { store } = memStore();
+    const g = fakeGateway();
+    const code = await newAccount(store);
+    const prep = await prepare(store, { code, purchase: one('career'), season: Y27 }, NOW);
+    g.paid.set(prep.paymentId as string, { status: 'READY', total: 3900, currency: 'KRW' });
+    expect(await confirm(store, g.gw, prep.paymentId, NOW)).toMatchObject({ ok: false, status: 'READY' });
+    expect(await confirm(store, g.gw, prep.paymentId, NOW, 'tok')).toMatchObject({ ok: true, code });
+    expect(g.approvals).toEqual([{ id: prep.paymentId, token: 'tok', amount: 3900 }]);
+  });
+
+  it('이미 열린 것이면 승인 자체를 하지 않는다', async () => {
+    const { store } = memStore();
+    const g = fakeGateway();
+    const code = await newAccount(store);
+    const b = await prepare(store, { code, purchase: one('career'), season: Y27 }, NOW);
+    await buy(store, g, code, one('career'));
+    g.paid.set(b.paymentId as string, { status: 'READY', total: 3900, currency: 'KRW' });
+    expect(await confirm(store, g.gw, b.paymentId, NOW, 'tok')).toEqual({ ok: false, reason: 'owned' });
+    expect(g.approvals).toEqual([]);
   });
 
   it('같은 결제를 화면과 웹훅이 두 번 확인해도 기록은 한 번', async () => {

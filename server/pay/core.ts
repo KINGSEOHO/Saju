@@ -59,6 +59,8 @@ export interface PaymentInfo {
 export interface Gateway {
   getPayment(paymentId: string): Promise<PaymentInfo | null>;
   cancel(paymentId: string, amount: number | null, reason: string): Promise<void>;
+  /** 수동 승인 — 결제창이 인증만 받고 승인표(paymentToken)를 주면 서버가 승인을 요청해야 돈이 나간다 */
+  approve?(paymentId: string, token: string, amount: number): Promise<void>;
 }
 
 export type ApiResult = Record<string, unknown> & { ok: boolean };
@@ -151,14 +153,27 @@ export function orderName(p: Purchase, season: SeasonKey): string {
   return `명경사주 ${CONCERNS.find((c) => c.id === p.item)?.title ?? ''} 리포트`;
 }
 
-export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: number): Promise<ApiResult> {
+export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: number, rawToken?: unknown): Promise<ApiResult> {
   const paymentId = typeof rawId === 'string' && /^mg-[0-9a-z-]{4,40}$/.test(rawId) ? rawId : null;
   if (!paymentId) return { ok: false, reason: 'bad' };
   const order = await store.getOrder(paymentId);
   if (!order) return { ok: false, reason: 'unknown' };
   if (order.status === 'paid') return { ok: true, code: order.code };
   if (order.status === 'cancelled') return { ok: false, reason: 'cancelled' };
-  const pay = await gw.getPayment(paymentId);
+  let pay = await gw.getPayment(paymentId);
+  // 인증만 끝난 결제(READY) + 승인표가 왔으면 승인을 요청한다. 금액은 화면 말고 주문에 적힌 값으로,
+  // 이미 열린 것이면 승인하지 않는다(돈을 뺐다가 돌려주지 않게).
+  const token = typeof rawToken === 'string' && rawToken.length < 2000 ? rawToken : '';
+  if (pay?.status === 'READY' && token && gw.approve) {
+    const pre = checkPurchase(await store.purchases(order.code), order.purchase, order.season);
+    if (pre !== 'ok') return { ok: false, reason: pre };
+    try {
+      await gw.approve(paymentId, token, order.purchase.amount);
+    } catch (e) {
+      return { ok: false, reason: 'not_paid', status: 'APPROVE_FAILED', why: e instanceof Error ? e.message.slice(0, 200) : '' };
+    }
+    pay = await gw.getPayment(paymentId);
+  }
   // 포트원이 답한 상태를 함께 돌려준다 (READY: 결제창에서 안 끝남 · FAILED · HTTP_401: 키 문제 등) — 고객센터·시험용
   if (!pay || pay.status !== 'PAID') return { ok: false, reason: 'not_paid', status: pay?.status ?? 'none', ...(pay?.why ? { why: pay.why } : {}) };
   // 같은 결제를 화면과 웹훅이 동시에 확인해도 한 번만 남긴다

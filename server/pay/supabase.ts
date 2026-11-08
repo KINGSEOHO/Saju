@@ -117,6 +117,10 @@ const gateway: Gateway = {
     const r = await portone(`/payments/${q(paymentId)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, ...(amount ? { amount } : {}) }) });
     if (!r.ok) throw new Error(`cancel ${r.status}`);
   },
+  async approve(paymentId, token, amount) {
+    const r = await portone(`/payments/${q(paymentId)}/confirm`, { method: 'POST', body: JSON.stringify({ paymentToken: token, totalAmount: amount, currency: 'KRW' }) });
+    if (!r.ok) throw new Error(`approve ${r.status} ${(await r.text().catch(() => '')).slice(0, 160)}`);
+  },
 };
 
 function cors(req: Request): Record<string, string> {
@@ -136,7 +140,7 @@ Deno.serve(async (req) => {
     if (route === 'account') out = await createAccount(store);
     else if (route === 'purchases') out = await listPurchases(store, body.code);
     else if (route === 'prepare') out = await prepare(store, body, now);
-    else if (route === 'confirm') out = await confirm(store, gateway, body.paymentId, now);
+    else if (route === 'confirm') out = await confirm(store, gateway, body.paymentId, now, body.paymentToken);
     else if (route === 'redeem') out = await redeem(store, gateway, body);
     else if (route === 'webhook') {
       const data = body.data as { paymentId?: unknown } | undefined;

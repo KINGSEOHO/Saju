@@ -53,7 +53,9 @@ async function myCode(): Promise<string> {
 }
 
 interface PortOneSdk {
-  requestPayment(req: Json): Promise<{ code?: string; message?: string; paymentId?: string; txId?: string; transactionType?: string; pgCode?: string; pgMessage?: string } | undefined>;
+  requestPayment(
+    req: Json,
+  ): Promise<{ code?: string; message?: string; paymentId?: string; paymentToken?: string; txId?: string; transactionType?: string; pgCode?: string; pgMessage?: string } | undefined>;
 }
 let sdk: Promise<PortOneSdk> | null = null;
 /** 포트원 결제창 스크립트 — 결제할 때만 불러온다 */
@@ -77,10 +79,10 @@ const returnUrl = () => `${location.origin}${location.pathname}?pay_return=1`;
 const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
 /** 서버에 확인을 맡긴다. 결제창이 막 닫혀 포트원이 아직 '대기(READY)'라고 하면 몇 번 더 물어본다 */
-async function confirmPayment(paymentId: string, sdkSaid = ''): Promise<PayResult> {
+async function confirmPayment(paymentId: string, sdkSaid = '', paymentToken?: string): Promise<PayResult> {
   let r: Json = {};
   for (let i = 0; i < 5; i++) {
-    r = await call('confirm', { paymentId });
+    r = await call('confirm', { paymentId, ...(paymentToken ? { paymentToken } : {}) });
     if (r.ok && typeof r.code === 'string') return { ok: true, code: r.code };
     if (!(r.reason === 'not_paid' && (r.status === 'READY' || r.status === 'PAY_PENDING'))) break;
     await wait(2000);
@@ -156,7 +158,7 @@ async function payFlow(p: Purchase, season: { year: number; title: string }, buy
     at('결제 확인');
     // 결제창이 돌려준 것을 그대로 적어 둔다 (txId가 없으면 결제창이 결과를 못 돌려준 것)
     const sdkSaid = `${res.txId ? 'tx O' : 'tx X'} · ${res.transactionType ?? '-'} · 받은 항목 ${Object.keys(res).join(',')}`;
-    return confirmPayment(paymentId, sdkSaid);
+    return confirmPayment(paymentId, sdkSaid, res.paymentToken);
   }
 }
 
@@ -185,7 +187,7 @@ export function resumePayment(): void {
     window.alert(`결제를 마치지 못했어요.\n(결제창: ${q.get('code')} ${q.get('pgCode') ?? ''} ${q.get('message') ?? q.get('pgMessage') ?? ''} · 결제 번호 ${paymentId})`);
     return;
   }
-  void confirmPayment(paymentId, `돌아옴 tx ${q.get('txId') ? 'O' : 'X'}`)
+  void confirmPayment(paymentId, `돌아옴 tx ${q.get('txId') ? 'O' : 'X'}`, q.get('paymentToken') ?? undefined)
     .then((r) => {
       if (!r.ok) window.alert(`결제를 마치지 못했어요.\n(${r.detail ?? ''})`);
     })
