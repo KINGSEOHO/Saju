@@ -37,8 +37,10 @@ export interface RedeemResult {
   refund?: number;
 }
 
-/** 결제할 때 결제대행사(이니시스)가 필수로 받는 구매자 정보 — 이메일 하나. 회사 서버에는 보내지 않고 결제창으로만 넘긴다 */
+/** 결제할 때 결제대행사(이니시스 V2)가 필수로 받는 구매자 정보 — 회사 서버에는 보내지 않고 결제창으로만 넘긴다 */
 export interface Buyer {
+  name: string;
+  phone: string;
   email: string;
 }
 

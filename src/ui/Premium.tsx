@@ -65,8 +65,11 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
   const [agree, setAgree] = useState(false);
   // 실제 결제에서는 결제대행사(이니시스)가 구매자 이메일을 필수로 받는다 — 시안에서는 묻지 않는다
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const needEmail = !free && PAY_LIVE;
-  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  const digits = phone.replace(/\D/g, '');
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) && name.trim().length > 0 && /^01\d{8,9}$/.test(digits);
   return (
     <div className="panel mt-4" role="alertdialog" aria-label="잠금 해제 확인">
       <p className="text-ui font-bold text-ink">
@@ -83,21 +86,32 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
       </p>
       {needEmail && (
         <div className="mt-4">
-          <label htmlFor="pay-email" className="text-label font-semibold text-ink">
-            이메일 (필수)
-          </label>
+          <p className="text-label font-semibold text-ink">구매자 정보 (필수)</p>
+          <input aria-label="이름" autoComplete="name" className="field mt-2" placeholder="이름" value={name} onChange={(e) => setName(e.target.value)} />
+          <input
+            aria-label="휴대폰 번호"
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel"
+            className="field mt-2"
+            placeholder="휴대폰 번호 (숫자만)"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
           <input
             id="pay-email"
             type="email"
             inputMode="email"
             autoComplete="email"
             className="field mt-2"
-            placeholder="결제 안내를 받을 이메일"
+            aria-label="이메일"
+            placeholder="이메일"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <p className="mt-2 text-cap text-sub">
-            결제대행사가 결제 처리와 결제 안내를 위해 꼭 받는 정보예요. 결제대행사에만 넘기고 명경사주 서버에는 저장하지 않아요. 보관은 전자상거래법에 따라 5년이에요. 입력하지 않으면 결제할 수 없어요(
+            이름·휴대폰 번호·이메일은 결제대행사가 결제 처리와 결제 안내를 위해 꼭 받는 정보예요. 결제대행사에만 넘기고 명경사주 서버에는 저장하지 않아요. 보관은 전자상거래법에 따라 5년이에요.
+            입력하지 않으면 결제할 수 없어요(
             <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
               개인정보처리방침
             </a>
@@ -122,7 +136,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
               개인정보처리방침
             </a>
-            ). {needEmail ? '위 이메일을 결제대행사에 넘기는 것에도 동의해요. ' : ''}이름·생년월일은 보내지 않아요.
+            ). {needEmail ? '위 이름·휴대폰 번호·이메일을 결제대행사에 넘기는 것에도 동의해요. ' : ''}이름·생년월일은 보내지 않아요.
           </span>
         </label>
       )}
@@ -134,7 +148,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
         <button
           type="button"
           className="btn-primary"
-          onClick={() => onYes(needEmail ? { email: email.trim() } : undefined)}
+          onClick={() => onYes(needEmail ? { name: name.trim(), phone: digits, email: email.trim() } : undefined)}
           disabled={busy || (!free && !agree) || (needEmail && !emailOk)}
           aria-busy={busy}
         >
