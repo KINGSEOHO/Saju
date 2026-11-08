@@ -6,7 +6,7 @@
  *
  * 서버로 보내는 것: 구매 코드 · 산 항목 · 사주 구분값(양력 생일로 만든 짧은 암호값) · 금액 · 시즌. 이름·생년월일은 보내지 않는다.
  */
-import { PAY_API, PAY_LIVE, PORTONE_CHANNEL_KEY, PORTONE_STORE_ID } from '../config/backend.ts';
+import { PAY_API, PAY_LIVE, PAY_PC_REDIRECT, PORTONE_CHANNEL_KEY, PORTONE_STORE_ID } from '../config/backend.ts';
 import type { AccountApi, Buyer, PayResult, RedeemResult } from './account.ts';
 import type { Purchase } from './entitlements.ts';
 import { STORAGE } from './storageKeys.ts';
@@ -53,7 +53,7 @@ async function myCode(): Promise<string> {
 }
 
 interface PortOneSdk {
-  requestPayment(req: Json): Promise<{ code?: string; message?: string; paymentId?: string } | undefined>;
+  requestPayment(req: Json): Promise<{ code?: string; message?: string; paymentId?: string; txId?: string; transactionType?: string; pgCode?: string; pgMessage?: string } | undefined>;
 }
 let sdk: Promise<PortOneSdk> | null = null;
 /** 포트원 결제창 스크립트 — 결제할 때만 불러온다 */
@@ -74,10 +74,23 @@ function loadSdk(): Promise<PortOneSdk> {
 /** 휴대폰 결제창에서 돌아올 주소 — 화면 주소(#/r?…)는 따로 적어 두었다가 되돌린다 */
 const returnUrl = () => `${location.origin}${location.pathname}?pay_return=1`;
 
-async function confirmPayment(paymentId: string): Promise<PayResult> {
-  const r = await call('confirm', { paymentId });
-  if (r.ok && typeof r.code === 'string') return { ok: true, code: r.code };
-  return { ok: false, reason: r.reason === 'owned' || r.reason === 'price' ? r.reason : 'fail', detail: `결제 확인: ${String(r.reason)}${r.status ? ` ${String(r.status)}` : ''} · 결제 번호 ${paymentId}` };
+const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+
+/** 서버에 확인을 맡긴다. 결제창이 막 닫혀 포트원이 아직 '대기(READY)'라고 하면 몇 번 더 물어본다 */
+async function confirmPayment(paymentId: string, sdkSaid = ''): Promise<PayResult> {
+  let r: Json = {};
+  for (let i = 0; i < 5; i++) {
+    r = await call('confirm', { paymentId });
+    if (r.ok && typeof r.code === 'string') return { ok: true, code: r.code };
+    if (!(r.reason === 'not_paid' && (r.status === 'READY' || r.status === 'PAY_PENDING'))) break;
+    await wait(2000);
+  }
+  const why = typeof r.why === 'string' && r.why ? ` (${r.why})` : '';
+  return {
+    ok: false,
+    reason: r.reason === 'owned' || r.reason === 'price' ? r.reason : 'fail',
+    detail: `결제 확인: ${String(r.reason)}${r.status ? ` ${String(r.status)}` : ''}${why} · 결제 번호 ${paymentId}${sdkSaid ? ` · 결제창 응답 ${sdkSaid}` : ''}`,
+  };
 }
 
 export const payApi: AccountApi = {
@@ -131,13 +144,19 @@ async function payFlow(p: Purchase, season: { year: number; title: string }, buy
       currency: 'KRW',
       payMethod: 'CARD',
       redirectUrl: returnUrl(),
+      noticeUrls: [`${PAY_API}/webhook`],
+      productType: 'PRODUCT_TYPE_DIGITAL',
+      ...(PAY_PC_REDIRECT ? { windowType: { pc: 'REDIRECTION', mobile: 'REDIRECTION' } } : {}),
       // 이니시스 V2는 구매자 이름·휴대폰 번호·이메일이 필수 — 결제창으로만 넘기고 우리 서버에는 보내지 않는다
       ...(buyer ? { customer: { fullName: buyer.name, phoneNumber: buyer.phone, email: buyer.email } } : {}),
     });
     // 컴퓨터에서는 여기로 돌아온다 (휴대폰은 주소가 넘어가서 resumePayment가 마저 한다)
-    if (!res || res.code) return { ok: false, reason: res?.code === 'FAILURE_TYPE_PG' ? 'fail' : 'cancel', detail: `결제창: ${res?.code ?? '닫힘'} ${res?.message ?? ''}`.trim() };
+    if (!res || res.code)
+      return { ok: false, reason: res?.code === 'FAILURE_TYPE_PG' ? 'fail' : 'cancel', detail: `결제창: ${res?.code ?? '닫힘'} ${res?.pgCode ?? ''} ${res?.message ?? res?.pgMessage ?? ''}`.trim() };
     at('결제 확인');
-    return confirmPayment(paymentId);
+    // 결제창이 돌려준 것을 그대로 적어 둔다 (txId가 없으면 결제창이 결과를 못 돌려준 것)
+    const sdkSaid = JSON.stringify({ tx: res.txId ? 'O' : 'X', type: res.transactionType ?? '-', id: res.paymentId === paymentId ? 'O' : (res.paymentId ?? '-') });
+    return confirmPayment(paymentId, sdkSaid);
   }
 }
 
@@ -161,8 +180,15 @@ export function resumePayment(): void {
   // 화면이 먼저 그려졌을 수 있어 주소가 바뀐 것을 알린다
   window.dispatchEvent(new HashChangeEvent('hashchange'));
   // code가 붙어 오면 결제를 하지 않았거나 실패한 것 — 확인할 것이 없다
-  if (!paymentId || q.get('code')) return;
-  void confirmPayment(paymentId)
+  if (!paymentId) return;
+  if (q.get('code')) {
+    window.alert(`결제를 마치지 못했어요.\n(결제창: ${q.get('code')} ${q.get('pgCode') ?? ''} ${q.get('message') ?? q.get('pgMessage') ?? ''} · 결제 번호 ${paymentId})`);
+    return;
+  }
+  void confirmPayment(paymentId, `돌아옴 tx ${q.get('txId') ? 'O' : 'X'}`)
+    .then((r) => {
+      if (!r.ok) window.alert(`결제를 마치지 못했어요.\n(${r.detail ?? ''})`);
+    })
     .catch(() => null)
     .then(() => window.dispatchEvent(new Event('mg-account')));
 }

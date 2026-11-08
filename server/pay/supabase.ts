@@ -107,9 +107,11 @@ const portone = (path: string, init: RequestInit = {}) =>
 const gateway: Gateway = {
   async getPayment(paymentId) {
     const r = await portone(`/payments/${q(paymentId)}`);
-    if (!r.ok) return { status: `HTTP_${r.status}`, total: -1, currency: '' };
-    const p = (await r.json()) as { status?: string; amount?: { total?: number }; currency?: string };
-    return { status: p.status ?? '', total: p.amount?.total ?? -1, currency: p.currency ?? '' };
+    if (!r.ok) return { status: `HTTP_${r.status}`, total: -1, currency: '', why: (await r.text().catch(() => '')).slice(0, 200) };
+    const p = (await r.json()) as { status?: string; amount?: { total?: number }; currency?: string; failure?: { reason?: string; pgCode?: string; pgMessage?: string } };
+    const f = p.failure;
+    const why = f ? [f.pgCode, f.pgMessage, f.reason].filter(Boolean).join(' ').slice(0, 200) : '';
+    return { status: p.status ?? '', total: p.amount?.total ?? -1, currency: p.currency ?? '', ...(why ? { why } : {}) };
   },
   async cancel(paymentId, amount, reason) {
     const r = await portone(`/payments/${q(paymentId)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, ...(amount ? { amount } : {}) }) });

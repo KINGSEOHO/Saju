@@ -25,6 +25,8 @@ const ENV = import.meta.env as Record<string, string | undefined>;
 export const PAY_API = (ENV.VITE_PAY_API ?? '').replace(/\/$/, '');
 export const PORTONE_STORE_ID = ENV.VITE_PORTONE_STORE_ID ?? '';
 export const PORTONE_CHANNEL_KEY = ENV.VITE_PORTONE_CHANNEL_KEY ?? '';
+/** 시험용: 컴퓨터에서도 결제창을 팝업 대신 '페이지 넘김'으로 연다 (팝업·쿠키를 막는 브라우저 확인용) */
+export const PAY_PC_REDIRECT = ENV.VITE_PAY_PC_REDIRECT === '1';
 /** 실제 결제를 쓰는지 — 주소가 있고 결제를 파는 때(시안 포함)만. 베타(결제 전)에는 방문자마다 서버 계정을 만들지 않는다 */
 export const PAY_LIVE = !!PAY_API && (ENV.VITE_PAYWALL_DEMO === '1' || !BETA_FREE);
 

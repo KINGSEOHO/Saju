@@ -52,6 +52,8 @@ export interface PaymentInfo {
   status: string;
   total: number;
   currency: string;
+  /** 결제가 안 됐을 때 포트원이 알려 준 사유 (PG 코드·메시지) — 시험·고객센터용 */
+  why?: string;
 }
 
 export interface Gateway {
@@ -158,7 +160,7 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   if (order.status === 'cancelled') return { ok: false, reason: 'cancelled' };
   const pay = await gw.getPayment(paymentId);
   // 포트원이 답한 상태를 함께 돌려준다 (READY: 결제창에서 안 끝남 · FAILED · HTTP_401: 키 문제 등) — 고객센터·시험용
-  if (!pay || pay.status !== 'PAID') return { ok: false, reason: 'not_paid', status: pay?.status ?? 'none' };
+  if (!pay || pay.status !== 'PAID') return { ok: false, reason: 'not_paid', status: pay?.status ?? 'none', ...(pay?.why ? { why: pay.why } : {}) };
   // 같은 결제를 화면과 웹훅이 동시에 확인해도 한 번만 남긴다
   if (!(await store.claimOrder(paymentId))) {
     const again = await store.getOrder(paymentId);
