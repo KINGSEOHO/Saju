@@ -125,7 +125,9 @@ const gateway: Gateway = {
 
 function cors(req: Request): Record<string, string> {
   const o = req.headers.get('Origin') ?? '';
-  return ORIGINS.includes(o) ? { 'Access-Control-Allow-Origin': o, 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', Vary: 'Origin' } : {};
+  // 시험용: 같은 와이파이의 휴대폰에서 개발 서버(컴퓨터 주소:5173)로 들어온 것도 받는다. 주소를 아는 것만으로는 아무것도 못 한다(결제는 포트원에 다시 확인).
+  const lan = /^http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}):5173$/.test(o);
+  return ORIGINS.includes(o) || lan ? { 'Access-Control-Allow-Origin': o, 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', Vary: 'Origin' } : {};
 }
 
 Deno.serve(async (req) => {
