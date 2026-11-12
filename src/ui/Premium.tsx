@@ -88,9 +88,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
         <div className="mt-4">
           <div className="panel rounded-xl px-4 py-3">
             <p className="text-body font-semibold text-ink">명경사주는 이 정보를 받거나 저장하지 않아요.</p>
-            <p className="mt-1 text-label text-sub">
-              카드 결제를 하려면 결제대행사가 구매자 이름·휴대폰 번호·이메일을 꼭 받아야 해요. 적은 내용은 결제창으로만 바로 넘어가고, 결제 확인과 영수증에만 쓰여요.
-            </p>
+            <p className="mt-1 text-label text-sub">카드 결제에 필요해서 결제대행사로만 바로 넘어가요.</p>
           </div>
           <p className="mt-4 text-label font-semibold text-ink">구매자 정보 (필수)</p>
           <input aria-label="이름" autoComplete="name" className="field mt-2" placeholder="이름" value={name} onChange={(e) => setName(e.target.value)} />
