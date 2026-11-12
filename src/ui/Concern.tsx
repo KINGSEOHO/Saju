@@ -273,6 +273,21 @@ function detailOutline(c: ConcernReport): string[] {
   ].filter(Boolean);
 }
 
+/**
+ * 잠겼을 때 '이 리포트가 알려 주는 답' — 상세 리포트에 실제로 들어 있는 것만, 답 자리는 빈칸([?월])으로.
+ * (12개월 표의 좋은 달·조심할 달, 10년 신호의 강한 해)
+ */
+function teaserOf(id: ConcernId, year: number): string[] {
+  const T: Partial<Record<ConcernId, string[]>> = {
+    career: ['옮기기 좋은 달은 [?월]이에요.', '사표를 미뤄야 할 달은 [?월]이에요.', '앞으로 10년 중 이직 신호가 가장 강한 해는 [?년]이에요.'],
+    love: ['인연이 들어오기 쉬운 달은 [?월]이에요.', '마음을 다치기 쉬운 달은 [?월]이에요.', '앞으로 10년 중 결혼 신호가 가장 강한 해는 [?년]이에요.'],
+    money: ['돈이 모이기 좋은 달은 [?월]이에요.', '큰 지출을 조심할 달은 [?월]이에요.', '앞으로 10년 중 재물 흐름이 가장 좋은 해는 [?년]이에요.'],
+    exam: ['공부가 잘 붙는 달은 [?월]이에요.', '컨디션이 흔들리기 쉬운 달은 [?월]이에요.', '앞으로 10년 중 합격 신호가 가장 강한 해는 [?년]이에요.'],
+    year: [`${year}년 기회의 달은 [?월]이에요.`, `${year}년 조심할 달은 [?월]이에요.`],
+  };
+  return T[id] ?? [];
+}
+
 /** 답의 첫 마디 — 잠겼을 때 큰 글씨는 여기까지만 ('올해는', '지금은' …) */
 const firstWords = (t: string) => t.split(' ')[0];
 
@@ -385,6 +400,7 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         items={c.detail.items}
         locked={CAN_PAY ? sealed : undefined}
         outline={detailOutline(c)}
+        teaser={teaserOf(id, seasonKey(a).year)}
         offers={concernOffers(u.ent, id)}
         fresh={u.ent.first}
         onTake={(o, buyer) => u.buy(o, id, undefined, buyer)}

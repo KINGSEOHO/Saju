@@ -23,10 +23,48 @@ import type { ConcernId } from '../report/concernList.ts';
 export const CAN_PAY = PAYWALL_DEMO || !BETA_FREE;
 
 /** 잠긴 상세 자리 — 제목(outline)이 있으면 제목마다 흐린 줄, 없으면 흐린 줄만 */
-function LockedBlur({ outline }: { outline?: string[] }) {
+/** '[?월]' 같은 빈칸을 물음표 칸으로 — 답(몇 월인지)은 보여 주지 않고 무엇을 알려 주는지만 */
+function Blank({ text }: { text: string }) {
+  const parts = text.split(/(\[\?[^\]]*\])/);
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.startsWith('[?') ? (
+          <span
+            key={i}
+            className="mx-0.5 inline-flex h-7 min-w-12 items-center justify-center rounded-md border border-dashed border-accent px-2 align-middle text-label font-bold text-accent tabular-nums"
+          >
+            ? {p.slice(2, -1)}
+          </span>
+        ) : (
+          p
+        ),
+      )}
+    </>
+  );
+}
+
+/** 잠긴 리포트가 알려 주는 답 — 빈칸만 보인다 */
+function Teaser({ lines }: { lines: string[] }) {
+  return (
+    <div className="panel mt-6 rounded-xl px-4 py-4">
+      <p className="text-label font-semibold text-ink">이 리포트에 들어 있는 답</p>
+      <ul className="mt-3 space-y-2.5">
+        {lines.map((t) => (
+          <li key={t} className="text-ui leading-relaxed text-ink-2">
+            <Blank text={t} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function LockedBlur({ outline, teaser }: { outline?: string[]; teaser?: string[] }) {
   if (!outline?.length) return <Veil rows={8} className="mt-6" />;
   return (
     <div className="mt-6 space-y-10">
+      {teaser?.length ? <Teaser lines={teaser} /> : null}
       {outline.map((t, i) => (
         <section key={t}>
           <h4 className="text-title3 text-ink">{t}</h4>
@@ -319,6 +357,7 @@ export function Premium({
   onTake,
   onRedeem,
   outline,
+  teaser,
   children,
 }: {
   /** 측정에도 쓰는 이름 — 고민(career…), 궁합(compat), 재회(reunion) */
@@ -341,6 +380,8 @@ export function Premium({
   onRedeem?: (code: string) => Promise<RedeemResult>;
   /** 잠겼을 때 보여 줄 상세의 제목들 — 내용은 흐린 줄로 */
   outline?: string[];
+  /** 잠겼을 때 '무엇을 알려 주는지' 한 줄씩 — 답 자리는 [?월]처럼 빈칸 */
+  teaser?: string[];
   children: ReactNode;
 }) {
   const [note, setNote] = useState(false);
@@ -430,7 +471,7 @@ export function Premium({
               ))}
             </ul>
           )}
-          <LockedBlur outline={outline} />
+          <LockedBlur outline={outline} teaser={teaser} />
           {done && <PayNotice n={done} />}
           {pay ? (
             asking ? (

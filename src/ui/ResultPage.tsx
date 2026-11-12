@@ -1,7 +1,7 @@
 /** 결과 화면 — 사주 계산·풀이 엔진과 함께 따로 불러온다 (첫 화면을 가볍게) */
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { PAYWALL_DEMO, PRICES } from '../config/plans.ts';
-import { analyze, pillarHanja, STEMS, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
+import { analyze, BRANCHES, pillarHanja, STEMS, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
 import { groupOf } from '../engine/tenGods.ts';
 import { clearFreshResult, isFreshResult } from '../lib/freshResult.ts';
 import { track } from '../lib/funnel.ts';
@@ -182,6 +182,33 @@ function Row({ id, title, desc, price, open, onToggle, children }: { id: RowId; 
         </div>
       )}
     </li>
+  );
+}
+
+const YEAR_COLOR = { wood: '푸른', fire: '붉은', earth: '누런', metal: '흰', water: '검은' } as const;
+
+/**
+ * 결론 바로 아래 신년운세 길잡이 — 연말·연초에 가장 많이 찾는 것이라 눈에 띄게.
+ * 그해의 간지(丁未 등)를 크게 쓰고, 무엇을 알려 주는지와 버튼을 함께 둔다.
+ */
+function NewYearHook({ year, onGo }: { year: number; onGo: () => void }) {
+  const stem = STEMS[(((year - 4) % 10) + 10) % 10];
+  const branch = BRANCHES[(((year - 4) % 12) + 12) % 12];
+  return (
+    <button type="button" onClick={onGo} className="panel no-print tap mt-6 flex w-full items-center gap-4 rounded-2xl px-5 py-5 text-left">
+      <span className="hanja flex shrink-0 flex-col items-center justify-center rounded-xl border border-ink/70 px-3 py-2 text-[30px] leading-[1.1] font-bold text-ink" aria-hidden>
+        <span>{stem.hanja}</span>
+        <span>{branch.hanja}</span>
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-label text-sub">
+          {year}년은 {YEAR_COLOR[stem.element]} {branch.animal}의 해
+        </span>
+        <span className="mt-0.5 block text-title3 font-bold text-ink">내 운은 어떻게 흐를까요?</span>
+        <span className="mt-1 block text-label text-ink-2">달마다 힘이 실리는 때와 쉬어 갈 때를 미리 봐요.</span>
+        <span className="mt-3 inline-flex h-9 items-center rounded-full bg-accent px-4 text-label font-semibold text-on-accent">{year} 신년운세 보기 ›</span>
+      </span>
+    </button>
   );
 }
 
@@ -459,22 +486,7 @@ export default function Result({ input }: { input: BirthInput }) {
         </button>
       </section>
 
-      {seasonOf(a).newYear && (
-        // 연말·연초는 신년운세를 가장 많이 찾는 때 — 결론 바로 아래에 한 줄로 길을 둔다
-        <button
-          type="button"
-          onClick={() => openSection('year')}
-          className="no-print tap mt-6 flex w-full items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 text-left active:bg-fill"
-        >
-          <span>
-            <span className="block text-ui font-semibold text-ink">{seasonOf(a).year}년, 내 운은 어떻게 흐를까요?</span>
-            <span className="block text-label text-sub">{seasonOf(a).title} — 달마다 힘이 실리는 때와 쉬어 갈 때</span>
-          </span>
-          <span aria-hidden className="text-sub">
-            ›
-          </span>
-        </button>
-      )}
+      {seasonOf(a).newYear && <NewYearHook year={seasonOf(a).year} onGo={() => openSection('year')} />}
 
       {a.warnings.some((w) => w.kind !== 'unknownTime') && (
         <div className="mt-8 border-l-2 border-ink pl-4">
