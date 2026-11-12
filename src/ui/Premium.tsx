@@ -63,6 +63,8 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
   const free = o.kind === 'free' || o.kind === 'partnerFree';
   // 돈이 나가는 결제는 상품·금액 확인과 청약철회 제한(전자상거래법 제17조 제2항 제5호)에 먼저 동의받는다
   const [agree, setAgree] = useState(false);
+  const [adult, setAdult] = useState(false);
+  const [privacy, setPrivacy] = useState(false);
   // 실제 결제에서는 결제대행사(이니시스)가 구매자 이메일을 필수로 받는다 — 시안에서는 묻지 않는다
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -124,25 +126,41 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
         </div>
       )}
       {!free && (
-        <label className="mt-4 flex cursor-pointer items-start gap-3 text-cap text-ink-2" data-pay-agree>
-          <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-          <span>
-            <b className="text-ink">(필수)</b> 만 14세 이상이며, 상품({what})과 금액({o.cost.toLocaleString('ko-KR')}원)을 확인했어요. 디지털 콘텐츠라{' '}
-            <b className="text-ink">리포트를 연 뒤에는 단순 변심으로 환불되지 않는다</b>는{' '}
-            <a href="#/refund" target="_blank" rel="noreferrer" className="underline">
-              환불 안내
-            </a>
-            와{' '}
-            <a href="#/terms" target="_blank" rel="noreferrer" className="underline">
-              이용약관
-            </a>
-            에 동의해요. 구매 기록(구매 코드 · 상품 · 금액 · 결제 번호 · 생일로 만든 사주 구분값)이 결제 확인 서버에 저장되는 것에도 동의해요(
-            <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
-              개인정보처리방침
-            </a>
-            ). {needEmail ? '위 이름·휴대폰 번호·이메일을 결제대행사에 넘기는 것에도 동의해요. ' : ''}이름·생년월일은 보내지 않아요.
-          </span>
-        </label>
+        <div className="mt-4 space-y-3 text-cap text-ink-2" data-pay-agree>
+          {/* 필수 동의는 하나로 묶지 않고 따로 받는다 (만 14세 · 상품과 환불 · 개인정보) */}
+          <label className="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={adult} onChange={(e) => setAdult(e.target.checked)} />
+            <span>
+              <b className="text-ink">(필수)</b> 만 14세 이상이에요.
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+            <span>
+              <b className="text-ink">(필수)</b> 상품({what})과 금액({o.cost.toLocaleString('ko-KR')}원)을 확인했어요. 디지털 콘텐츠라{' '}
+              <b className="text-ink">리포트를 연 뒤에는 단순 변심으로 환불되지 않는다</b>는{' '}
+              <a href="#/refund" target="_blank" rel="noreferrer" className="underline">
+                환불 안내
+              </a>
+              와{' '}
+              <a href="#/terms" target="_blank" rel="noreferrer" className="underline">
+                이용약관
+              </a>
+              에 동의해요.
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} />
+            <span>
+              <b className="text-ink">(필수)</b> 개인정보 처리에 동의해요. 구매 기록(구매 코드 · 상품 · 금액 · 결제 번호 · 생일로 만든 사주 구분값)을 결제 확인과 다시 보기를 위해 5년 보관해요.
+              {needEmail ? ' 위 이름·휴대폰 번호·이메일은 결제대행사에만 넘겨요.' : ''} 이름·생년월일은 보내지 않아요. 동의하지 않으면 결제할 수 없어요(
+              <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
+                개인정보처리방침
+              </a>
+              ).
+            </span>
+          </label>
+        </div>
       )}
       <div className="mt-4 grid grid-cols-2 gap-2">
         <button type="button" className="btn-secondary" onClick={onNo} disabled={busy}>
@@ -153,7 +171,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
           type="button"
           className="btn-primary"
           onClick={() => onYes(needEmail ? { name: name.trim(), phone: digits, email: email.trim() } : undefined)}
-          disabled={busy || (!free && !agree) || (needEmail && !emailOk)}
+          disabled={busy || (!free && !(agree && adult && privacy)) || (needEmail && !emailOk)}
           aria-busy={busy}
         >
           {busy ? '결제하는 중…' : free ? '무료로 열기' : PAYWALL_DEMO ? '결제하고 열기' : '결제하기'}
