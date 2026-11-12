@@ -7,7 +7,7 @@
  */
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { ageGroup } from '../comic/ctx.ts';
-import { textWidth, wrap, wrapBalanced } from '../comic/text.ts';
+import { textWidth, wrapBalanced } from '../comic/text.ts';
 import { EL_COLOR, INK, Toon } from '../comic/toon.tsx';
 import type { Actor } from '../comic/types.ts';
 import { BRANCHES, STEMS, type SajuAnalysis } from '../engine/index.ts';
@@ -173,99 +173,68 @@ function pillarStrip(g: Draw, a: SajuAnalysis, x: number, y: number, w: number) 
   return h;
 }
 
-/** MBTI × 사주 — 글자별 비교. 같으면 초록, 반대면 먹색(반전), 사주로 반반이면 ? */
-function mbtiBlock(g: Draw, d: StoryData, x: number, y: number, w: number): number {
-  const top = y;
-  g.text(x, y, 'MBTI × 사주', 26, C.accent, { w: 800 });
-  if (d.mbti) g.text(x + w, y, `${d.mbti.type} · ${d.mbti.nick}`, 24, C.sub, { anchor: 'end' });
-  y += 24;
-  const labelW = 190;
-  const cw = (w - labelW) / 4;
-  const bw = Math.min(150, cw - 16);
-  const bh = 80;
-  const box = (i: number, yy: number, letter: string, kind: 'user' | 'agree' | 'differ' | 'neutral' | 'lean') => {
-    const bx = x + labelW + cw * i + (cw - bw) / 2;
-    const fill = kind === 'user' ? C.soft : kind === 'agree' || kind === 'lean' ? C.accent : kind === 'differ' ? C.ink : '#ffffff';
-    const stroke = kind === 'neutral' ? ` stroke="${C.faint}" stroke-width="2.5" stroke-dasharray="8 7"` : '';
-    g.raw(`<rect x="${bx}" y="${yy}" width="${bw}" height="${bh}" rx="16" fill="${fill}"${stroke}/>`);
-    const color = kind === 'user' ? C.ink : kind === 'neutral' ? C.faint : '#ffffff';
-    g.text(bx + bw / 2, yy + 58, letter, 48, color, { w: 800, anchor: 'middle' });
-    if (kind === 'differ') g.text(bx + bw / 2, yy + bh + 26, '반전', 20, C.ink, { w: 700, anchor: 'middle' });
-  };
-  if (d.mbti) {
-    g.text(x, y + 52, '내 MBTI', 26, C.sub, { w: 600 });
-    d.mbti.letters.forEach((v, i) => box(i, y, v.user, 'user'));
-    y += bh + 16;
-    g.text(x, y + 52, '사주로 본 나', 26, C.sub, { w: 600 });
-    d.mbti.letters.forEach((v, i) => box(i, y, v.verdict === 'neutral' ? '?' : (v.saju ?? '?'), v.verdict));
-    y += bh + (d.mbti.letters.some((v) => v.verdict === 'differ') ? 34 : 8);
-  } else {
-    g.text(x, y + 52, '사주로 본 MBTI', 26, C.sub, { w: 600 });
-    (d.sajuLetters ?? [null, null, null, null]).forEach((l, i) => box(i, y, l ?? '?', l ? 'lean' : 'neutral'));
-    y += bh + 8;
-  }
-  y += 52;
-  g.text(x, y, mbtiLine(d), 34, C.ink, { w: 700, serif: true });
-  return y - top + 22;
-}
-
-/** 인스타그램 스토리 한 장 (위 200px·아래 250px쯤은 인스타 화면 글자에 가려지므로 비워 둔다) */
-export function storySvg(a: SajuAnalysis, d: StoryData, cast: Cast, site: string, hits: { done: number; hit: number } | null, fonts = ''): string {
+export function storySvg(a: SajuAnalysis, d: StoryData, _cast: Cast, site: string, hits: { done: number; hit: number } | null, fonts = ''): string {
+  // 세부 풀이 카드의 앞면처럼 — 한지 바탕에 카드 한 장, 위에는 수묵 거울(명경), 아래에는 내 사주 한 줄과 원국
   const W = 1080;
-  const P = 80;
-  const inner = W - P * 2;
-  const LIMIT = 1556;
   const g = new Draw();
-  let y = 200;
-  g.text(P, y, '명경사주', 34, C.accent, { w: 700, serif: true });
-  g.text(W - P, y, '명경이가 털어 본 내 사주', 26, C.sub, { anchor: 'end' });
-  y += 34;
-  comicPanel(g, cast, P, y, inner, 340, BUBBLE);
-  y += 340 + 70;
-  g.text(P, y, d.name ? `명경이가 본 ${d.name}님` : '명경이가 본 나', 28, C.accent, { w: 700 });
-  y += 74;
-  for (const l of wrapBalanced(d.headline, 58, inner, 2)) {
-    g.text(P, y, l, 58, C.ink, { w: 700, serif: true });
-    y += 76;
+  const INK_ = '#24221e';
+  const SEAL = '#a8392c';
+  g.raw(`<rect width="${W}" height="1920" fill="#efe6d2"/>`);
+  g.raw(
+    `<defs><filter id="sb" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/></filter><filter id="sw" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`,
+  );
+  // 위: 낙관 + 이름
+  const seal = (x: number, y: number, s: number) => {
+    g.raw(`<rect x="${x}" y="${y}" width="${s}" height="${s}" rx="${s * 0.12}" fill="${SEAL}"/>`);
+    g.text(x + s / 2, y + s * 0.45, '明', s * 0.36, '#f6efe2', { w: 700, anchor: 'middle', serif: true });
+    g.text(x + s / 2, y + s * 0.86, '鏡', s * 0.36, '#f6efe2', { w: 700, anchor: 'middle', serif: true });
+  };
+  seal(W / 2 - 150, 150, 64);
+  g.text(W / 2 - 66, 196, '명경사주', 40, INK_, { w: 700, serif: true });
+  // 카드
+  const CX = 90;
+  const CY = 260;
+  const CW = W - CX * 2;
+  const CH = 1270;
+  g.raw(`<rect x="${CX}" y="${CY}" width="${CW}" height="${CH}" rx="40" fill="#fbf6ea" stroke="#d6c9a8" stroke-width="3"/>`);
+  g.raw(`<rect x="${CX + 22}" y="${CY + 22}" width="${CW - 44}" height="${CH - 44}" rx="26" fill="none" stroke="${INK_}" stroke-opacity="0.18" stroke-width="2"/>`);
+  for (const [x, y, r] of [
+    [CX + 70, CY + 70, 0],
+    [CX + CW - 70, CY + 70, 90],
+    [CX + 70, CY + CH - 70, 270],
+  ])
+    g.raw(`<path d="M0 0 q24 -24 48 0 q-24 16 -8 32 q16 8 24 -8" stroke="${INK_}" stroke-opacity="0.3" stroke-width="2.5" fill="none" transform="translate(${x} ${y}) rotate(${r}) scale(0.9)"/>`);
+  // 수묵 거울 (세부 풀이 '풀이 리포트' 카드와 같은 그림)
+  g.raw(
+    `<g transform="translate(${W / 2 - 80 * 3.8} ${CY + 40}) scale(3.8)"><circle cx="80" cy="42" r="30" fill="${INK_}" opacity="0.07" filter="url(#sw)"/><circle cx="80" cy="42" r="30" stroke="${INK_}" stroke-width="3.2" fill="none" opacity="0.75" filter="url(#sb)"/><circle cx="80" cy="42" r="24" stroke="${INK_}" stroke-width="0.8" fill="none" opacity="0.35"/><circle cx="91" cy="31" r="4" fill="${INK_}" opacity="0.16" filter="url(#sw)"/><path d="M60 54 Q68 42 75 50 Q83 36 92 48 Q98 44 102 52" stroke="${INK_}" stroke-width="1.5" fill="none" opacity="0.5" filter="url(#sb)"/><path d="M64 96 L80 72 L96 96" stroke="${INK_}" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7" filter="url(#sb)"/><path d="M52 97 L108 97" stroke="${INK_}" stroke-width="2" stroke-linecap="round" opacity="0.5"/><path d="M80 72 q-3 6 0 12" stroke="${SEAL}" stroke-width="1.6" fill="none" opacity="0.8"/></g>`,
+  );
+  const inner = CW - 160;
+  let y = CY + 500;
+  g.text(W / 2, y, d.name ? `명경이가 본 ${d.name}님` : '명경이가 본 나', 30, C.accent, { w: 700, anchor: 'middle' });
+  y += 86;
+  for (const l of wrapBalanced(d.headline, 62, inner, 2)) {
+    g.text(W / 2, y, l, 62, INK_, { w: 700, anchor: 'middle', serif: true });
+    y += 82;
   }
-  // 명경이의 솔직한 한마디 — 좋은 말만 하지 않는 거울
-  y += 4;
-  const quote = wrap(d.subline, 30, inner - 40, 2);
-  g.raw(`<rect x="${P}" y="${y - 32}" width="6" height="${quote.length * 44 + 46}" fill="${C.accent}"/>`);
-  g.text(P + 32, y, '명경이의 솔직한 한마디', 22, C.accent, { w: 700 });
-  y += 44;
-  for (const l of quote) {
-    g.text(P + 32, y, l, 30, C.ink, { w: 700, serif: true });
-    y += 44;
+  y += 10;
+  g.raw(`<line x1="${W / 2 - 40}" y1="${y}" x2="${W / 2 + 40}" y2="${y}" stroke="${SEAL}" stroke-width="3"/>`);
+  y += 62;
+  g.text(W / 2, y, '명경이의 솔직한 한마디', 24, '#6b6455', { w: 700, anchor: 'middle' });
+  y += 52;
+  for (const l of wrapBalanced(d.subline, 32, inner, 2)) {
+    g.text(W / 2, y, l, 32, '#3a362f', { w: 700, anchor: 'middle', serif: true });
+    y += 48;
   }
-  y += 26;
-  y += pillarStrip(g, a, P, y, inner) + 64;
-  y += mbtiBlock(g, d, P, y, inner) + 30;
-  // 남는 자리에만: 겉과 속 → 적중 결과 → 해시태그
-  const extras: { h: number; draw: (yy: number) => void }[] = [];
-  if (d.outer && d.inner) {
-    extras.push({
-      h: 84,
-      draw: (yy) => {
-        g.text(P, yy, '겉', 24, C.accent, { w: 800 });
-        g.text(P + 44, yy, d.outer!, 26, C.ink);
-        g.text(P, yy + 40, '속', 24, C.accent, { w: 800 });
-        g.text(P + 44, yy + 40, d.inner!, 26, C.ink);
-      },
-    });
-  }
-  if (hits) extras.push({ h: 46, draw: (yy) => g.text(P, yy, `명경이가 평소 내 모습 ${hits.done}개 중 ${hits.hit}개를 맞혔어요`, 26, C.ink, { w: 700 }) });
-  if (d.tags.length) extras.push({ h: 46, draw: (yy) => g.text(P, yy, d.tags.slice(0, 2).join('  '), 26, C.accent, { w: 700 }) });
-  for (const e of extras) {
-    if (y + e.h - 30 > LIMIT) continue;
-    e.draw(y);
-    y += e.h;
-  }
+  // 원국 네 기둥 + 한 줄 더 (MBTI · 적중) — 카드 아래쪽에 맞춰
+  const py = y + 30;
+  pillarStrip(g, a, CX + 80, py, CW - 160);
+  const extra = mbtiShort(d) ?? (hits ? `명경이가 평소 내 모습 ${hits.done}개 중 ${hits.hit}개를 맞혔어요` : d.tags.slice(0, 2).join('  '));
+  if (extra) g.text(W / 2, py + 200, extra, 28, INK_, { w: 700, anchor: 'middle' });
+  // 카드 오른쪽 아래 모서리에 낙관
+  seal(CX + CW - 108, CY + CH - 108, 52);
   // 아래 (인스타 화면 글자 영역 위)
-  g.raw(`<line x1="${P}" y1="1590" x2="${W - P}" y2="1590" stroke="${C.line}" stroke-width="2"/>`);
-  g.text(P, 1648, '나도 명경이한테 사주 털리기', 30, C.ink, { w: 700 });
-  g.text(P, 1694, site, 28, C.accent, { w: 600 });
-  g.text(W - P, 1670, '정확하게 계산하고, 있는 그대로', 22, C.sub, { anchor: 'end' });
+  g.text(W / 2, 1620, '나도 명경이한테 사주 보기', 34, INK_, { w: 700, anchor: 'middle' });
+  g.text(W / 2, 1668, site, 28, C.accent, { w: 600, anchor: 'middle' });
   return `${svgOpen(W, 1920, fonts)}\n${g.o.join('\n')}\n</svg>`;
 }
 
@@ -489,6 +458,40 @@ export function ShareSection({ a, d }: { a: SajuAnalysis; d: StoryData }) {
       </h2>
       <p className="mt-1 text-center text-label text-sub">명경이가 털어 본 내 사주를 한 장으로 만들어 드려요. 생년월일과 시간은 넣지 않아요.</p>
       <ShareButtons kit={kit} />
+      <InviteFriend />
     </section>
+  );
+}
+
+/** 친구·연인에게 '너도 봐 봐' — 내 결과가 아니라 첫 화면 주소만 보낸다 (내 생일·이름은 넣지 않는다) */
+const INVITE = '명경사주에서 내 사주를 봤는데, 좋은 말만 해 주지 않아서 오히려 믿음이 가요 ㅋㅋ 당신 사주도 궁금해요. 같이 봐요!';
+function InviteFriend() {
+  const [note, setNote] = useState('');
+  const invite = async () => {
+    const url = siteUrl();
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: '명경사주', text: INVITE, url });
+        return;
+      }
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${INVITE}\n${url}`);
+      setNote('초대 문구를 복사했어요. 친구나 연인에게 붙여 넣어 보내 보세요.');
+    } catch {
+      setNote(`이 주소를 보내 주세요: ${url}`);
+    }
+  };
+  return (
+    <div className="mt-6 text-center">
+      <button type="button" className="btn-secondary w-full" onClick={invite}>
+        친구·연인 사주도 봐 주기
+      </button>
+      <p className="mt-2 text-cap text-sub" aria-live="polite">
+        {note || '내 결과 말고 첫 화면 주소만 보내요.'}
+      </p>
+    </div>
   );
 }

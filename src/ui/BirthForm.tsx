@@ -243,12 +243,18 @@ export function BirthFlow({ step }: { step: number }) {
               </label>
             )}
             <Hint error={date.error} note={date.note} />
-            <p className="mt-8 text-cap text-sub">
-              입력한 정보는 이 기기 안에서만 계산하고 서버로 보내지 않아요.{' '}
-              <a href="#/privacy" className="underline">
-                개인정보처리방침
-              </a>
-            </p>
+            <div className="panel mt-8 flex items-start gap-3 rounded-xl px-4 py-3">
+              <svg viewBox="0 0 20 20" className="mt-0.5 size-5 shrink-0 text-accent" aria-hidden>
+                <path d="M10 2 3.5 4.5v5c0 4 2.8 7.2 6.5 8.5 3.7-1.3 6.5-4.5 6.5-8.5v-5Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                <path d="m7 10 2.2 2.2L13.2 8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <p className="text-label text-ink-2">
+                <b className="text-ink">생년월일은 지금 쓰는 기기 안에서만 계산해요.</b> 서버로 보내지 않고 저장하지도 않아요.{' '}
+                <a href="#/privacy" className="underline">
+                  개인정보처리방침
+                </a>
+              </p>
+            </div>
           </Question>
         )}
 
@@ -366,12 +372,18 @@ export function BirthFlow({ step }: { step: number }) {
               </label>
               <JobPicker value={d.job} onChange={(job) => update({ job })} />
             </div>
-            <p className="mt-8 text-cap text-sub">
-              입력한 정보는 이 기기 안에서만 계산하고 서버로 보내지 않아요.{' '}
-              <a href="#/privacy" className="underline">
-                개인정보처리방침
-              </a>
-            </p>
+            <div className="panel mt-8 flex items-start gap-3 rounded-xl px-4 py-3">
+              <svg viewBox="0 0 20 20" className="mt-0.5 size-5 shrink-0 text-accent" aria-hidden>
+                <path d="M10 2 3.5 4.5v5c0 4 2.8 7.2 6.5 8.5 3.7-1.3 6.5-4.5 6.5-8.5v-5Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                <path d="m7 10 2.2 2.2L13.2 8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <p className="text-label text-ink-2">
+                <b className="text-ink">생년월일은 지금 쓰는 기기 안에서만 계산해요.</b> 서버로 보내지 않고 저장하지도 않아요.{' '}
+                <a href="#/privacy" className="underline">
+                  개인정보처리방침
+                </a>
+              </p>
+            </div>
           </Question>
         )}
       </div>

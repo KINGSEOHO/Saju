@@ -459,6 +459,23 @@ export default function Result({ input }: { input: BirthInput }) {
         </button>
       </section>
 
+      {seasonOf(a).newYear && (
+        // 연말·연초는 신년운세를 가장 많이 찾는 때 — 결론 바로 아래에 한 줄로 길을 둔다
+        <button
+          type="button"
+          onClick={() => openSection('year')}
+          className="no-print tap mt-6 flex w-full items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 text-left active:bg-fill"
+        >
+          <span>
+            <span className="block text-ui font-semibold text-ink">{seasonOf(a).year}년, 내 운은 어떻게 흐를까요?</span>
+            <span className="block text-label text-sub">{seasonOf(a).title} — 달마다 힘이 실리는 때와 쉬어 갈 때</span>
+          </span>
+          <span aria-hidden className="text-sub">
+            ›
+          </span>
+        </button>
+      )}
+
       {a.warnings.some((w) => w.kind !== 'unknownTime') && (
         <div className="mt-8 border-l-2 border-ink pl-4">
           <p className="text-label font-semibold text-ink">태어난 시각이 경계에 가까워요</p>
