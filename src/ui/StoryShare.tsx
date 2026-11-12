@@ -173,8 +173,8 @@ function pillarStrip(g: Draw, a: SajuAnalysis, x: number, y: number, w: number) 
   return h;
 }
 
-export function storySvg(a: SajuAnalysis, d: StoryData, _cast: Cast, site: string, hits: { done: number; hit: number } | null, fonts = ''): string {
-  // 세부 풀이 카드의 앞면처럼 — 한지 바탕에 카드 한 장, 위에는 수묵 거울(명경), 아래에는 내 사주 한 줄과 원국
+export function storySvg(a: SajuAnalysis, d: StoryData, cast: Cast, site: string, hits: { done: number; hit: number } | null, fonts = ''): string {
+  // 세부 풀이 카드 풍의 틀(한지 · 카드 · 明鏡 낙관) 안에 웹툰 한 컷(내 캐릭터 + 명경이)과 내 사주 한 줄 · 원국 · MBTI
   const W = 1080;
   const g = new Draw();
   const INK_ = '#24221e';
@@ -195,28 +195,19 @@ export function storySvg(a: SajuAnalysis, d: StoryData, _cast: Cast, site: strin
   const CX = 90;
   const CY = 260;
   const CW = W - CX * 2;
-  const CH = 1270;
+  const CH = 1300;
   g.raw(`<rect x="${CX}" y="${CY}" width="${CW}" height="${CH}" rx="40" fill="#fbf6ea" stroke="#d6c9a8" stroke-width="3"/>`);
   g.raw(`<rect x="${CX + 22}" y="${CY + 22}" width="${CW - 44}" height="${CH - 44}" rx="26" fill="none" stroke="${INK_}" stroke-opacity="0.18" stroke-width="2"/>`);
-  for (const [x, y, r] of [
-    [CX + 70, CY + 70, 0],
-    [CX + CW - 70, CY + 70, 90],
-    [CX + 70, CY + CH - 70, 270],
-  ])
-    g.raw(`<path d="M0 0 q24 -24 48 0 q-24 16 -8 32 q16 8 24 -8" stroke="${INK_}" stroke-opacity="0.3" stroke-width="2.5" fill="none" transform="translate(${x} ${y}) rotate(${r}) scale(0.9)"/>`);
-  // 수묵 거울 (세부 풀이 '풀이 리포트' 카드와 같은 그림)
-  g.raw(
-    `<g transform="translate(${W / 2 - 80 * 3.8} ${CY + 40}) scale(3.8)"><circle cx="80" cy="42" r="30" fill="${INK_}" opacity="0.07" filter="url(#sw)"/><circle cx="80" cy="42" r="30" stroke="${INK_}" stroke-width="3.2" fill="none" opacity="0.75" filter="url(#sb)"/><circle cx="80" cy="42" r="24" stroke="${INK_}" stroke-width="0.8" fill="none" opacity="0.35"/><circle cx="91" cy="31" r="4" fill="${INK_}" opacity="0.16" filter="url(#sw)"/><path d="M60 54 Q68 42 75 50 Q83 36 92 48 Q98 44 102 52" stroke="${INK_}" stroke-width="1.5" fill="none" opacity="0.5" filter="url(#sb)"/><path d="M64 96 L80 72 L96 96" stroke="${INK_}" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7" filter="url(#sb)"/><path d="M52 97 L108 97" stroke="${INK_}" stroke-width="2" stroke-linecap="round" opacity="0.5"/><path d="M80 72 q-3 6 0 12" stroke="${SEAL}" stroke-width="1.6" fill="none" opacity="0.8"/></g>`,
-  );
+  comicPanel(g, cast, CX + 60, CY + 60, CW - 120, 340, BUBBLE);
   const inner = CW - 160;
-  let y = CY + 500;
+  let y = CY + 470;
   g.text(W / 2, y, d.name ? `명경이가 본 ${d.name}님` : '명경이가 본 나', 30, C.accent, { w: 700, anchor: 'middle' });
   y += 86;
   for (const l of wrapBalanced(d.headline, 62, inner, 2)) {
     g.text(W / 2, y, l, 62, INK_, { w: 700, anchor: 'middle', serif: true });
     y += 82;
   }
-  y += 10;
+  y -= 24;
   g.raw(`<line x1="${W / 2 - 40}" y1="${y}" x2="${W / 2 + 40}" y2="${y}" stroke="${SEAL}" stroke-width="3"/>`);
   y += 62;
   g.text(W / 2, y, '명경이의 솔직한 한마디', 24, '#6b6455', { w: 700, anchor: 'middle' });
@@ -225,16 +216,30 @@ export function storySvg(a: SajuAnalysis, d: StoryData, _cast: Cast, site: strin
     g.text(W / 2, y, l, 32, '#3a362f', { w: 700, anchor: 'middle', serif: true });
     y += 48;
   }
-  // 원국 네 기둥 + 한 줄 더 (MBTI · 적중) — 카드 아래쪽에 맞춰
-  const py = y + 30;
+  // 원국 네 기둥 → 사주로 본 MBTI 네 글자 → 해시태그
+  const py = y + 20;
   pillarStrip(g, a, CX + 80, py, CW - 160);
-  const extra = mbtiShort(d) ?? (hits ? `명경이가 평소 내 모습 ${hits.done}개 중 ${hits.hit}개를 맞혔어요` : d.tags.slice(0, 2).join('  '));
-  if (extra) g.text(W / 2, py + 200, extra, 28, INK_, { w: 700, anchor: 'middle' });
+  y = py + 128 + 52;
+  const letters = d.mbti ? d.mbti.type.split('') : (d.sajuLetters ?? []).map((l) => l ?? '?');
+  if (letters.length === 4) {
+    g.text(W / 2, y, d.mbti ? (mbtiShort(d) ?? '') : '사주로 본 내 MBTI', 26, C.accent, { w: 700, anchor: 'middle' });
+    const bw = 96;
+    const gap = 18;
+    const x0 = W / 2 - (bw * 4 + gap * 3) / 2;
+    letters.forEach((l, i) => {
+      const same = !d.mbti || d.mbti.letters[i]?.verdict !== 'differ';
+      g.raw(`<rect x="${x0 + i * (bw + gap)}" y="${y + 22}" width="${bw}" height="80" rx="16" fill="${same ? C.accent : INK_}"/>`);
+      g.text(x0 + i * (bw + gap) + bw / 2, y + 80, l, 46, '#ffffff', { w: 800, anchor: 'middle' });
+    });
+    y += 152;
+  }
+  const extra = hits ? `명경이가 평소 내 모습 ${hits.done}개 중 ${hits.hit}개를 맞혔어요` : d.tags.slice(0, 2).join('  ');
+  if (extra && y < CY + CH - 24) g.text(W / 2, y, extra, 28, INK_, { w: 700, anchor: 'middle' });
   // 카드 오른쪽 아래 모서리에 낙관
   seal(CX + CW - 108, CY + CH - 108, 52);
   // 아래 (인스타 화면 글자 영역 위)
-  g.text(W / 2, 1620, '나도 명경이한테 사주 보기', 34, INK_, { w: 700, anchor: 'middle' });
-  g.text(W / 2, 1668, site, 28, C.accent, { w: 600, anchor: 'middle' });
+  g.text(W / 2, 1640, '나도 명경이한테 사주 털리기', 34, INK_, { w: 700, anchor: 'middle' });
+  g.text(W / 2, 1688, site, 28, C.accent, { w: 600, anchor: 'middle' });
   return `${svgOpen(W, 1920, fonts)}\n${g.o.join('\n')}\n</svg>`;
 }
 
