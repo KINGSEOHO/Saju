@@ -9,7 +9,11 @@
 import { PAY_API, PAY_LIVE, PAY_PC_REDIRECT, PORTONE_CHANNEL_KEY, PORTONE_STORE_ID } from '../config/backend.ts';
 import type { AccountApi, Buyer, PayResult, RedeemResult } from './account.ts';
 import type { Purchase } from './entitlements.ts';
+import { PAYWALL_DEMO } from '../config/plans.ts';
 import { STORAGE } from './storageKeys.ts';
+
+/** 고장 찾기용 글자(포트원 상태·결제창 응답)는 시안에서만 보인다. 실제 사이트 손님에게는 결제 번호만 */
+const tech = (s: string): string | undefined => (PAYWALL_DEMO ? s : undefined);
 
 type Json = Record<string, unknown>;
 
@@ -95,7 +99,7 @@ async function confirmPayment(paymentId: string, sdkSaid = '', paymentToken?: st
   return {
     ok: false,
     reason: r.reason === 'owned' || r.reason === 'price' ? r.reason : 'fail',
-    detail: `결제 확인: ${String(r.reason)}${r.status ? ` ${String(r.status)}` : ''}${why} · 결제 번호 ${paymentId}${sdkSaid ? ` · 결제창 응답 ${sdkSaid}` : ''}`,
+    detail: tech(`결제 확인: ${String(r.reason)}${r.status ? ` ${String(r.status)}` : ''}${why} · 결제 번호 ${paymentId}${sdkSaid ? ` · 결제창 응답 ${sdkSaid}` : ''}`) ?? `결제 번호 ${paymentId}`,
   };
 }
 
@@ -116,7 +120,7 @@ export const payApi: AccountApi = {
     try {
       return await payFlow(p, season, buyer, (s) => (step = s));
     } catch (e) {
-      return { ok: false, reason: 'fail', detail: `${step}: ${e instanceof Error ? e.message : String(e)}` };
+      return { ok: false, reason: 'fail', detail: tech(`${step}: ${e instanceof Error ? e.message : String(e)}`) };
     }
   },
   async redeem(target): Promise<RedeemResult> {
@@ -131,7 +135,7 @@ async function payFlow(p: Purchase, season: { year: number; title: string }, buy
     const code = await myCode();
     at('주문 준비');
     const prep = await call('prepare', { code, purchase: p, season });
-    if (!prep.ok) return { ok: false, reason: prep.reason === 'owned' ? 'owned' : prep.reason === 'price' ? 'price' : 'fail', detail: `주문 준비: ${String(prep.reason)}` };
+    if (!prep.ok) return { ok: false, reason: prep.reason === 'owned' ? 'owned' : prep.reason === 'price' ? 'price' : 'fail', detail: tech(`주문 준비: ${String(prep.reason)}`) };
     const paymentId = prep.paymentId as string;
     try {
       sessionStorage.setItem(STORAGE.payReturn, JSON.stringify({ paymentId, hash: location.hash, open: p.item }));
@@ -158,7 +162,12 @@ async function payFlow(p: Purchase, season: { year: number; title: string }, buy
     });
     // 컴퓨터에서는 여기로 돌아온다 (휴대폰은 주소가 넘어가서 resumePayment가 마저 한다)
     if (!res || res.code)
-      return { ok: false, reason: userCancelled(res) ? 'cancel' : 'fail', detail: `결제창: ${res?.code ?? '닫힘'} ${res?.pgCode ?? ''} ${res?.message ?? res?.pgMessage ?? ''}`.trim() };
+      return {
+        ok: false,
+        reason: userCancelled(res) ? 'cancel' : 'fail',
+        // 카드사가 알려 준 이유(한도 초과 등)는 손님에게도 도움이 되므로 실제 사이트에서도 보여 준다
+        detail: tech(`결제창: ${res?.code ?? '닫힘'} ${res?.pgCode ?? ''} ${res?.message ?? res?.pgMessage ?? ''}`.trim()) ?? (userCancelled(res) ? undefined : res?.pgMessage || res?.message),
+      };
     at('결제 확인');
     // 결제창이 돌려준 것을 그대로 적어 둔다 (txId가 없으면 결제창이 결과를 못 돌려준 것)
     const sdkSaid = `${res.txId ? 'tx O' : 'tx X'} · ${res.transactionType ?? '-'} · 받은 항목 ${Object.keys(res).join(',')}`;
@@ -198,7 +207,7 @@ export function resumePayment(): void {
   if (q.get('code')) {
     const msg = `${q.get('message') ?? ''}${q.get('pgMessage') ?? ''}`;
     if (/취소|cancel/i.test(msg)) return;
-    window.alert(`결제를 마치지 못했어요.\n(결제창: ${q.get('code')} ${q.get('pgCode') ?? ''} ${q.get('message') ?? q.get('pgMessage') ?? ''} · 결제 번호 ${paymentId})`);
+    window.alert(`결제를 마치지 못했어요.\n(${tech(`결제창: ${q.get('code')} ${q.get('pgCode') ?? ''} `) ?? ''}${q.get('pgMessage') ?? q.get('message') ?? ''} · 결제 번호 ${paymentId})`);
     return;
   }
   void confirmPayment(paymentId, `돌아옴 tx ${q.get('txId') ? 'O' : 'X'}`, q.get('paymentToken') ?? undefined)
