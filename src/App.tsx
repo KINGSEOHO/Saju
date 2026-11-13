@@ -13,6 +13,7 @@ import { ErrorBoundary } from './ui/ErrorBoundary.tsx';
 import { Faq } from './ui/Faq.tsx';
 import { BusinessFooter, Legal, type LegalDoc } from './ui/Legal.tsx';
 import { ImageSheet } from './ui/ImageSheet.tsx';
+import { ReviewBanner } from './ui/ReviewBanner.tsx';
 
 // 결과 화면은 사주 계산 엔진을 함께 쓰는 큰 덩어리라 따로 불러온다 — 첫 화면(소개·입력)이 먼저 뜨게.
 // 페이지를 열어 둔 사이 새 버전이 배포되면 예전 파일을 못 찾을 수 있어, 그때는 새로고침을 안내한다.
@@ -97,6 +98,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <ReviewBanner />
       <header data-sticky-head className="no-print sticky top-0 z-30 border-b border-line bg-bg">
         <div className="wrap flex h-14 items-center justify-between">
           <a href="#/" className="flex items-center gap-2">

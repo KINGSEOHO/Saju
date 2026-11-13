@@ -43,6 +43,8 @@ jobs:
           VITE_PAY_API: ${{ vars.PAY_API }}
           VITE_PORTONE_STORE_ID: ${{ vars.PORTONE_STORE_ID }}
           VITE_PORTONE_CHANNEL_KEY: ${{ vars.PORTONE_CHANNEL_KEY }}
+          VITE_PORTONE_TEST_CHANNEL_KEY: ${{ vars.PORTONE_TEST_CHANNEL_KEY }}
+          VITE_REVIEW_TOKEN: ${{ vars.REVIEW_TOKEN }}
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

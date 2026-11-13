@@ -65,6 +65,14 @@
 - 고장 찾기용 글자(포트원 상태·결제창 응답)는 시안(`VITE_PAYWALL_DEMO=1`)에서만 보여요. 실제 사이트 손님에게는 결제 번호만 보여요.
 - 휴대폰 시험: 컴퓨터와 같은 와이파이(핫스팟도 됨)에서 `npx vite --host` → 휴대폰으로 Network 주소. 결제 서버가 사설 IP의 `:5173` 주소를 받아 줘요.
 
+## 심사용 접속 (결제대행사·카드사 심사 때)
+
+결제를 열기 전에 심사 담당자가 구매 버튼을 눌러 볼 수 있게 하는 비밀 주소예요.
+
+- GitHub **Variables**에 `PORTONE_TEST_CHANNEL_KEY`(포트원 **테스트** 채널 키)와 `REVIEW_TOKEN`(아무 긴 글자)을 넣고 사이트를 다시 배포해요.
+- 심사 담당자에게 `https://mgsaju.io.kr/?review=<REVIEW_TOKEN>` 을 알려 줘요. 이 주소로 들어오면 구매 버튼·결제창이 보이고 테스트 채널로 결제돼요(돈이 나가지 않아요).
+- 일반 주소에서는 결제가 계속 숨겨져 있어요. 끝나면 `REVIEW_TOKEN` 변수를 지우고 다시 배포하면 꺼져요.
+
 ## 확인 못 한 것
 
 - Supabase CLI가 `supabase/config.toml`의 `entrypoint = "./functions/pay/index.js"`를 그대로 받는지는 첫 배포 때 확인해요. 안 되면 파일 이름을 `index.ts`로 바꿔요.

@@ -163,7 +163,7 @@ export function concernOffers(e: Ent, id: ConcernId, prices = PRICES, rules: Off
   const yearOpen = isOpen(e, 'year');
   const lockedCore = CORE_CONCERNS.filter((c) => !isOpen(e, c)).length;
   // 고민 4개가 이미 다 열린 사람에게 남은 것은 그해 신년운세뿐
-  if (id === 'year' && e.all) return [{ kind: 'one', cost: prices.year, label: `${won(prices.year)}에 ${yearName} 열기`, note: '고민 4개는 이미 열려 있어요.' }];
+  if (id === 'year' && e.all) return [{ kind: 'one', cost: prices.year, label: `${won(prices.year)}에 ${yearName} 구매하기`, note: '고민 4개는 이미 열려 있어요.' }];
   // 첫 결제 혜택은 고민 4개에만 (신년운세는 시즌 상품이라 정가)
   const welcome = rules.welcome && e.first && id !== 'year';
   const single = id === 'year' ? prices.year : welcome ? prices.first : prices.concern;
@@ -173,9 +173,14 @@ export function concernOffers(e: Ent, id: ConcernId, prices = PRICES, rules: Off
   const out: Offer[] = [];
   // 차액 결제를 끈 동안: 정해진 값으로만 판다 — 아무것도 안 샀으면 하나(3,900·6,900) 또는 전부(묶음 가격), 하나라도 샀으면 하나씩만
   if (!rules.topup) {
-    out.push({ kind: 'one', cost: single, label: `${won(single)}에 ${id === 'year' ? yearName : '이 고민'} 열기` });
+    out.push({ kind: 'one', cost: single, label: `${won(single)}에 ${id === 'year' ? yearName : '이 고민'} 구매하기` });
     if (e.spent === 0 && !e.all)
-      out.push({ kind: 'all', cost: prices.all, label: `${won(prices.all)}에 전부 열기`, note: `${rest}가 모두 열려요 · 하나씩 사면 ${won(prices.year + prices.concern * CORE_CONCERNS.length)}.` });
+      out.push({
+        kind: 'all',
+        cost: prices.all,
+        label: `${won(prices.all)}에 전부 구매하기`,
+        note: `${rest}가 모두 열려요 · 하나씩 사면 ${won(prices.year + prices.concern * CORE_CONCERNS.length)}.`,
+      });
     return out.length > 1 && id === 'year' && bundleFirst(out[0], out[1], prices) ? [out[1], out[0]] : out;
   }
   // 하나만 — 사고 나서도 '전부 열기'까지 1,000원 이상 남을 때만 (첫 결제 혜택은 늘)

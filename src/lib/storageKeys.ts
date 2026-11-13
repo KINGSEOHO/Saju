@@ -25,6 +25,8 @@ export const STORAGE = {
   account: 'mg_account_v1',
   /** 휴대폰 결제창이 다른 주소로 넘어갔다 돌아올 때 — 결제 번호와 돌아갈 화면 (sessionStorage) */
   payReturn: 'mg_pay_return_v1',
+  /** 심사용 접속 표시 — 심사용 주소로 들어온 브라우저에만 남는다 (localStorage) */
+  review: 'mg_review_v1',
 } as const;
 
 /** 사람·날짜마다 이름이 달라지는 기록의 앞부분 */

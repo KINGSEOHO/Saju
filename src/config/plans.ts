@@ -6,6 +6,7 @@
  * 설계 근거는 docs/MONETIZATION.md 참고.
  */
 import type { SectionId } from '../report/generate.ts';
+import { STORAGE } from '../lib/storageKeys.ts';
 
 export const BETA_FREE = true;
 
@@ -50,8 +51,39 @@ export const PRICES = {
 export const OFFER_RULES = { welcome: false, topup: false };
 export type OfferRules = typeof OFFER_RULES;
 
-/** 미리보기에서만 결제 흐름을 흉내 낸다 (node scripts/preview-artifact.mjs --paywall) */
-export const PAYWALL_DEMO = import.meta.env.VITE_PAYWALL_DEMO === '1';
+/**
+ * 심사용 접속 — 결제대행사·카드사 심사 담당자가 사이트에서 구매 버튼을 직접 눌러 볼 수 있게 한다.
+ * 심사용 주소(`?review=○○○`, ○○○는 저장소 변수 REVIEW_TOKEN)로 들어온 브라우저에서만 켜지고(이후 그 브라우저에는 계속),
+ * 결제는 포트원 **테스트 채널**로만 한다 (config/backend.ts). 일반 방문자에게는 아무것도 달라지지 않는다.
+ * 토큰이 비어 있으면 이 기능은 꺼져 있다.
+ */
+export function reviewOn(search: string, stored: string | null, token: string): boolean {
+  if (!token) return false;
+  return new URLSearchParams(search).get('review') === token || stored === token;
+}
+function detectReview(): boolean {
+  if (typeof location === 'undefined') return false;
+  const token = ((import.meta.env as Record<string, string | undefined>).VITE_REVIEW_TOKEN ?? '').trim();
+  let stored: string | null = null;
+  try {
+    stored = localStorage.getItem(STORAGE.review);
+  } catch {
+    /* 저장이 안 되는 브라우저 — 주소에 토큰이 있을 때만 */
+  }
+  const on = reviewOn(location.search, stored, token);
+  if (on && stored !== token) {
+    try {
+      localStorage.setItem(STORAGE.review, token);
+    } catch {
+      /* 이번 화면에서만 */
+    }
+  }
+  return on;
+}
+export const REVIEW = detectReview();
+
+/** 미리보기·심사용 접속에서 결제 흐름을 보여 준다 (미리보기: node scripts/preview-artifact.mjs --paywall) */
+export const PAYWALL_DEMO = import.meta.env.VITE_PAYWALL_DEMO === '1' || REVIEW;
 
 /**
  * 결제를 팔 때(과 그 시안) 무료 칸에서 고민 리포트·신년운세와 겹치는 '언제' 이야기를 덜어 낸다.
