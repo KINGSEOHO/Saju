@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PAY_LIVE } from '../config/backend.ts';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
+import { showPurchaseCode } from './PurchaseCode.tsx';
 import { useAccount, type Buyer, type PayResult, type RedeemResult } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
@@ -413,6 +414,7 @@ export function Premium({
     if (!r) return setDone({ title: '결제를 마치지 못했어요.', text: '잠시 뒤 다시 해 주세요.' });
     if (r.ok) {
       track('paid', { item: id, offer: offerName(o), amount: o.cost }, false);
+      showPurchaseCode(r.code);
       return setDone({ title: '결제됐어요.', code: r.code });
     }
     setDone(

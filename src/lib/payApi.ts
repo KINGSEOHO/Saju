@@ -213,6 +213,7 @@ export function resumePayment(): void {
   void confirmPayment(paymentId, `돌아옴 tx ${q.get('txId') ? 'O' : 'X'}`, q.get('paymentToken') ?? undefined)
     .then((r) => {
       if (!r.ok) window.alert(`결제를 마치지 못했어요.\n(${r.detail ?? ''})`);
+      else if (r.code) void import('../ui/PurchaseCode.tsx').then((m) => m.showPurchaseCode(r.code as string));
     })
     .catch(() => null)
     .then(() => {
