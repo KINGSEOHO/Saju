@@ -260,57 +260,24 @@ function redeemNote(r: RedeemResult): PayNote {
 }
 
 /** 다른 기기에서 산 기록 불러오기 — 이 기기에서 따로 산 것이 있으면 합친다. open: 처음부터 펼쳐 둘 때 (결제 전 확인에서 왔을 때) */
-/** 무료 코드 넣기 — 한 번 쓰면 그 코드는 끝 */
-function Coupon({ onCoupon, onDone }: { onCoupon: (code: string) => Promise<CouponResult>; onDone: (code: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const [code, setCode] = useState('');
-  const [msg, setMsg] = useState('');
-  const [busy, setBusy] = useState(false);
-  if (!open)
-    return (
-      <button type="button" className="link mx-auto mt-2 block text-label" onClick={() => setOpen(true)}>
-        무료 코드가 있나요?
-      </button>
-    );
-  return (
-    <form
-      className="panel mt-4"
-      data-coupon
-      onSubmit={async (e) => {
-        e.preventDefault();
-        if (busy) return;
-        setBusy(true);
-        const r = await onCoupon(code);
-        setBusy(false);
-        if (r.ok) {
-          setOpen(false);
-          setCode('');
-          setMsg('');
-          return onDone(r.code);
-        }
-        setMsg(
-          r.reason === 'owned'
-            ? '이미 열려 있는 리포트예요. 코드는 쓰지 않았어요.'
-            : r.reason === 'coupon'
-              ? '쓸 수 없는 코드예요. 이미 쓴 코드이거나 기간이 지났을 수 있어요.'
-              : '잠시 뒤 다시 해 주세요.',
-        );
-      }}
-    >
-      <label className="block">
-        <span className="text-label font-semibold text-ink">무료 코드</span>
-        <input className="field mt-2 uppercase tracking-wider" value={code} onChange={(e) => setCode(e.target.value)} placeholder="FREE-XXXX-XXXX" autoComplete="off" />
-      </label>
-      <p className="mt-2 text-cap text-sub">코드 하나로 이 고민 리포트가 열려요. 한 번 쓰면 다시 쓸 수 없어요.</p>
-      {msg && <p className="mt-2 text-label font-semibold text-ink">{msg}</p>}
-      <button type="submit" className="btn-primary mt-3 w-full" disabled={busy}>
-        무료로 열기
-      </button>
-    </form>
-  );
-}
+/** 'FREE-'로 시작하면 무료 코드 — 구매 코드 칸에 함께 받는다 (따로 칸을 두지 않는다: 산 사람이 손해 본 느낌이 들지 않게) */
+const isCoupon = (s: string) => /^FREE/.test(s.toUpperCase().replace(/[^0-9A-Z]/g, ''));
 
-function Redeem({ onRedeem, onDone, open: start = false, onBack }: { onRedeem: (code: string) => Promise<RedeemResult>; onDone: (r: RedeemResult) => void; open?: boolean; onBack?: () => void }) {
+function Redeem({
+  onRedeem,
+  onDone,
+  onCoupon,
+  onCouponDone,
+  open: start = false,
+  onBack,
+}: {
+  onRedeem: (code: string) => Promise<RedeemResult>;
+  onDone: (r: RedeemResult) => void;
+  onCoupon?: (code: string) => Promise<CouponResult>;
+  onCouponDone?: (code: string) => void;
+  open?: boolean;
+  onBack?: () => void;
+}) {
   const [open, setOpen] = useState(start);
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState('');
@@ -329,6 +296,22 @@ function Redeem({ onRedeem, onDone, open: start = false, onBack }: { onRedeem: (
         e.preventDefault();
         if (busy) return;
         setBusy(true);
+        if (isCoupon(code)) {
+          const c = onCoupon ? await onCoupon(code) : ({ ok: false, reason: 'coupon' } as const);
+          setBusy(false);
+          if (!c.ok)
+            return setMsg(
+              c.reason === 'owned'
+                ? '이미 열려 있는 리포트예요. 코드는 쓰지 않았어요.'
+                : c.reason === 'coupon'
+                  ? '쓸 수 없는 코드예요. 이미 쓴 코드이거나 기간이 지났을 수 있어요.'
+                  : '잠시 뒤 다시 해 주세요.',
+            );
+          setOpen(false);
+          setCode('');
+          setMsg('');
+          return onCouponDone?.(c.code);
+        }
         const r = await onRedeem(code);
         setBusy(false);
         if (!r.ok) return setMsg('코드를 찾지 못했어요. MG-로 시작하는 8자리를 다시 확인해 주세요.');
@@ -535,7 +518,14 @@ export function Premium({
               step === 'history' ? (
                 <History onNew={() => setStep('confirm')} onRestore={() => setStep(onRedeem ? 'redeem' : 'confirm')} onNo={close} />
               ) : step === 'redeem' && onRedeem ? (
-                <Redeem open onRedeem={onRedeem} onDone={restored} onBack={() => setStep(fresh ? 'history' : 'confirm')} />
+                <Redeem
+                  open
+                  onRedeem={onRedeem}
+                  onCoupon={onCoupon}
+                  onCouponDone={(code) => (showPurchaseCode(code, '코드로 열었어요'), setDone({ title: '코드로 열었어요.', code }))}
+                  onDone={restored}
+                  onBack={() => setStep(fresh ? 'history' : 'confirm')}
+                />
               ) : (
                 <Confirm o={asking} what={what ?? title} busy={busy} onNo={close} onYes={payNow} onRestore={!fresh && onRedeem ? () => setStep('redeem') : undefined} />
               )
@@ -559,8 +549,14 @@ export function Premium({
                     {o.note && <p className="mt-1.5 text-center text-cap text-sub">{o.note}</p>}
                   </div>
                 ))}
-                {onRedeem && <Redeem onRedeem={onRedeem} onDone={restored} />}
-                {onCoupon && <Coupon onCoupon={onCoupon} onDone={(code) => (showPurchaseCode(code, '무료 코드로 열었어요'), setDone({ title: '무료 코드로 열었어요.', code }))} />}
+                {onRedeem && (
+                  <Redeem
+                    onRedeem={onRedeem}
+                    onCoupon={onCoupon}
+                    onCouponDone={(code) => (showPurchaseCode(code, '코드로 열었어요'), setDone({ title: '코드로 열었어요.', code }))}
+                    onDone={restored}
+                  />
+                )}
               </div>
             )
           ) : (
