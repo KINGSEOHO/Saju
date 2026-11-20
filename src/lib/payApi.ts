@@ -164,7 +164,8 @@ async function payFlow(p: Purchase, season: { year: number; title: string }, buy
       orderName: prep.orderName,
       totalAmount: prep.amount,
       currency: 'KRW',
-      payMethod: 'CARD',
+      // 간편결제는 그 결제사 화면을 바로 연다 (포트원 V2 이니시스: payMethod EASY_PAY + easyPay.easyPayProvider)
+      ...(buyer?.method && buyer.method !== 'CARD' ? { payMethod: 'EASY_PAY', easyPay: { easyPayProvider: buyer.method } } : { payMethod: 'CARD' }),
       redirectUrl: returnUrl(),
       noticeUrls: [`${PAY_API}/webhook`],
       productType: 'PRODUCT_TYPE_DIGITAL',

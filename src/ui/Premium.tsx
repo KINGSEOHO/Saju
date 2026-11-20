@@ -14,7 +14,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PAY_LIVE } from '../config/backend.ts';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
 import { showPurchaseCode } from './PurchaseCode.tsx';
-import { useAccount, type Buyer, type CouponResult, type PayResult, type RedeemResult } from '../lib/account.ts';
+import { PAY_METHODS, useAccount, type Buyer, type CouponResult, type PayMethod, type PayResult, type RedeemResult } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
 import { Veil } from './common.tsx';
@@ -110,6 +110,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [method, setMethod] = useState<PayMethod>('CARD');
   const needEmail = !free && PAY_LIVE;
   const digits = phone.replace(/\D/g, '');
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) && name.trim().length > 0 && /^01\d{8,9}$/.test(digits);
@@ -127,11 +128,27 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             ? '결제 화면으로 넘어가는 자리예요. 시안이라 실제로 결제되지 않고 바로 열려요.'
             : '결제 화면으로 넘어가요.'}
       </p>
+      {!free && (
+        <fieldset className="mt-4" data-pay-method>
+          <legend className="text-label font-semibold text-ink">결제수단</legend>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {PAY_METHODS.map((m) => (
+              <label
+                key={m.id}
+                className={`flex h-12 cursor-pointer items-center justify-center rounded-xl border text-ui font-semibold transition-colors ${method === m.id ? 'border-accent bg-bg text-ink' : 'border-line text-ink-2'}`}
+              >
+                <input type="radio" name="pay-method" className="sr-only" checked={method === m.id} onChange={() => setMethod(m.id)} />
+                {m.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
       {needEmail && (
         <div className="mt-4">
           <div className="panel rounded-xl px-4 py-3">
             <p className="text-body font-semibold text-ink">명경사주는 이 정보를 받거나 저장하지 않아요.</p>
-            <p className="mt-1 text-label text-sub">카드 결제에 필요해서 결제대행사로만 바로 넘어가요.</p>
+            <p className="mt-1 text-label text-sub">결제에 필요해서 결제대행사로만 바로 넘어가요.</p>
           </div>
           <p className="mt-4 text-label font-semibold text-ink">구매자 정보 (필수)</p>
           <input aria-label="이름" autoComplete="name" className="field mt-2" placeholder="이름" value={name} onChange={(e) => setName(e.target.value)} />
@@ -211,7 +228,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
         <button
           type="button"
           className="btn-primary"
-          onClick={() => onYes(needEmail ? { name: name.trim(), phone: digits, email: email.trim() } : undefined)}
+          onClick={() => onYes(needEmail ? { name: name.trim(), phone: digits, email: email.trim(), method } : undefined)}
           disabled={busy || (!free && !(agree && adult && privacy)) || (needEmail && !emailOk)}
           aria-busy={busy}
         >
