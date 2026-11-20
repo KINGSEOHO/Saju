@@ -9,15 +9,17 @@ import { createPortal } from 'react-dom';
 const EVENT = 'mg-pay-code';
 let listening = false;
 /** 창이 아직 그려지기 전에 결제 확인이 끝난 경우 (휴대폰에서 돌아온 직후) — 그려지면 바로 연다 */
-let pending: string | null = null;
+let pending: Shown | null = null;
+type Shown = { code: string; title: string };
 
-export function showPurchaseCode(code: string) {
-  if (!listening) pending = code;
-  window.dispatchEvent(new CustomEvent(EVENT, { detail: { code } }));
+/** title: 창 제목 (기본 '결제됐어요', 무료 코드는 '무료 코드로 열었어요') */
+export function showPurchaseCode(code: string, title = '결제됐어요') {
+  if (!listening) pending = { code, title };
+  window.dispatchEvent(new CustomEvent(EVENT, { detail: { code, title } }));
 }
 
 export function PurchaseCodeDialog() {
-  const [code, setCode] = useState<string | null>(() => {
+  const [shown, setShown] = useState<Shown | null>(() => {
     const c = pending;
     pending = null;
     return c;
@@ -27,10 +29,10 @@ export function PurchaseCodeDialog() {
 
   useEffect(() => {
     const on = (e: Event) => {
-      const c = (e as CustomEvent<{ code?: string }>).detail?.code;
-      if (c) {
+      const d = (e as CustomEvent<Partial<Shown>>).detail;
+      if (d?.code) {
         setCopied(false);
-        setCode(c);
+        setShown({ code: d.code, title: d.title ?? '결제됐어요' });
       }
     };
     window.addEventListener(EVENT, on);
@@ -41,13 +43,14 @@ export function PurchaseCodeDialog() {
     };
   }, []);
 
+  const code = shown?.code ?? null;
   useEffect(() => {
     if (!code) return;
     const { overflow } = document.body.style;
     document.body.style.overflow = 'hidden';
     okRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setCode(null);
+      if (e.key === 'Escape') setShown(null);
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -75,7 +78,7 @@ export function PurchaseCodeDialog() {
           <span>鏡</span>
         </span>
         <h2 id="pay-code-title" className="mt-3 text-title3 font-bold text-ink">
-          결제됐어요
+          {shown?.title}
         </h2>
         <p className="mt-1 text-label text-sub">아래 구매 코드를 꼭 저장해 주세요.</p>
         <div className="panel mt-5 rounded-xl px-4 py-4">
@@ -87,7 +90,7 @@ export function PurchaseCodeDialog() {
         <p className="mt-4 text-left text-cap leading-relaxed text-sub">
           다른 휴대폰이나 브라우저에서 열 때, 또는 기록이 지워졌을 때 이 코드를 넣으면 다시 결제하지 않고 열 수 있어요. 캡처하거나 메모에 붙여 두세요.
         </p>
-        <button ref={okRef} type="button" className="btn-primary mt-5 w-full" onClick={() => setCode(null)}>
+        <button ref={okRef} type="button" className="btn-primary mt-5 w-full" onClick={() => setShown(null)}>
           저장했어요
         </button>
       </div>

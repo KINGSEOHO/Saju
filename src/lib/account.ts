@@ -14,6 +14,7 @@
  * 없으면 시안용 demoApi(이 기기 안에서 서버를 흉내)를 쓴다. 둘은 같은 모양(AccountApi)이다.
  */
 import { useEffect, useState } from 'react';
+import type { ConcernId } from '../report/concernList.ts';
 import { checkPurchase, overpaid, type Purchase, type SeasonKey } from './entitlements.ts';
 import { newCode, normalizeCode } from './code.ts';
 import { STORAGE } from './storageKeys.ts';
@@ -61,7 +62,14 @@ export interface AccountApi {
    * refund = 합쳐 보니 겹쳐 낸 돈 (실제 서버는 이만큼 결제를 부분 취소한다)
    */
   redeem(code: string): Promise<RedeemResult>;
+  /**
+   * 무료 코드(FREE-XXXX-XXXX)로 고민 리포트(3,900원짜리) 하나를 연다. 한 번 쓰면 그 코드는 끝.
+   * reason: 'coupon'(없거나 이미 썼거나 기간이 지남) · 'owned'(이미 열려 있어 코드를 쓰지 않음) · 'fail'
+   */
+  coupon(input: string, item: ConcernId, target: string): Promise<CouponResult>;
 }
+
+export type CouponResult = { ok: true; code: string } | { ok: false; reason: 'coupon' | 'owned' | 'fail' };
 
 export { newCode, normalizeCode } from './code.ts';
 
@@ -70,6 +78,7 @@ export { newCode, normalizeCode } from './code.ts';
 // ---------------------------------------------------------------------------
 const DEVICE = STORAGE.demoDevice;
 const STORE = STORAGE.demoPurchases;
+const COUPON_USED = STORAGE.demoCoupons;
 /** 합쳐진 예전 코드 → 새 코드 */
 const ALIAS = STORAGE.demoAlias;
 const read = <T>(k: string, d: T): T => {
@@ -118,6 +127,17 @@ export const demoApi: AccountApi & { record(p: Purchase): Promise<void> } = {
     const code = mine();
     const all = read<Record<string, Purchase[]>>(STORE, {});
     write(STORE, { ...all, [code]: [...(all[code] ?? []), p] });
+  },
+  async coupon(input, item, target) {
+    const used = read<string[]>(COUPON_USED, []);
+    const c = input.toUpperCase().replace(/[^0-9A-Z]/g, '');
+    if (c !== 'FREETESTTEST' || used.includes(c)) return { ok: false, reason: 'coupon' };
+    const code = mine();
+    const all = read<Record<string, Purchase[]>>(STORE, {});
+    if ((all[code] ?? []).some((p) => p.item === item && p.target === target)) return { ok: false, reason: 'owned' };
+    write(STORE, { ...all, [code]: [...(all[code] ?? []), { kind: 'free', item, target, amount: 0, at: Date.now() }] });
+    write(COUPON_USED, [...used, c]);
+    return { ok: true, code };
   },
   async pay(p, season) {
     const code = mine();
@@ -207,6 +227,11 @@ export function useAccount() {
     },
     redeem: async (code: string) => {
       const r = await accountApi.redeem(code);
+      if (r.ok) changed();
+      return r;
+    },
+    coupon: async (input: string, item: ConcernId, target: string) => {
+      const r = await accountApi.coupon(input, item, target);
       if (r.ok) changed();
       return r;
     },

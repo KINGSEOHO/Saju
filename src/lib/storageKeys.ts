@@ -27,6 +27,8 @@ export const STORAGE = {
   payReturn: 'mg_pay_return_v1',
   /** 심사용 접속 표시 — 심사용 주소로 들어온 브라우저에만 남는다 (localStorage) */
   review: 'mg_review_v1',
+  /** 시안 전용 — 이 기기에서 쓴 무료 코드 */
+  demoCoupons: 'mg_demo_coupons',
 } as const;
 
 /** 사람·날짜마다 이름이 달라지는 기록의 앞부분 */

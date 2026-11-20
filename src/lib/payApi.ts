@@ -7,7 +7,7 @@
  * 서버로 보내는 것: 구매 코드 · 산 항목 · 사주 구분값(양력 생일로 만든 짧은 암호값) · 금액 · 시즌. 이름·생년월일은 보내지 않는다.
  */
 import { PAY_API, PAY_LIVE, PAY_PC_REDIRECT, PORTONE_CHANNEL_KEY, PORTONE_STORE_ID } from '../config/backend.ts';
-import type { AccountApi, Buyer, PayResult, RedeemResult } from './account.ts';
+import type { AccountApi, Buyer, CouponResult, PayResult, RedeemResult } from './account.ts';
 import type { Purchase } from './entitlements.ts';
 import { PAYWALL_DEMO } from '../config/plans.ts';
 import { STORAGE } from './storageKeys.ts';
@@ -121,6 +121,18 @@ export const payApi: AccountApi = {
       return await payFlow(p, season, buyer, (s) => (step = s));
     } catch (e) {
       return { ok: false, reason: 'fail', detail: tech(`${step}: ${e instanceof Error ? e.message : String(e)}`) };
+    }
+  },
+  async coupon(input, item, target): Promise<CouponResult> {
+    try {
+      const r = await call('coupon', { code: await myCode(), coupon: input, item, target });
+      if (r.ok && typeof r.code === 'string') {
+        if (r.code !== readCode()) writeCode(r.code);
+        return { ok: true, code: r.code };
+      }
+      return { ok: false, reason: r.reason === 'owned' ? 'owned' : r.reason === 'coupon' || r.reason === 'bad' ? 'coupon' : 'fail' };
+    } catch {
+      return { ok: false, reason: 'fail' };
     }
   },
   async redeem(target): Promise<RedeemResult> {

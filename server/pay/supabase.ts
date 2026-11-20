@@ -13,7 +13,7 @@
  * 비밀값은 Supabase의 함수 비밀값(Secrets)에만: PORTONE_API_SECRET. SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY는 Supabase가 넣어 준다.
  * 표는 RLS를 켜고 정책을 두지 않아, 사이트의 공개 키로는 읽거나 쓸 수 없다 (이 함수만 쓴다).
  */
-import { confirm, createAccount, listPurchases, prepare, redeem, type Gateway, type Order, type Store, type StoredPurchase } from './core.ts';
+import { confirm, createAccount, listPurchases, prepare, redeem, useCoupon, type Gateway, type Order, type Store, type StoredPurchase } from './core.ts';
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (req: Request) => Response | Promise<Response>): void };
 
@@ -98,6 +98,18 @@ const store: Store = {
   async setOrderStatus(paymentId, status) {
     await db(`pay_orders?payment_id=eq.${q(paymentId)}`, { method: 'PATCH', body: JSON.stringify({ status }) });
   },
+  async takeCoupon(hash, now, use) {
+    const at = new Date(now).toISOString();
+    const r = await db(
+      `pay_coupons?code_hash=eq.${q(hash)}&used_at=is.null&expires_at=gt.${q(at)}`,
+      { method: 'PATCH', body: JSON.stringify({ used_at: at, used_by: use.code, used_item: use.item }) },
+      'return=representation',
+    );
+    return r.ok && ((await r.json()) as unknown[]).length === 1;
+  },
+  async releaseCoupon(hash) {
+    await db(`pay_coupons?code_hash=eq.${q(hash)}`, { method: 'PATCH', body: JSON.stringify({ used_at: null, used_by: null, used_item: null }) });
+  },
 };
 
 const PORTONE = 'https://api.portone.io';
@@ -151,6 +163,7 @@ Deno.serve(async (req) => {
     else if (route === 'prepare') out = await prepare(store, body, now);
     else if (route === 'confirm') out = await confirm(store, gateway, body.paymentId, now, body.paymentToken);
     else if (route === 'redeem') out = await redeem(store, gateway, body);
+    else if (route === 'coupon') out = await useCoupon(store, body, now);
     else if (route === 'webhook') {
       const data = body.data as { paymentId?: unknown } | undefined;
       out = data?.paymentId ? await confirm(store, gateway, data.paymentId, now) : { ok: true };

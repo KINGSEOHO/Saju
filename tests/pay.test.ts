@@ -5,13 +5,30 @@
 import { describe, expect, it } from 'vitest';
 import { PRICES } from '../src/config/plans.ts';
 import type { Purchase, SeasonKey } from '../src/lib/entitlements.ts';
-import { cleanPurchase, confirm, createAccount, listPurchases, orderName, prepare, redeem, type Gateway, type Order, type PaymentInfo, type Store, type StoredPurchase } from '../server/pay/core.ts';
+import {
+  cleanPurchase,
+  confirm,
+  couponHash,
+  createAccount,
+  listPurchases,
+  normalizeCoupon,
+  orderName,
+  prepare,
+  redeem,
+  useCoupon,
+  type Gateway,
+  type Order,
+  type PaymentInfo,
+  type Store,
+  type StoredPurchase,
+} from '../server/pay/core.ts';
 
 function memStore() {
   const accounts = new Set<string>();
   const alias = new Map<string, string>();
   const rows = new Map<string, StoredPurchase[]>();
   const orders = new Map<string, Order>();
+  const coupons = new Map<string, { expires: number; used: boolean }>();
   const store: Store = {
     async createAccount(code) {
       if (accounts.has(code)) return false;
@@ -42,8 +59,15 @@ function memStore() {
       return true;
     },
     setOrderStatus: async (id, status) => void (orders.get(id)!.status = status),
+    async takeCoupon(hash, now) {
+      const c = coupons.get(hash);
+      if (!c || c.used || c.expires <= now) return false;
+      c.used = true;
+      return true;
+    },
+    releaseCoupon: async (hash) => void (coupons.get(hash)!.used = false),
   };
-  return { store, rows, orders };
+  return { store, rows, orders, coupons };
 }
 
 function fakeGateway() {
@@ -244,5 +268,52 @@ describe('구매 코드 합치기 — 겹쳐 낸 돈은 그 결제를 부분 취
     const g = fakeGateway();
     const a = await newAccount(store);
     expect(await redeem(store, g.gw, { code: a, target: 'MG-ZZZZ-ZZZZ' })).toEqual({ ok: false, merged: 0 });
+  });
+});
+
+describe('무료 코드 — 한 번 쓰면 끝, 3,900원짜리 고민 리포트 하나만', () => {
+  const EXP = Date.UTC(2026, 11, 31, 15, 0); // 12/31 24:00 KST
+  async function setup() {
+    const m = memStore();
+    const code = await newAccount(m.store);
+    m.coupons.set(await couponHash('FREE-AB2C-3DEF'), { expires: EXP, used: false });
+    return { ...m, code };
+  }
+
+  it('코드 모양을 정리한다 (소문자·띄어쓰기·하이픈 상관없이)', () => {
+    expect(normalizeCoupon('free ab2c-3def')).toBe('FREE-AB2C-3DEF');
+    expect(normalizeCoupon('FREE-AB2C-3DE')).toBeNull();
+    expect(normalizeCoupon('MG-AB2C-3DEF')).toBeNull();
+  });
+
+  it('쓰면 그 고민이 열리고, 같은 코드는 다시 못 쓴다', async () => {
+    const { store, code } = await setup();
+    expect(await useCoupon(store, { code, coupon: 'free-ab2c-3def', item: 'career', target: S }, NOW)).toEqual({ ok: true, code });
+    const list = (await listPurchases(store, code)).purchases as StoredPurchase[];
+    expect(list).toEqual([{ kind: 'free', item: 'career', target: S, amount: 0, at: NOW }]);
+    // 다른 계정이 같은 코드를 넣어도 안 된다
+    const other = await newAccount(store);
+    expect(await useCoupon(store, { code: other, coupon: 'FREE-AB2C-3DEF', item: 'love', target: 'zzz' }, NOW)).toEqual({ ok: false, reason: 'coupon' });
+  });
+
+  it('이미 열린 고민이면 코드를 쓰지 않는다', async () => {
+    const { store, code, coupons } = await setup();
+    const g = fakeGateway();
+    await buy(store, g, code, one('career'));
+    expect(await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'career', target: S }, NOW)).toEqual({ ok: false, reason: 'owned' });
+    expect([...coupons.values()][0].used).toBe(false);
+  });
+
+  it('신년운세·궁합(3,900원이 아닌 것)은 열 수 없고, 기간이 지나면 못 쓴다', async () => {
+    const { store, code } = await setup();
+    expect((await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'year', target: S }, NOW)).reason).toBe('bad');
+    expect((await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'match', target: S }, NOW)).reason).toBe('bad');
+    expect((await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'love', target: S }, EXP + 1)).reason).toBe('coupon');
+  });
+
+  it('무료로 연 고민은 다시 결제하지 않는다 (산 것으로 본다)', async () => {
+    const { store, code } = await setup();
+    await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'money', target: S }, NOW);
+    expect((await prepare(store, { code, purchase: one('money'), season: Y27 }, NOW)).reason).toBe('owned');
   });
 });

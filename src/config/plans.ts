@@ -8,7 +8,11 @@
 import type { SectionId } from '../report/generate.ts';
 import { STORAGE } from '../lib/storageKeys.ts';
 
-export const BETA_FREE = false;
+/**
+ * 정식 판매 중이면 false. 모두 열어 두는 빌드는 VITE_ALL_FREE=1일 때만 — 운영자 전용 미리보기(scripts/preview-artifact.mjs --owner)에서만 쓴다.
+ * 실제 사이트 배포(deploy-pages.yml)는 이 값을 넣지 않는다.
+ */
+export const BETA_FREE = import.meta.env.VITE_ALL_FREE === '1';
 
 /**
  * 무료 풀이 리포트에서 앞부분(이야기 첫 문단 · 핵심 첫 묶음)만 보여 줄 주제 — 나머지는 그 고민 리포트(연애·결혼 · 이직·진로 · 돈)에서.

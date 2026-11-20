@@ -405,6 +405,7 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         fresh={u.ent.first}
         onTake={(o, buyer) => u.buy(o, id, undefined, buyer)}
         onRedeem={u.redeem}
+        onCoupon={id === 'career' || id === 'love' || id === 'money' || id === 'exam' ? (c) => u.coupon(c, id) : undefined}
       >
         <ConcernDetail a={a} c={c} />
       </Premium>

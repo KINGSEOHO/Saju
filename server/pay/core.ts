@@ -14,6 +14,7 @@
 import { checkPurchase, overpaid, type Purchase, type SeasonKey } from '../../src/lib/entitlements.ts';
 import { CONCERNS } from '../../src/report/concernList.ts';
 import { newCode, normalizeCode } from '../../src/lib/code.ts';
+import { PRICES } from '../../src/config/plans.ts';
 
 /** 저장한 구매 기록 — 결제 번호가 있어야 나중에 환불(부분 취소)할 수 있다 */
 export interface StoredPurchase extends Purchase {
@@ -46,6 +47,10 @@ export interface Store {
   /** ready → confirming 을 한 번만 허락한다 (동시에 두 번 확인해도 기록이 한 번만 남게) */
   claimOrder(paymentId: string): Promise<boolean>;
   setOrderStatus(paymentId: string, status: Order['status']): Promise<void>;
+  /** 무료 코드를 쓴다 — 아직 안 썼고 기간 안이면 '썼음'으로 바꾸고 true (한 번만, 동시에 두 번 써도 하나만) */
+  takeCoupon(hash: string, now: number, use: { code: string; item: string }): Promise<boolean>;
+  /** 쓴 뒤 기록에 실패했을 때 되돌린다 */
+  releaseCoupon(hash: string): Promise<void>;
 }
 
 export interface PaymentInfo {
@@ -199,6 +204,48 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   await store.addPurchase(order.code, { ...order.purchase, at: now, paymentId });
   await store.setOrderStatus(paymentId, 'paid');
   return { ok: true, code: order.code };
+}
+
+/** 무료 코드로 열 수 있는 것 — 3,900원짜리 고민 리포트 */
+export const COUPON_ITEMS = new Set(['career', 'love', 'money', 'exam']);
+const COUPON_RE = /^FREE([2-9A-HJKMNP-Z]{8})$/;
+
+/** 'free-ab2c 3def' → 'FREE-AB2C-3DEF' (모양이 아니면 null) */
+export function normalizeCoupon(raw: string): string | null {
+  const m = COUPON_RE.exec(raw.toUpperCase().replace(/[^0-9A-Z]/g, ''));
+  return m ? `FREE-${m[1].slice(0, 4)}-${m[1].slice(4)}` : null;
+}
+
+export async function couponHash(code: string): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * 무료 코드로 고민 리포트 하나를 연다. 이미 열려 있으면 코드를 쓰지 않는다.
+ * 쓰면 그 코드는 끝 (다시 넣어도 안 된다). 기록은 kind 'free', 금액 0.
+ */
+export async function useCoupon(store: Store, body: { code?: unknown; coupon?: unknown; item?: unknown; target?: unknown }, now: number): Promise<ApiResult> {
+  const own = typeof body.code === 'string' ? normalizeCode(body.code) : null;
+  if (!own || !(await store.hasAccount(own))) return { ok: false, reason: 'unknown' };
+  const coupon = typeof body.coupon === 'string' ? normalizeCoupon(body.coupon) : null;
+  if (!coupon) return { ok: false, reason: 'coupon' };
+  const item = typeof body.item === 'string' && COUPON_ITEMS.has(body.item) ? (body.item as Purchase['item']) : null;
+  const target = typeof body.target === 'string' && /^[0-9a-z]{1,40}$/.test(body.target) ? body.target : null;
+  if (!item || !target) return { ok: false, reason: 'bad' };
+  const code = await resolve(store, own);
+  // 이미 열린 리포트면 코드를 아껴 둔다
+  const open = checkPurchase(await store.purchases(code), { kind: 'one', item, target, amount: PRICES.concern, at: 0 }, { year: 0, title: '' });
+  if (open === 'owned') return { ok: false, reason: 'owned' };
+  const hash = await couponHash(coupon);
+  if (!(await store.takeCoupon(hash, now, { code, item }))) return { ok: false, reason: 'coupon' };
+  try {
+    await store.addPurchase(code, { kind: 'free', item, target, amount: 0, at: now });
+  } catch (e) {
+    await store.releaseCoupon(hash);
+    throw e;
+  }
+  return { ok: true, code };
 }
 
 export async function redeem(store: Store, gw: Gateway, body: { code?: unknown; target?: unknown }): Promise<ApiResult> {

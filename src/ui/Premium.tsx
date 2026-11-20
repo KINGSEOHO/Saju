@@ -14,7 +14,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PAY_LIVE } from '../config/backend.ts';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
 import { showPurchaseCode } from './PurchaseCode.tsx';
-import { useAccount, type Buyer, type PayResult, type RedeemResult } from '../lib/account.ts';
+import { useAccount, type Buyer, type CouponResult, type PayResult, type RedeemResult } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
 import { Veil } from './common.tsx';
@@ -84,6 +84,8 @@ export function useUnlock(saju: string, season: SeasonKey) {
     ent: entOf(acct.purchases, saju, season),
     /** 결제 — 이미 열렸거나 값이 바뀌었으면 결제하지 않고 까닭을 돌려준다 */
     buy: (o: Offer, id: ConcernId | null, pk?: string, buyer?: Buyer) => acct.pay(purchaseOf(o, saju, id, pk, season.year), season, buyer),
+    /** 무료 코드로 고민 하나 열기 */
+    coupon: (input: string, id: ConcernId) => acct.coupon(input, id, saju),
   };
 }
 
@@ -258,6 +260,56 @@ function redeemNote(r: RedeemResult): PayNote {
 }
 
 /** 다른 기기에서 산 기록 불러오기 — 이 기기에서 따로 산 것이 있으면 합친다. open: 처음부터 펼쳐 둘 때 (결제 전 확인에서 왔을 때) */
+/** 무료 코드 넣기 — 한 번 쓰면 그 코드는 끝 */
+function Coupon({ onCoupon, onDone }: { onCoupon: (code: string) => Promise<CouponResult>; onDone: (code: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState('');
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  if (!open)
+    return (
+      <button type="button" className="link mx-auto mt-2 block text-label" onClick={() => setOpen(true)}>
+        무료 코드가 있나요?
+      </button>
+    );
+  return (
+    <form
+      className="panel mt-4"
+      data-coupon
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (busy) return;
+        setBusy(true);
+        const r = await onCoupon(code);
+        setBusy(false);
+        if (r.ok) {
+          setOpen(false);
+          setCode('');
+          setMsg('');
+          return onDone(r.code);
+        }
+        setMsg(
+          r.reason === 'owned'
+            ? '이미 열려 있는 리포트예요. 코드는 쓰지 않았어요.'
+            : r.reason === 'coupon'
+              ? '쓸 수 없는 코드예요. 이미 쓴 코드이거나 기간이 지났을 수 있어요.'
+              : '잠시 뒤 다시 해 주세요.',
+        );
+      }}
+    >
+      <label className="block">
+        <span className="text-label font-semibold text-ink">무료 코드</span>
+        <input className="field mt-2 uppercase tracking-wider" value={code} onChange={(e) => setCode(e.target.value)} placeholder="FREE-XXXX-XXXX" autoComplete="off" />
+      </label>
+      <p className="mt-2 text-cap text-sub">코드 하나로 이 고민 리포트가 열려요. 한 번 쓰면 다시 쓸 수 없어요.</p>
+      {msg && <p className="mt-2 text-label font-semibold text-ink">{msg}</p>}
+      <button type="submit" className="btn-primary mt-3 w-full" disabled={busy}>
+        무료로 열기
+      </button>
+    </form>
+  );
+}
+
 function Redeem({ onRedeem, onDone, open: start = false, onBack }: { onRedeem: (code: string) => Promise<RedeemResult>; onDone: (r: RedeemResult) => void; open?: boolean; onBack?: () => void }) {
   const [open, setOpen] = useState(start);
   const [code, setCode] = useState('');
@@ -357,6 +409,7 @@ export function Premium({
   fresh = false,
   onTake,
   onRedeem,
+  onCoupon,
   outline,
   teaser,
   children,
@@ -379,6 +432,8 @@ export function Premium({
   onTake?: (o: Offer, buyer?: Buyer) => Promise<PayResult>;
   /** 다른 기기의 구매 코드로 불러오기 */
   onRedeem?: (code: string) => Promise<RedeemResult>;
+  /** 무료 코드로 열기 (3,900원짜리 고민 리포트만) */
+  onCoupon?: (code: string) => Promise<CouponResult>;
   /** 잠겼을 때 보여 줄 상세의 제목들 — 내용은 흐린 줄로 */
   outline?: string[];
   /** 잠겼을 때 '무엇을 알려 주는지' 한 줄씩 — 답 자리는 [?월]처럼 빈칸 */
@@ -505,6 +560,7 @@ export function Premium({
                   </div>
                 ))}
                 {onRedeem && <Redeem onRedeem={onRedeem} onDone={restored} />}
+                {onCoupon && <Coupon onCoupon={onCoupon} onDone={(code) => (showPurchaseCode(code, '무료 코드로 열었어요'), setDone({ title: '무료 코드로 열었어요.', code }))} />}
               </div>
             )
           ) : (
