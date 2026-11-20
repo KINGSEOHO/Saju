@@ -1,0 +1,19 @@
+name: Keep payment backend awake
+# 결제 확인 서버(Supabase 무료 프로젝트)가 7일 동안 조용하면 자동으로 멈추는 것을 막는다.
+# 공개 주소로 읽기 요청 한 번만 보낸다 — 아무것도 저장하거나 바꾸지 않는다. 결제를 정식으로 열어 방문이 늘면 지워도 된다.
+on:
+  schedule:
+    - cron: '17 3 */2 * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping
+        env:
+          PAY_API: ${{ vars.PAY_API }}
+        run: |
+          test -n "$PAY_API" || { echo "PAY_API 변수가 없어요"; exit 1; }
+          curl -fsS -m 30 -X POST -H 'Content-Type: application/json' -d '{"code":"MG-2222-2222"}' "$PAY_API/purchases"
