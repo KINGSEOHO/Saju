@@ -54,6 +54,8 @@ export interface PaymentInfo {
   currency: string;
   /** 결제가 안 됐을 때 포트원이 알려 준 사유 (PG 코드·메시지) — 시험·고객센터용 */
   why?: string;
+  /** 포트원 테스트 채널로 한 결제 (실제 돈이 오가지 않거나 자동 취소된다) */
+  test?: boolean;
 }
 
 export interface Gateway {
@@ -61,6 +63,8 @@ export interface Gateway {
   cancel(paymentId: string, amount: number | null, reason: string): Promise<void>;
   /** 수동 승인 — 결제창이 인증만 받고 승인표(paymentToken)를 주면 서버가 승인을 요청해야 돈이 나간다 */
   approve?(paymentId: string, token: string, amount: number): Promise<void>;
+  /** 테스트 채널 결제도 기록할지 — 개발·시험 때만 켠다 (결제 확인 함수의 PAY_ALLOW_TEST=1) */
+  allowTest?: boolean;
 }
 
 export type ApiResult = Record<string, unknown> & { ok: boolean };
@@ -186,6 +190,8 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
     await store.setOrderStatus(paymentId, 'cancelled');
     return { ok: false, reason: why };
   };
+  // 테스트 채널 결제(채널 키는 화면에 공개돼 있다)로 리포트가 열리지 않게 — 기록하지 않고 취소한다
+  if (pay.test && !gw.allowTest) return refundAll('테스트 결제는 받지 않아 자동 취소', 'test');
   if (pay.total !== order.purchase.amount || pay.currency !== 'KRW') return refundAll('결제 금액이 주문과 달라 자동 취소', 'mismatch');
   // 결제창을 연 사이 다른 기기에서 먼저 산 것이 있으면 겹친 결제다 — 기록하지 않고 돌려준다
   const check = checkPurchase(await store.purchases(order.code), order.purchase, order.season);

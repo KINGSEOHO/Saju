@@ -105,13 +105,20 @@ const portone = (path: string, init: RequestInit = {}) =>
   fetch(`${PORTONE}${path}`, { ...init, headers: { Authorization: `PortOne ${env('PORTONE_API_SECRET')}`, 'Content-Type': 'application/json', ...(init.headers ?? {}) } });
 
 const gateway: Gateway = {
+  allowTest: env('PAY_ALLOW_TEST') === '1',
   async getPayment(paymentId) {
     const r = await portone(`/payments/${q(paymentId)}`);
     if (!r.ok) return { status: `HTTP_${r.status}`, total: -1, currency: '', why: (await r.text().catch(() => '')).slice(0, 200) };
-    const p = (await r.json()) as { status?: string; amount?: { total?: number }; currency?: string; failure?: { reason?: string; pgCode?: string; pgMessage?: string } };
+    const p = (await r.json()) as {
+      status?: string;
+      amount?: { total?: number };
+      currency?: string;
+      channel?: { type?: string };
+      failure?: { reason?: string; pgCode?: string; pgMessage?: string };
+    };
     const f = p.failure;
     const why = f ? [f.pgCode, f.pgMessage, f.reason].filter(Boolean).join(' ').slice(0, 200) : '';
-    return { status: p.status ?? '', total: p.amount?.total ?? -1, currency: p.currency ?? '', ...(why ? { why } : {}) };
+    return { status: p.status ?? '', total: p.amount?.total ?? -1, currency: p.currency ?? '', ...(p.channel?.type === 'TEST' ? { test: true } : {}), ...(why ? { why } : {}) };
   },
   async cancel(paymentId, amount, reason) {
     const r = await portone(`/payments/${q(paymentId)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, ...(amount ? { amount } : {}) }) });

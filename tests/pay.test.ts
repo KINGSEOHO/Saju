@@ -166,6 +166,20 @@ describe('결제 확인 — 포트원에 직접 물어본 뒤에만 기록한다
     expect(g.approvals).toEqual([]);
   });
 
+  it('테스트 채널 결제는 기록하지 않고 취소한다 (켜 두면 기록)', async () => {
+    const { store } = memStore();
+    const g = fakeGateway();
+    const code = await newAccount(store);
+    const prep = await prepare(store, { code, purchase: one('career'), season: Y27 }, NOW);
+    g.paid.set(prep.paymentId as string, { status: 'PAID', total: 3900, currency: 'KRW', test: true });
+    expect(await confirm(store, g.gw, prep.paymentId, NOW)).toEqual({ ok: false, reason: 'test' });
+    expect(g.cancels).toEqual([{ id: prep.paymentId, amount: null }]);
+    expect((await listPurchases(store, code)).purchases).toHaveLength(0);
+    const p2 = await prepare(store, { code, purchase: one('love'), season: Y27 }, NOW);
+    g.paid.set(p2.paymentId as string, { status: 'PAID', total: 3900, currency: 'KRW', test: true });
+    expect(await confirm(store, { ...g.gw, allowTest: true }, p2.paymentId, NOW)).toMatchObject({ ok: true });
+  });
+
   it('같은 결제를 화면과 웹훅이 두 번 확인해도 기록은 한 번', async () => {
     const { store } = memStore();
     const g = fakeGateway();

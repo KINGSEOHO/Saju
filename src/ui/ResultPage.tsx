@@ -1,6 +1,6 @@
 /** 결과 화면 — 사주 계산·풀이 엔진과 함께 따로 불러온다 (첫 화면을 가볍게) */
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { PAYWALL_DEMO, PRICES } from '../config/plans.ts';
+import { BETA_FREE, PAYWALL_DEMO, PRICES } from '../config/plans.ts';
 import { analyze, BRANCHES, pillarHanja, STEMS, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
 import { groupOf } from '../engine/tenGods.ts';
 import { clearFreshResult, isFreshResult } from '../lib/freshResult.ts';
@@ -586,8 +586,8 @@ export default function Result({ input }: { input: BirthInput }) {
             고민마다 한 줄 답과 그 이유, 지금 보이는 신호는 무료예요. 좋은 시기·피할 시기와 지금 할 일을 담은 상세 리포트가 유료예요.
           </p>
           <BundleNote a={a} />
-          {/* 지금은 베타라 산 기록이 없어 시안에서만 보인다. 결제를 붙이면 산 것이 있을 때 늘 보이게 바꾼다 */}
-          {PAYWALL_DEMO && (
+          {/* 내 구매 코드 — 산 것이 있을 때만 보인다 (결제를 파는 동안) */}
+          {(PAYWALL_DEMO || !BETA_FREE) && (
             <div className="mt-5">
               <Suspense fallback={null}>
                 <ConcernTop a={a} />

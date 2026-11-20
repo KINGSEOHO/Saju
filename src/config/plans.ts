@@ -8,7 +8,7 @@
 import type { SectionId } from '../report/generate.ts';
 import { STORAGE } from '../lib/storageKeys.ts';
 
-export const BETA_FREE = true;
+export const BETA_FREE = false;
 
 /**
  * 무료 풀이 리포트에서 앞부분(이야기 첫 문단 · 핵심 첫 묶음)만 보여 줄 주제 — 나머지는 그 고민 리포트(연애·결혼 · 이직·진로 · 돈)에서.
@@ -80,7 +80,8 @@ function detectReview(): boolean {
   }
   return on;
 }
-export const REVIEW = detectReview();
+/** 결제를 정식으로 연 뒤(BETA_FREE=false)에는 꺼진다 — 테스트 채널로 리포트를 여는 길이 되지 않게 */
+export const REVIEW = BETA_FREE && detectReview();
 
 /** 미리보기·심사용 접속에서 결제 흐름을 보여 준다 (미리보기: node scripts/preview-artifact.mjs --paywall) */
 export const PAYWALL_DEMO = import.meta.env.VITE_PAYWALL_DEMO === '1' || REVIEW;

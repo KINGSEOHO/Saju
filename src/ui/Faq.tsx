@@ -76,7 +76,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
         <a className="underline" href="#/pricing">
           요금 안내
         </a>
-        에 있어요. 지금은 결제 준비 중이라 유료 리포트도 무료로 열려 있어요.
+        에 있어요. 결제한 리포트는 결제일부터 1년 동안 다시 볼 수 있어요.
       </>
     ),
   },
