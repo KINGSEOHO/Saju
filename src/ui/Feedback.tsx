@@ -1,3 +1,6 @@
+import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
+import { accountApi } from '../lib/account.ts';
+import { GiftBox } from './PurchaseCode.tsx';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { BUSINESS } from '../config/business.ts';
 import type { SajuAnalysis } from '../engine/index.ts';
@@ -216,6 +219,7 @@ function ReviewTab({ a }: { a: SajuAnalysis }) {
   const [adult, setAdult] = useState(false);
   const [state, setState] = useState<SendState>('idle');
   const [err, setErr] = useState<string | null>(null);
+  const [gift, setGift] = useState<string | null>(null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -240,9 +244,20 @@ function ReviewTab({ a }: { a: SajuAnalysis }) {
       return setErr('후기를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
     }
     setState(r);
+    // 결제 이벤트 — 유료 결제를 한 사람이면 무료 코드 하나 (후기 내용·점수와 상관없이)
+    if (PAYWALL_DEMO || !BETA_FREE) {
+      const g = await accountApi.claimGift().catch(() => null);
+      if (g?.ok) setGift(g.gift);
+    }
   }
 
-  if (state === 'sent' || state === 'queued') return <Done title="후기 고마워요" body="남겨 주신 후기는 풀이를 더 정확하게 고치는 데 그대로 쓰여요." state={state} onSent={() => setState('sent')} />;
+  if (state === 'sent' || state === 'queued')
+    return (
+      <>
+        <Done title="후기 고마워요" body="남겨 주신 후기는 풀이를 더 정확하게 고치는 데 그대로 쓰여요." state={state} onSent={() => setState('sent')} />
+        {gift && <GiftBox code={gift} />}
+      </>
+    );
 
   return (
     <form onSubmit={submit} className="space-y-7">

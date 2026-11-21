@@ -119,6 +119,15 @@ export const payApi: AccountApi = {
     const r = await call('purchases', { code: await myCode() }).catch(() => ({ ok: false }) as Json);
     return r.ok && Array.isArray(r.gifts) ? (r.gifts as Gift[]) : [];
   },
+  async claimGift() {
+    try {
+      const r = await call('gift', { code: await myCode() });
+      if (r.ok && typeof r.gift === 'string') return { ok: true as const, gift: r.gift };
+      return { ok: false as const, reason: r.reason === 'nopay' || r.reason === 'done' || r.reason === 'soldout' ? r.reason : ('fail' as const) };
+    } catch {
+      return { ok: false as const, reason: 'fail' as const };
+    }
+  },
   async eventLeft() {
     const r = await call('event').catch(() => ({ ok: false }) as Json);
     return r.ok ? Number(r.left) || 0 : 0;

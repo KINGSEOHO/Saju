@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { PRICES } from '../src/config/plans.ts';
 import type { Purchase, SeasonKey } from '../src/lib/entitlements.ts';
 import {
+  claimGift,
   cleanPurchase,
   confirm,
   couponHash,
@@ -76,7 +77,7 @@ function memStore() {
       g.to = code;
       return g.code;
     },
-    giftsOf: async (code) => gifts.filter((g) => g.to === code).map((g) => ({ code: g.code, used: false })),
+    giftsOf: async (code) => gifts.filter((g) => g.to === code).map((g) => ({ code: g.code, used: false, paymentId: g.pid as string })),
     giftsLeft: async () => gifts.filter((g) => !g.pid).length,
   };
   return { store, rows, orders, coupons, gifts };
@@ -330,34 +331,37 @@ describe('무료 코드 — 한 번 쓰면 끝, 3,900원짜리 고민 리포트 
   });
 });
 
-describe('결제 이벤트 — 돈을 내고 결제하면 무료 코드 하나 (준비한 코드가 떨어지면 끝)', () => {
-  it('결제하면 코드 하나를 주고, 같은 결제를 다시 확인해도 같은 코드', async () => {
+describe('결제 이벤트 — 결제하고 후기를 남기면 무료 코드 하나 (결제 한 건에 하나, 준비한 코드가 떨어지면 끝)', () => {
+  it('결제만으로는 주지 않고, 후기 뒤에 받으면 결제 한 건에 하나', async () => {
     const m = memStore();
     m.gifts.push({ code: 'FREE-AAAA-BBBB' }, { code: 'FREE-CCCC-DDDD' });
     const g = fakeGateway();
     const code = await newAccount(m.store);
     const r = await buy(m.store, g, code, one('career'));
-    expect(r).toMatchObject({ ok: true, gift: 'FREE-AAAA-BBBB' });
-    expect(await confirm(m.store, g.gw, r.paymentId, NOW)).toMatchObject({ ok: true, gift: 'FREE-AAAA-BBBB' });
-    expect((await listPurchases(m.store, code)).gifts).toEqual([{ code: 'FREE-AAAA-BBBB', used: false }]);
-    expect(await m.store.giftsLeft()).toBe(1);
-  });
-
-  it('남은 코드가 없으면 결제는 그대로 되고 선물만 없다', async () => {
-    const m = memStore();
-    const g = fakeGateway();
-    const code = await newAccount(m.store);
-    const r = await buy(m.store, g, code, one('love'));
-    expect(r.ok).toBe(true);
     expect(r).not.toHaveProperty('gift');
+    expect(await claimGift(m.store, { code })).toEqual({ ok: true, gift: 'FREE-AAAA-BBBB' });
+    expect(await claimGift(m.store, { code })).toEqual({ ok: false, reason: 'done' });
+    expect((await listPurchases(m.store, code)).gifts).toEqual([{ code: 'FREE-AAAA-BBBB', used: false }]);
+    // 한 번 더 결제하면 하나 더
+    await buy(m.store, g, code, one('love'));
+    expect(await claimGift(m.store, { code })).toEqual({ ok: true, gift: 'FREE-CCCC-DDDD' });
   });
 
-  it('무료 코드로 연 것에는 선물이 없다', async () => {
+  it('유료 결제가 없으면(무료 코드로만 열었어도) 주지 않는다', async () => {
     const m = memStore();
     m.gifts.push({ code: 'FREE-AAAA-BBBB' });
     const code = await newAccount(m.store);
+    expect(await claimGift(m.store, { code })).toEqual({ ok: false, reason: 'nopay' });
     m.coupons.set(await couponHash('FREE-AB2C-3DEF'), { expires: Date.UTC(2027, 0, 1), used: false });
-    expect(await useCoupon(m.store, { code, coupon: 'FREE-AB2C-3DEF', item: 'career', target: S }, NOW)).toEqual({ ok: true, code });
-    expect(await m.store.giftsLeft()).toBe(1);
+    await useCoupon(m.store, { code, coupon: 'FREE-AB2C-3DEF', item: 'career', target: S }, NOW);
+    expect(await claimGift(m.store, { code })).toEqual({ ok: false, reason: 'nopay' });
+  });
+
+  it('준비한 코드가 떨어지면 끝', async () => {
+    const m = memStore();
+    const g = fakeGateway();
+    const code = await newAccount(m.store);
+    await buy(m.store, g, code, one('money'));
+    expect(await claimGift(m.store, { code })).toEqual({ ok: false, reason: 'soldout' });
   });
 });

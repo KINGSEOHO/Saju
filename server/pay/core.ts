@@ -53,8 +53,8 @@ export interface Store {
   releaseCoupon(hash: string): Promise<void>;
   /** 결제 이벤트 — 이 결제에 무료 코드 하나를 준다 (같은 결제면 같은 코드, 남은 코드가 없으면 null) */
   takeGift(paymentId: string, code: string): Promise<string | null>;
-  /** 이 계정이 이벤트로 받은 코드들 */
-  giftsOf(code: string): Promise<{ code: string; used: boolean }[]>;
+  /** 이 계정이 이벤트로 받은 코드들 (어느 결제로 받았는지 함께) */
+  giftsOf(code: string): Promise<{ code: string; used: boolean; paymentId: string }[]>;
   /** 이벤트로 나눠 줄 수 있는 코드 수 (0이면 이벤트 끝) */
   giftsLeft(): Promise<number>;
 }
@@ -128,7 +128,7 @@ export async function listPurchases(store: Store, rawCode: unknown): Promise<Api
   if (!code || !(await store.hasAccount(code))) return { ok: false, reason: 'unknown' };
   const cur = await resolve(store, code);
   const list = await store.purchases(cur);
-  const gifts = await store.giftsOf(cur).catch(() => []);
+  const gifts = (await store.giftsOf(cur).catch(() => [])).map((g) => ({ code: g.code, used: g.used }));
   // 결제 번호는 손님 화면에 필요 없다
   return {
     ok: true,
@@ -175,7 +175,7 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   if (!paymentId) return { ok: false, reason: 'bad' };
   const order = await store.getOrder(paymentId);
   if (!order) return { ok: false, reason: 'unknown' };
-  if (order.status === 'paid') return { ok: true, code: order.code, ...(await gift(store, paymentId, order.code)) };
+  if (order.status === 'paid') return { ok: true, code: order.code };
   if (order.status === 'cancelled') return { ok: false, reason: 'cancelled' };
   let pay = await gw.getPayment(paymentId);
   // 인증만 끝난 결제(READY) + 승인표가 왔으면 승인을 요청한다. 금액은 화면 말고 주문에 적힌 값으로,
@@ -196,7 +196,7 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   // 같은 결제를 화면과 웹훅이 동시에 확인해도 한 번만 남긴다
   if (!(await store.claimOrder(paymentId))) {
     const again = await store.getOrder(paymentId);
-    return again?.status === 'paid' ? { ok: true, code: order.code, ...(await gift(store, paymentId, order.code)) } : { ok: false, reason: 'busy' };
+    return again?.status === 'paid' ? { ok: true, code: order.code } : { ok: false, reason: 'busy' };
   }
   const refundAll = async (reason: string, why: string) => {
     await gw.cancel(paymentId, null, reason);
@@ -211,17 +211,24 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   if (check !== 'ok') return refundAll('이미 열린 리포트라 자동 취소', check);
   await store.addPurchase(order.code, { ...order.purchase, at: now, paymentId });
   await store.setOrderStatus(paymentId, 'paid');
-  return { ok: true, code: order.code, ...(await gift(store, paymentId, order.code)) };
+  return { ok: true, code: order.code };
 }
 
-/** 결제 이벤트 선물 — 실패해도 결제는 그대로 성공으로 둔다 */
-async function gift(store: Store, paymentId: string, code: string): Promise<{ gift?: string }> {
-  try {
-    const g = await store.takeGift(paymentId, code);
-    return g ? { gift: g } : {};
-  } catch {
-    return {};
-  }
+/**
+ * 결제 이벤트 — 돈을 내고 결제한 뒤 후기를 남기면 무료 코드 하나. 결제 한 건에 하나 (후기 내용·점수와 상관없이).
+ * reason: nopay(유료 결제가 없음) · done(결제마다 이미 받음) · soldout(준비한 코드가 다 나감)
+ */
+export async function claimGift(store: Store, body: { code?: unknown }): Promise<ApiResult> {
+  const own = typeof body.code === 'string' ? normalizeCode(body.code) : null;
+  if (!own || !(await store.hasAccount(own))) return { ok: false, reason: 'unknown' };
+  const code = await resolve(store, own);
+  const paid = (await store.purchases(code)).filter((p) => p.kind !== 'free' && p.amount > 0 && p.paymentId && (p.refunded ?? 0) < p.amount).sort((a, b) => b.at - a.at);
+  if (!paid.length) return { ok: false, reason: 'nopay' };
+  const gifted = new Set((await store.giftsOf(code)).map((g) => g.paymentId));
+  const next = paid.find((p) => !gifted.has(p.paymentId as string));
+  if (!next) return { ok: false, reason: 'done' };
+  const gift = await store.takeGift(next.paymentId as string, code);
+  return gift ? { ok: true, gift } : { ok: false, reason: 'soldout' };
 }
 
 export async function eventInfo(store: Store): Promise<ApiResult> {

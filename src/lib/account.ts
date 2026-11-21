@@ -82,6 +82,8 @@ export interface AccountApi {
   gifts(): Promise<Gift[]>;
   /** 결제 이벤트로 남은 코드 수 (0이면 이벤트 끝) */
   eventLeft(): Promise<number>;
+  /** 결제 이벤트 — 유료 결제 뒤 후기를 남기면 무료 코드 하나 (결제 한 건에 하나) */
+  claimGift(): Promise<{ ok: true; gift: string } | { ok: false; reason: 'nopay' | 'done' | 'soldout' | 'fail' }>;
 }
 
 export interface Gift {
@@ -161,6 +163,11 @@ export const demoApi: AccountApi & { record(p: Purchase): Promise<void> } = {
   },
   gifts: async () => [],
   eventLeft: async () => 45,
+  /** 시안: 이 기기에서 돈을 낸 기록이 있으면 시험용 코드를 준다 */
+  async claimGift() {
+    const paid = (read<Record<string, Purchase[]>>(STORE, {})[mine()] ?? []).some((p) => p.amount > 0);
+    return paid ? { ok: true, gift: 'FREE-TEST-TEST' } : { ok: false, reason: 'nopay' };
+  },
   async pay(p, season) {
     const code = mine();
     // 화면이 아니라 저장된 최신 기록으로 다시 본다 (다른 탭에서 먼저 산 것까지)
@@ -168,7 +175,7 @@ export const demoApi: AccountApi & { record(p: Purchase): Promise<void> } = {
     const check = checkPurchase(all[code] ?? [], p, season);
     if (check !== 'ok') return { ok: false, reason: check };
     write(STORE, { ...all, [code]: [...(all[code] ?? []), p] });
-    return { ok: true, code, gift: 'FREE-TEST-TEST' };
+    return { ok: true, code };
   },
   async redeem(input) {
     const norm = normalizeCode(input);

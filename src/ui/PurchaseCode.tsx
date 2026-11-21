@@ -81,6 +81,18 @@ export function PurchaseCodeDialog() {
   }, []);
 
   const code = shown?.code ?? null;
+  const [left, setLeft] = useState(0);
+  useEffect(() => {
+    if (!code) return;
+    let live = true;
+    void accountApi
+      .eventLeft()
+      .then((n) => live && setLeft(n))
+      .catch(() => null);
+    return () => {
+      live = false;
+    };
+  }, [code]);
   useEffect(() => {
     if (!code) return;
     const { overflow } = document.body.style;
@@ -125,6 +137,22 @@ export function PurchaseCodeDialog() {
           </button>
         </div>
         {shown?.gift && <GiftBox code={shown.gift} />}
+        {!shown?.gift && shown?.title === '결제됐어요' && left > 0 && (
+          <div className="mt-4 rounded-xl border border-accent/40 px-4 py-3 text-left">
+            <p className="text-label font-semibold text-ink">이벤트 · 후기를 남기면 무료 코드를 드려요</p>
+            <p className="mt-1 text-cap text-sub">맨 아래 '후기 남기기'를 보내면 고민 리포트(3,900원) 무료 코드 1개가 바로 나와요.</p>
+            <button
+              type="button"
+              className="link mt-2 text-label"
+              onClick={() => {
+                setShown(null);
+                window.setTimeout(() => document.getElementById('review')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+              }}
+            >
+              후기 쓰러 가기
+            </button>
+          </div>
+        )}
         <p className="mt-4 text-left text-cap leading-relaxed text-sub">
           다른 휴대폰이나 브라우저에서 열 때, 또는 기록이 지워졌을 때 이 코드를 넣으면 다시 결제하지 않고 열 수 있어요. 캡처하거나 메모에 붙여 두세요.
         </p>
@@ -176,10 +204,10 @@ export function EventPopup({ left }: { left: number }) {
       <div className="sheet-backdrop absolute inset-0" onClick={close} aria-hidden />
       <div className="sheet-panel relative w-full max-w-[340px] rounded-2xl border border-line bg-bg p-6 text-center">
         <h2 id="event-title" className="text-title3 font-bold text-ink">
-          결제하면 리포트 하나 더
+          결제하고 후기 남기면 리포트 하나 더
         </h2>
         <p className="mt-2 text-label text-ink-2">
-          12월 31일까지 결제하신 분께 고민 리포트(3,900원) <b className="text-ink">무료 코드 1개</b>를 드려요. 직접 써도 되고 친구에게 선물해도 돼요.
+          12월 31일까지 결제하고 맨 아래 후기를 남기면 고민 리포트(3,900원) <b className="text-ink">무료 코드 1개</b>를 드려요. 후기 내용·점수와 상관없이 드리고, 직접 써도 되고 친구에게 선물해도 돼요.
         </p>
         <p className="mt-3 text-cap text-sub">
           남은 코드 <b className="text-ink tabular-nums">{left}</b>개 · 다 떨어지면 이벤트가 끝나요.
