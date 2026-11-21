@@ -7,7 +7,7 @@
  * 서버로 보내는 것: 구매 코드 · 산 항목 · 사주 구분값(양력 생일로 만든 짧은 암호값) · 금액 · 시즌. 이름·생년월일은 보내지 않는다.
  */
 import { PAY_API, PAY_LIVE, PAY_PC_REDIRECT, PORTONE_CHANNEL_KEY, PORTONE_STORE_ID } from '../config/backend.ts';
-import type { AccountApi, Buyer, CouponResult, PayResult, RedeemResult } from './account.ts';
+import type { AccountApi, Buyer, CouponResult, Gift, PayResult, RedeemResult } from './account.ts';
 import type { Purchase } from './entitlements.ts';
 import { PAYWALL_DEMO } from '../config/plans.ts';
 import { STORAGE } from './storageKeys.ts';
@@ -91,7 +91,7 @@ async function confirmPayment(paymentId: string, sdkSaid = '', paymentToken?: st
   let r: Json = {};
   for (let i = 0; i < 5; i++) {
     r = await call('confirm', { paymentId, ...(paymentToken ? { paymentToken } : {}) });
-    if (r.ok && typeof r.code === 'string') return { ok: true, code: r.code };
+    if (r.ok && typeof r.code === 'string') return { ok: true, code: r.code, ...(typeof r.gift === 'string' ? { gift: r.gift } : {}) };
     if (!(r.reason === 'not_paid' && (r.status === 'READY' || r.status === 'PAY_PENDING'))) break;
     await wait(2000);
   }
@@ -114,6 +114,14 @@ export const payApi: AccountApi = {
     // 다른 기기에서 코드를 합쳤으면 합쳐진 코드로 바꿔 둔다
     if (typeof r.code === 'string' && r.code !== readCode()) writeCode(r.code);
     return (r.purchases as Purchase[]) ?? [];
+  },
+  async gifts(): Promise<Gift[]> {
+    const r = await call('purchases', { code: await myCode() }).catch(() => ({ ok: false }) as Json);
+    return r.ok && Array.isArray(r.gifts) ? (r.gifts as Gift[]) : [];
+  },
+  async eventLeft() {
+    const r = await call('event').catch(() => ({ ok: false }) as Json);
+    return r.ok ? Number(r.left) || 0 : 0;
   },
   async pay(p, season, buyer) {
     let step = '구매 코드';
@@ -226,7 +234,7 @@ export function resumePayment(): void {
   void confirmPayment(paymentId, `돌아옴 tx ${q.get('txId') ? 'O' : 'X'}`, q.get('paymentToken') ?? undefined)
     .then((r) => {
       if (!r.ok) window.alert(`결제를 마치지 못했어요.\n(${r.detail ?? ''})`);
-      else if (r.code) void import('../ui/PurchaseCode.tsx').then((m) => m.showPurchaseCode(r.code as string));
+      else if (r.code) void import('../ui/PurchaseCode.tsx').then((m) => m.showPurchaseCode(r.code as string, undefined, r.gift));
     })
     .catch(() => null)
     .then(() => {

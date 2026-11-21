@@ -51,6 +51,12 @@ export interface Store {
   takeCoupon(hash: string, now: number, use: { code: string; item: string }): Promise<boolean>;
   /** 쓴 뒤 기록에 실패했을 때 되돌린다 */
   releaseCoupon(hash: string): Promise<void>;
+  /** 결제 이벤트 — 이 결제에 무료 코드 하나를 준다 (같은 결제면 같은 코드, 남은 코드가 없으면 null) */
+  takeGift(paymentId: string, code: string): Promise<string | null>;
+  /** 이 계정이 이벤트로 받은 코드들 */
+  giftsOf(code: string): Promise<{ code: string; used: boolean }[]>;
+  /** 이벤트로 나눠 줄 수 있는 코드 수 (0이면 이벤트 끝) */
+  giftsLeft(): Promise<number>;
 }
 
 export interface PaymentInfo {
@@ -122,10 +128,12 @@ export async function listPurchases(store: Store, rawCode: unknown): Promise<Api
   if (!code || !(await store.hasAccount(code))) return { ok: false, reason: 'unknown' };
   const cur = await resolve(store, code);
   const list = await store.purchases(cur);
+  const gifts = await store.giftsOf(cur).catch(() => []);
   // 결제 번호는 손님 화면에 필요 없다
   return {
     ok: true,
     code: cur,
+    ...(gifts.length ? { gifts } : {}),
     purchases: list.map((p) => {
       const out: Purchase = { ...p };
       delete (out as StoredPurchase).paymentId;
@@ -167,7 +175,7 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   if (!paymentId) return { ok: false, reason: 'bad' };
   const order = await store.getOrder(paymentId);
   if (!order) return { ok: false, reason: 'unknown' };
-  if (order.status === 'paid') return { ok: true, code: order.code };
+  if (order.status === 'paid') return { ok: true, code: order.code, ...(await gift(store, paymentId, order.code)) };
   if (order.status === 'cancelled') return { ok: false, reason: 'cancelled' };
   let pay = await gw.getPayment(paymentId);
   // 인증만 끝난 결제(READY) + 승인표가 왔으면 승인을 요청한다. 금액은 화면 말고 주문에 적힌 값으로,
@@ -188,7 +196,7 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   // 같은 결제를 화면과 웹훅이 동시에 확인해도 한 번만 남긴다
   if (!(await store.claimOrder(paymentId))) {
     const again = await store.getOrder(paymentId);
-    return again?.status === 'paid' ? { ok: true, code: order.code } : { ok: false, reason: 'busy' };
+    return again?.status === 'paid' ? { ok: true, code: order.code, ...(await gift(store, paymentId, order.code)) } : { ok: false, reason: 'busy' };
   }
   const refundAll = async (reason: string, why: string) => {
     await gw.cancel(paymentId, null, reason);
@@ -203,7 +211,21 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   if (check !== 'ok') return refundAll('이미 열린 리포트라 자동 취소', check);
   await store.addPurchase(order.code, { ...order.purchase, at: now, paymentId });
   await store.setOrderStatus(paymentId, 'paid');
-  return { ok: true, code: order.code };
+  return { ok: true, code: order.code, ...(await gift(store, paymentId, order.code)) };
+}
+
+/** 결제 이벤트 선물 — 실패해도 결제는 그대로 성공으로 둔다 */
+async function gift(store: Store, paymentId: string, code: string): Promise<{ gift?: string }> {
+  try {
+    const g = await store.takeGift(paymentId, code);
+    return g ? { gift: g } : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function eventInfo(store: Store): Promise<ApiResult> {
+  return { ok: true, left: await store.giftsLeft() };
 }
 
 /** 무료 코드로 열 수 있는 것 — 3,900원짜리 고민 리포트 */

@@ -57,7 +57,7 @@ export const PAY_METHODS = [
 export type PayMethod = (typeof PAY_METHODS)[number]['id'];
 
 /** 결제 결과 — 성공이면 구매 코드, 아니면 결제하지 않은 까닭 (cancel: 손님이 결제창을 닫음 · fail: 결제나 확인이 안 됨) */
-export type PayResult = { ok: true; code: string } | { ok: false; reason: 'owned' | 'price' | 'cancel' | 'fail'; /** 어느 단계에서 왜 막혔는지 (고객센터·시험 때 알려 주는 용도 — 개인정보는 들어 있지 않다) */ detail?: string };
+export type PayResult = { ok: true; code: string; /** 결제 이벤트로 받은 무료 코드 (이벤트가 끝났으면 없음) */ gift?: string } | { ok: false; reason: 'owned' | 'price' | 'cancel' | 'fail'; /** 어느 단계에서 왜 막혔는지 (고객센터·시험 때 알려 주는 용도 — 개인정보는 들어 있지 않다) */ detail?: string };
 
 export interface AccountApi {
   current(): Promise<Account>;
@@ -78,6 +78,15 @@ export interface AccountApi {
    * reason: 'coupon'(없거나 이미 썼거나 기간이 지남) · 'owned'(이미 열려 있어 코드를 쓰지 않음) · 'fail'
    */
   coupon(input: string, item: ConcernId, target: string): Promise<CouponResult>;
+  /** 결제 이벤트로 받은 무료 코드들 */
+  gifts(): Promise<Gift[]>;
+  /** 결제 이벤트로 남은 코드 수 (0이면 이벤트 끝) */
+  eventLeft(): Promise<number>;
+}
+
+export interface Gift {
+  code: string;
+  used: boolean;
 }
 
 export type CouponResult = { ok: true; code: string } | { ok: false; reason: 'coupon' | 'owned' | 'fail' };
@@ -150,6 +159,8 @@ export const demoApi: AccountApi & { record(p: Purchase): Promise<void> } = {
     write(COUPON_USED, [...used, c]);
     return { ok: true, code };
   },
+  gifts: async () => [],
+  eventLeft: async () => 45,
   async pay(p, season) {
     const code = mine();
     // 화면이 아니라 저장된 최신 기록으로 다시 본다 (다른 탭에서 먼저 산 것까지)
@@ -157,7 +168,7 @@ export const demoApi: AccountApi & { record(p: Purchase): Promise<void> } = {
     const check = checkPurchase(all[code] ?? [], p, season);
     if (check !== 'ok') return { ok: false, reason: check };
     write(STORE, { ...all, [code]: [...(all[code] ?? []), p] });
-    return { ok: true, code };
+    return { ok: true, code, gift: 'FREE-TEST-TEST' };
   },
   async redeem(input) {
     const norm = normalizeCode(input);

@@ -5,7 +5,7 @@
 import { useState, type ReactNode } from 'react';
 import { BUSINESS, POLICY_DATE, POLICY_VERSIONS } from '../config/business.ts';
 import { BETA_FREE, PRICES } from '../config/plans.ts';
-import { clearAllLocal, deviceIdForRequest } from '../lib/storageKeys.ts';
+import { clearAllLocal, deviceIdForRequest, STORAGE } from '../lib/storageKeys.ts';
 
 export type LegalDoc = 'terms' | 'privacy' | 'refund' | 'pricing';
 
@@ -360,6 +360,10 @@ function Pricing() {
         <Table head={['상품', '내용', '가격']} rows={PRODUCTS.map((p) => [p.name, p.what, <span className="tabular-nums whitespace-nowrap">{won(p.price)}</span>])} />
         <p>가격은 부가가치세를 포함한 값이에요. 정해진 값으로만 결제되며, 사람마다 다른 값을 받지 않아요.</p>
         <p>생년월일만 넣으면 무료로 보는 풀이(사주 원판, 성격, 이번 달 운, 고민마다 한 줄 답과 이유)는 결제와 상관없이 늘 무료예요.</p>
+        <p>
+          <b className="text-ink">결제 이벤트 (2026년 12월 31일까지)</b> 결제(유료)할 때마다 고민 리포트(3,900원) 하나를 열 수 있는 무료 코드를 1개 드려요. 코드는 한 번만 쓸 수 있고, 친구에게 선물해도
+          돼요. 준비한 코드가 다 나가면 이벤트는 일찍 끝나요.
+        </p>
       </Sec>
       <Sec n={2} h="받는 방법과 이용 기간">
         <ul className="list-disc space-y-1.5 pl-5">
@@ -416,6 +420,56 @@ export function Legal({ doc }: { doc: LegalDoc }) {
 }
 
 /** 사이트 아래 — 사업자 정보와 약관 링크 (전자상거래법상 표시 사항) */
+/** 결제했는데 열리지 않는 등 문제가 생겼을 때 — 메일 앱으로 문의 (구매 코드는 이 기기에 있으면 미리 넣는다) */
+function HelpLink({ email }: { email: string }) {
+  const [copied, setCopied] = useState(false);
+  let code = '';
+  try {
+    code = (JSON.parse(localStorage.getItem(STORAGE.account) ?? 'null') as { code?: string } | null)?.code ?? '';
+  } catch {
+    /* 없으면 비워 둔다 */
+  }
+  const subject = '[명경사주] 문의';
+  const body = [
+    '어떤 문제가 있었나요?',
+    '',
+    '',
+    `구매 코드: ${code || '(있으면 적어 주세요)'}`,
+    '결제한 날짜와 시각: ',
+    '결제 금액·결제수단: ',
+    '',
+    '화면을 캡처해 붙여 주시면 더 빨리 확인할 수 있어요.',
+  ].join('\n');
+  const href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return (
+    <div className="panel flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3" data-help>
+      <div className="min-w-0">
+        <p className="text-label font-semibold text-ink">문제가 생겼나요?</p>
+        <p className="text-cap text-sub">결제했는데 열리지 않거나 오류가 났다면 알려 주세요.</p>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <a href={href} className="btn-small">
+          메일로 문의
+        </a>
+        <button
+          type="button"
+          className="btn-small"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(email);
+              setCopied(true);
+            } catch {
+              /* 주소를 길게 눌러 복사 */
+            }
+          }}
+        >
+          {copied ? '복사했어요' : '주소 복사'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function BusinessFooter() {
   const b = BUSINESS;
   const rows: [string, string][] = [
@@ -444,6 +498,7 @@ export function BusinessFooter() {
           요금 안내
         </a>
       </nav>
+      {b.email && <HelpLink email={b.email} />}
       <p className="text-label text-ink-2">
         <b className="text-ink">고객센터</b> {[b.phone, b.email].filter(Boolean).join(' · ') || pending} · {b.hours}
       </p>

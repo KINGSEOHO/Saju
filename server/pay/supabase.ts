@@ -13,7 +13,7 @@
  * 비밀값은 Supabase의 함수 비밀값(Secrets)에만: PORTONE_API_SECRET. SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY는 Supabase가 넣어 준다.
  * 표는 RLS를 켜고 정책을 두지 않아, 사이트의 공개 키로는 읽거나 쓸 수 없다 (이 함수만 쓴다).
  */
-import { confirm, createAccount, listPurchases, prepare, redeem, useCoupon, type Gateway, type Order, type Store, type StoredPurchase } from './core.ts';
+import { confirm, createAccount, eventInfo, listPurchases, prepare, redeem, useCoupon, type Gateway, type Order, type Store, type StoredPurchase } from './core.ts';
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (req: Request) => Response | Promise<Response>): void };
 
@@ -107,6 +107,21 @@ const store: Store = {
     );
     return r.ok && ((await r.json()) as unknown[]).length === 1;
   },
+  async takeGift(paymentId, code) {
+    const r = await db('rpc/pay_take_gift', { method: 'POST', body: JSON.stringify({ p_payment: paymentId, p_code: code }) }, '');
+    if (!r.ok) throw new Error(`db ${r.status}`);
+    const v = (await r.json()) as string | null;
+    return typeof v === 'string' && v ? v : null;
+  },
+  async giftsOf(code) {
+    const list = await rows<{ code_plain: string; used_at: string | null }>(`pay_coupons?gift_to=eq.${q(code)}&select=code_plain,used_at&order=gift_issued_at`);
+    return list.map((r) => ({ code: r.code_plain, used: !!r.used_at }));
+  },
+  async giftsLeft() {
+    const r = await db('rpc/pay_gifts_left', { method: 'POST', body: '{}' }, '');
+    if (!r.ok) throw new Error(`db ${r.status}`);
+    return Number(await r.json()) || 0;
+  },
   async releaseCoupon(hash) {
     await db(`pay_coupons?code_hash=eq.${q(hash)}`, { method: 'PATCH', body: JSON.stringify({ used_at: null, used_by: null, used_item: null }) });
   },
@@ -164,6 +179,7 @@ Deno.serve(async (req) => {
     else if (route === 'confirm') out = await confirm(store, gateway, body.paymentId, now, body.paymentToken);
     else if (route === 'redeem') out = await redeem(store, gateway, body);
     else if (route === 'coupon') out = await useCoupon(store, body, now);
+    else if (route === 'event') out = await eventInfo(store);
     else if (route === 'webhook') {
       const data = body.data as { paymentId?: unknown } | undefined;
       out = data?.paymentId ? await confirm(store, gateway, data.paymentId, now) : { ok: true };

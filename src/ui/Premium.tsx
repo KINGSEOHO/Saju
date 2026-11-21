@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PAY_LIVE } from '../config/backend.ts';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
-import { showPurchaseCode } from './PurchaseCode.tsx';
+import { GiftBox, showPurchaseCode } from './PurchaseCode.tsx';
 import { PAY_METHODS, useAccount, type Buyer, type CouponResult, type PayMethod, type PayResult, type RedeemResult } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
@@ -362,6 +362,8 @@ interface PayNote {
   title: string;
   text?: string;
   code?: string;
+  /** 결제 이벤트 선물 코드 */
+  gift?: string;
 }
 function PayNotice({ n }: { n: PayNote }) {
   const [copied, setCopied] = useState(false);
@@ -391,6 +393,7 @@ function PayNotice({ n }: { n: PayNote }) {
           <p className="mt-2 text-cap text-sub">내 구매 코드예요. 다른 휴대폰이나 카카오톡 안에서 열 때 이 코드를 넣으면 다시 결제하지 않아도 돼요. 캡처해 두세요.</p>
         </>
       )}
+      {n.gift && <GiftBox code={n.gift} />}
     </div>
   );
 }
@@ -469,8 +472,8 @@ export function Premium({
     if (!r) return setDone({ title: '결제를 마치지 못했어요.', text: '잠시 뒤 다시 해 주세요.' });
     if (r.ok) {
       track('paid', { item: id, offer: offerName(o), amount: o.cost }, false);
-      showPurchaseCode(r.code);
-      return setDone({ title: '결제됐어요.', code: r.code });
+      showPurchaseCode(r.code, undefined, r.gift);
+      return setDone({ title: '결제됐어요.', code: r.code, gift: r.gift });
     }
     setDone(
       r.reason === 'owned'

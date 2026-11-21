@@ -6,7 +6,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SajuAnalysis } from '../engine/index.ts';
 import { PAYWALL_DEMO, PRICES } from '../config/plans.ts';
-import { resetDemo } from '../lib/account.ts';
+import { accountApi, resetDemo, type Gift } from '../lib/account.ts';
+import { GiftBox } from './PurchaseCode.tsx';
 import { clearFunnel, funnelLog, ITEM_LABEL, STEP_LABEL } from '../lib/funnel.ts';
 import { formatYm } from '../lib/partnerDraft.ts';
 import { concernOffers, isOpen, purchaseLabel, sajuKey } from '../lib/entitlements.ts';
@@ -416,6 +417,19 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
 /** 내 구매 코드 — 산 게 있으면 늘 보여 준다. 다른 휴대폰에서 이 코드를 넣으면 그대로 열린다 */
 function CodeBox({ u }: { u: Unlock }) {
   const [copied, setCopied] = useState(false);
+  const [gifts, setGifts] = useState<Gift[]>([]);
+  const n = u.purchases.length;
+  useEffect(() => {
+    if (!n) return;
+    let live = true;
+    void accountApi
+      .gifts()
+      .then((g) => live && setGifts(g))
+      .catch(() => null);
+    return () => {
+      live = false;
+    };
+  }, [n]);
   if (!u.account || !u.purchases.length) return null;
   const copy = async () => {
     try {
@@ -436,6 +450,9 @@ function CodeBox({ u }: { u: Unlock }) {
         </button>
       </div>
       <p className="mt-2 text-cap text-sub">코드는 한 사람에 하나예요. 더 사도 같은 코드에 쌓여요. 다른 휴대폰이나 카카오톡 안에서 열 때 이 코드를 넣으면 산 리포트가 그대로 열려요. 캡처해 두세요.</p>
+      {gifts.map((g) => (
+        <GiftBox key={g.code} code={g.code} used={g.used} />
+      ))}
     </div>
   );
 }

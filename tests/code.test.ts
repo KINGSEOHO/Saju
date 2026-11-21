@@ -114,7 +114,7 @@ describe('중복 결제 막기', () => {
 
   it('결제하면 구매 코드를 돌려주고, 같은 리포트를 다시 결제하려 하면 결제하지 않는다', async () => {
     const { r } = await payOffer('career', 'one');
-    expect(r).toEqual({ ok: true, code: (await demoApi.current()).code });
+    expect(r).toEqual({ ok: true, gift: 'FREE-TEST-TEST', code: (await demoApi.current()).code });
     // 옛 화면(아직 잠겨 보이던 탭)에 남은 버튼으로 또 눌러도 서버가 막는다
     const again = await demoApi.pay(purchaseOf({ kind: 'one', cost: 3900, label: '' }, S, 'career', undefined, 2027), Y27);
     expect(again).toEqual({ ok: false, reason: 'owned' });

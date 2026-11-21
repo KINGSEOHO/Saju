@@ -29,6 +29,7 @@ function memStore() {
   const rows = new Map<string, StoredPurchase[]>();
   const orders = new Map<string, Order>();
   const coupons = new Map<string, { expires: number; used: boolean }>();
+  const gifts: { code: string; pid?: string; to?: string }[] = [];
   const store: Store = {
     async createAccount(code) {
       if (accounts.has(code)) return false;
@@ -66,8 +67,19 @@ function memStore() {
       return true;
     },
     releaseCoupon: async (hash) => void (coupons.get(hash)!.used = false),
+    async takeGift(pid, code) {
+      const had = gifts.find((g) => g.pid === pid);
+      if (had) return had.code;
+      const g = gifts.find((x) => !x.pid);
+      if (!g) return null;
+      g.pid = pid;
+      g.to = code;
+      return g.code;
+    },
+    giftsOf: async (code) => gifts.filter((g) => g.to === code).map((g) => ({ code: g.code, used: false })),
+    giftsLeft: async () => gifts.filter((g) => !g.pid).length,
   };
-  return { store, rows, orders, coupons };
+  return { store, rows, orders, coupons, gifts };
 }
 
 function fakeGateway() {
@@ -315,5 +327,37 @@ describe('무료 코드 — 한 번 쓰면 끝, 3,900원짜리 고민 리포트 
     const { store, code } = await setup();
     await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'money', target: S }, NOW);
     expect((await prepare(store, { code, purchase: one('money'), season: Y27 }, NOW)).reason).toBe('owned');
+  });
+});
+
+describe('결제 이벤트 — 돈을 내고 결제하면 무료 코드 하나 (준비한 코드가 떨어지면 끝)', () => {
+  it('결제하면 코드 하나를 주고, 같은 결제를 다시 확인해도 같은 코드', async () => {
+    const m = memStore();
+    m.gifts.push({ code: 'FREE-AAAA-BBBB' }, { code: 'FREE-CCCC-DDDD' });
+    const g = fakeGateway();
+    const code = await newAccount(m.store);
+    const r = await buy(m.store, g, code, one('career'));
+    expect(r).toMatchObject({ ok: true, gift: 'FREE-AAAA-BBBB' });
+    expect(await confirm(m.store, g.gw, r.paymentId, NOW)).toMatchObject({ ok: true, gift: 'FREE-AAAA-BBBB' });
+    expect((await listPurchases(m.store, code)).gifts).toEqual([{ code: 'FREE-AAAA-BBBB', used: false }]);
+    expect(await m.store.giftsLeft()).toBe(1);
+  });
+
+  it('남은 코드가 없으면 결제는 그대로 되고 선물만 없다', async () => {
+    const m = memStore();
+    const g = fakeGateway();
+    const code = await newAccount(m.store);
+    const r = await buy(m.store, g, code, one('love'));
+    expect(r.ok).toBe(true);
+    expect(r).not.toHaveProperty('gift');
+  });
+
+  it('무료 코드로 연 것에는 선물이 없다', async () => {
+    const m = memStore();
+    m.gifts.push({ code: 'FREE-AAAA-BBBB' });
+    const code = await newAccount(m.store);
+    m.coupons.set(await couponHash('FREE-AB2C-3DEF'), { expires: Date.UTC(2027, 0, 1), used: false });
+    expect(await useCoupon(m.store, { code, coupon: 'FREE-AB2C-3DEF', item: 'career', target: S }, NOW)).toEqual({ ok: true, code });
+    expect(await m.store.giftsLeft()).toBe(1);
   });
 });

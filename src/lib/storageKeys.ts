@@ -29,6 +29,8 @@ export const STORAGE = {
   review: 'mg_review_v1',
   /** 시안 전용 — 이 기기에서 쓴 무료 코드 */
   demoCoupons: 'mg_demo_coupons',
+  /** 결제 이벤트 안내 창을 이번 탭에서 봤는지 (sessionStorage) */
+  eventSeen: 'mg_event_seen_v1',
 } as const;
 
 /** 사람·날짜마다 이름이 달라지는 기록의 앞부분 */
