@@ -344,7 +344,7 @@ const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
 const PRODUCTS: { name: string; what: ReactNode; price: number }[] = [
   { name: '고민 리포트', what: '이직·진로, 연애·결혼, 돈, 시험·합격 가운데 고른 고민 하나의 상세 풀이 (좋은 시기·조심할 시기, 지금 할 일, 개운법)', price: PRICES.concern },
   { name: '신년운세 리포트', what: '그해 열두 달의 흐름과 달마다 할 일·조심할 일 (해마다 따로 사요)', price: PRICES.year },
-  { name: '전체 묶음', what: '고민 리포트 4개 + 그해 신년운세 리포트 (아직 아무것도 사지 않았을 때만)', price: PRICES.all },
+  { name: '전체 묶음', what: '고민 리포트 4개 + 그해 신년운세 리포트 (아직 아무것도 사지 않았을 때만 · 궁합·재회 리포트는 들어 있지 않아요)', price: PRICES.all },
   { name: '궁합·재회 리포트', what: '상대 한 명과의 궁합 상세와 재회 상세 (상대마다 따로 사요)', price: PRICES.partner },
 ];
 

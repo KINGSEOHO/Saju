@@ -179,7 +179,7 @@ export function concernOffers(e: Ent, id: ConcernId, prices = PRICES, rules: Off
         kind: 'all',
         cost: prices.all,
         label: `${won(prices.all)}에 전부 구매하기`,
-        note: `${rest}가 모두 열려요 · 하나씩 사면 ${won(prices.year + prices.concern * CORE_CONCERNS.length)}.`,
+        note: `${rest}가 모두 열려요 · 하나씩 사면 ${won(prices.year + prices.concern * CORE_CONCERNS.length)} · 궁합·재회는 따로예요.`,
       });
     return out.length > 1 && id === 'year' && bundleFirst(out[0], out[1], prices) ? [out[1], out[0]] : out;
   }
@@ -204,7 +204,7 @@ export function concernOffers(e: Ent, id: ConcernId, prices = PRICES, rules: Off
     kind: 'all',
     cost: allCost,
     label: e.spent ? `${won(allCost)} 더 내고 나머지 전부 열기` : `${won(allCost)}에 전부 열기`,
-    note: `${rest}가 모두 열려요${e.spent ? ` · 합계 ${won(prices.all)}` : ` · 하나씩 사면 ${won(prices.year + prices.concern * CORE_CONCERNS.length)}`}.`,
+    note: `${rest}가 모두 열려요${e.spent ? ` · 합계 ${won(prices.all)}` : ` · 하나씩 사면 ${won(prices.year + prices.concern * CORE_CONCERNS.length)}`} · 궁합·재회는 따로예요.`,
   });
   // 전부 열기가 더 이득이면 주 버튼으로
   return out.length > 1 && (out[1].cost <= out[0].cost || (id === 'year' && bundleFirst(out[0], out[1], prices))) ? [out[1], out[0]] : out;

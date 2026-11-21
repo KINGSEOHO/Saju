@@ -53,7 +53,7 @@ describe('가격', () => {
     const career = concernOffers(entOf([], S, Y27), 'career', undefined, ON);
     expect(career.map((o) => o.label)).toEqual(['첫 결제 1,900원에 이 고민 열기', '19,900원에 전부 열기']);
     expect(career[0]).toMatchObject({ kind: 'one', cost: 1900, note: '처음 한 번만이에요 · 다음부터는 3,900원', promo: { name: '첫 결제 혜택', was: 3900 } });
-    expect(career[1].note).toBe('2027 신년운세와 고민 4개가 모두 열려요 · 하나씩 사면 22,500원.');
+    expect(career[1].note).toBe('2027 신년운세와 고민 4개가 모두 열려요 · 하나씩 사면 22,500원 · 궁합·재회는 따로예요.');
     expect(career.every((o) => o.cost > 0)).toBe(true);
     // 신년운세에서는 신년운세 하나를 주 버튼으로 (전부 열기와 차이가 커서)
     const year = concernOffers(entOf([], S, Y27), 'year', undefined, ON);
@@ -74,7 +74,7 @@ describe('첫 결제 혜택', () => {
     // 하나 더 사면 9,700원이 되어 나머지가 200원만 남으므로, 하나 대신 나머지 전부만 남는다
     const money = concernOffers(entOf(r.list, S, Y27), 'money', undefined, ON);
     expect(money.map((o) => o.label)).toEqual(['4,100원 더 내고 나머지 전부 열기']);
-    expect(money[0].note).toBe('2027 신년운세와 고민 2개가 모두 열려요 · 합계 9,900원.');
+    expect(money[0].note).toBe('2027 신년운세와 고민 2개가 모두 열려요 · 합계 9,900원 · 궁합·재회는 따로예요.');
     r = buy(r.list, 'money', 'all');
     const e = entOf(r.list, S, Y27);
     expect(PAID_CONCERNS.every((id) => isOpen(e, id))).toBe(true);
@@ -110,7 +110,7 @@ describe('하나씩 사도 9,900원보다 더 내지 않는다', () => {
     // 하나 더 사면 11,700원이 되어 '전부 열기'보다 비싸지므로, 나머지 전부만 남는다
     const money = concernOffers(entOf(r.list, S, Y27), 'money', undefined, ON);
     expect(money.map((o) => o.label)).toEqual(['2,100원 더 내고 나머지 전부 열기']);
-    expect(money[0].note).toBe('2027 신년운세와 고민 2개가 모두 열려요 · 합계 9,900원.');
+    expect(money[0].note).toBe('2027 신년운세와 고민 2개가 모두 열려요 · 합계 9,900원 · 궁합·재회는 따로예요.');
     r = buy(r.list, 'money', 'all');
     const e = entOf(r.list, S, Y27);
     expect(PAID_CONCERNS.every((id) => isOpen(e, id))).toBe(true);
@@ -122,7 +122,7 @@ describe('하나씩 사도 9,900원보다 더 내지 않는다', () => {
     expect(r.o.cost).toBe(6900);
     const career = concernOffers(entOf(r.list, S, Y27), 'career', undefined, ON);
     expect(career.map((o) => [o.kind, o.cost])).toEqual([['all', 3000]]);
-    expect(career[0].note).toBe('고민 4개가 모두 열려요 · 합계 9,900원.');
+    expect(career[0].note).toBe('고민 4개가 모두 열려요 · 합계 9,900원 · 궁합·재회는 따로예요.');
   });
 
   it('다른 사주에는 이용권이 넘어가지 않는다', () => {

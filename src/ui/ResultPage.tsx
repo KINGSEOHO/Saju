@@ -286,7 +286,7 @@ function BundleNote({ a }: { a: SajuAnalysis }) {
       <div className="min-w-0">
         <p className="text-label font-semibold text-ink">전체 묶음</p>
         <p className="mt-0.5 text-cap text-sub">
-          이직·진로, 연애·결혼, 돈, 시험·합격과 {year}. 하나씩 사면 {won(each)}이에요.
+          이직·진로, 연애·결혼, 돈, 시험·합격과 {year}. 하나씩 사면 {won(each)}이에요. 궁합·재회는 들어 있지 않고 상대마다 {won(PRICES.partner)}이에요.
         </p>
       </div>
       <p className="shrink-0 font-serif text-title3 font-bold text-ink tabular-nums">{won(PRICES.all)}</p>
