@@ -217,6 +217,17 @@ describe('결제 확인 — 포트원에 직접 물어본 뒤에만 기록한다
     expect(await confirm(store, { ...g.gw, allowTest: true }, p2.paymentId, NOW)).toMatchObject({ ok: true });
   });
 
+  it('웹훅이 먼저 기록하는 중이면 실패로 답하지 않고 기다렸다가 성공으로 답한다', async () => {
+    const m = memStore();
+    const g = fakeGateway();
+    const code = await newAccount(m.store);
+    const prep = await prepare(m.store, { code, purchase: one('career'), season: Y27 }, NOW);
+    g.paid.set(prep.paymentId as string, { status: 'PAID', total: 3900, currency: 'KRW' });
+    m.orders.get(prep.paymentId as string)!.status = 'confirming'; // 웹훅이 잡은 상태
+    setTimeout(() => (m.orders.get(prep.paymentId as string)!.status = 'paid'), 300);
+    expect(await confirm(m.store, g.gw, prep.paymentId, NOW)).toMatchObject({ ok: true, code });
+  });
+
   it('같은 결제를 화면과 웹훅이 두 번 확인해도 기록은 한 번', async () => {
     const { store } = memStore();
     const g = fakeGateway();

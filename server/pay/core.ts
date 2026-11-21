@@ -195,8 +195,14 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   if (!pay || pay.status !== 'PAID') return { ok: false, reason: 'not_paid', status: pay?.status ?? 'none', ...(pay?.why ? { why: pay.why } : {}) };
   // 같은 결제를 화면과 웹훅이 동시에 확인해도 한 번만 남긴다
   if (!(await store.claimOrder(paymentId))) {
-    const again = await store.getOrder(paymentId);
-    return again?.status === 'paid' ? { ok: true, code: order.code, ...(await bundleGift(store, order)) } : { ok: false, reason: 'busy' };
+    // 화면과 웹훅이 동시에 확인하는 중 — 먼저 잡은 쪽이 기록을 마칠 때까지 잠깐(최대 3초쯤) 기다린다
+    for (let i = 0; i < 6; i++) {
+      const again = await store.getOrder(paymentId);
+      if (again?.status === 'paid') return { ok: true, code: order.code, ...(await bundleGift(store, order)) };
+      if (again?.status === 'cancelled') return { ok: false, reason: 'cancelled' };
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    return { ok: false, reason: 'busy' };
   }
   const refundAll = async (reason: string, why: string) => {
     await gw.cancel(paymentId, null, reason);

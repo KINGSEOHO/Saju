@@ -92,7 +92,8 @@ async function confirmPayment(paymentId: string, sdkSaid = '', paymentToken?: st
   for (let i = 0; i < 5; i++) {
     r = await call('confirm', { paymentId, ...(paymentToken ? { paymentToken } : {}) });
     if (r.ok && typeof r.code === 'string') return { ok: true, code: r.code, ...(typeof r.gift === 'string' ? { gift: r.gift } : {}) };
-    if (!(r.reason === 'not_paid' && (r.status === 'READY' || r.status === 'PAY_PENDING'))) break;
+    // 아직 결제창에서 넘어오는 중(READY)이거나, 웹훅이 먼저 기록하는 중(busy)이면 잠깐 뒤 다시 묻는다
+    if (!(r.reason === 'busy' || (r.reason === 'not_paid' && (r.status === 'READY' || r.status === 'PAY_PENDING')))) break;
     await wait(2000);
   }
   const why = typeof r.why === 'string' && r.why ? ` (${r.why})` : '';
