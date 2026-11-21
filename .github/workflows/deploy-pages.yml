@@ -45,6 +45,9 @@ jobs:
           VITE_PORTONE_CHANNEL_KEY: ${{ vars.PORTONE_CHANNEL_KEY }}
           VITE_PORTONE_TEST_CHANNEL_KEY: ${{ vars.PORTONE_TEST_CHANNEL_KEY }}
           VITE_REVIEW_TOKEN: ${{ vars.REVIEW_TOKEN }}
+          # 검색 등록 소유 확인 (구글 서치 콘솔 · 네이버 서치어드바이저의 HTML 태그 content 값)
+          VITE_GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
+          VITE_NAVER_SITE_VERIFICATION: ${{ vars.NAVER_SITE_VERIFICATION }}
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

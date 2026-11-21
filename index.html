@@ -3,10 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>명경사주 — 정밀 만세력과 사실 그대로의 사주 리포트</title>
-    <meta name="description" content="천문 계산 기반 정밀 만세력(절기·합삭·서머타임·경도 보정)으로 사주 원국을 산출하고, 근거와 함께 성향·연애·이직·재물·건강을 냉정하게 분석해요." />
+    <title>명경사주 — 정확한 온라인 사주 · 무료 만세력</title>
+    <meta name="description" content="명경사주는 천문 계산 만세력으로 사주를 정확하게 세우는 온라인 사주 사이트예요. 서머타임·태어난 곳 시차까지 보정하고, 성향·연애·이직·재물·건강을 근거와 함께 무료로 풀어 드려요." />
+    <link rel="canonical" href="https://mgsaju.io.kr/" />
+    <meta name="robots" content="index, follow" />
+    <!--site-verification-->
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"명경사주","alternateName":["明鏡四柱","mgsaju"],"url":"https://mgsaju.io.kr/","inLanguage":"ko"}</script>
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="명경사주" />
+    <meta property="og:url" content="https://mgsaju.io.kr/" />
     <meta property="og:title" content="명경사주 — 정확하게 계산하고, 있는 그대로 말해요" />
     <meta property="og:description" content="천문 계산 만세력으로 내 사주를 세우고, 강점과 약점을 근거와 함께 알려 드려요." />
     <meta property="og:image" content="https://mgsaju.io.kr/og.png" />
@@ -18,7 +23,28 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%2333574d%22/><text x=%2250%22 y=%2268%22 font-size=%2256%22 font-family=%22serif%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>命</text></svg>" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- 검색 로봇·자바스크립트가 늦을 때 보이는 첫 화면 글 (App.tsx의 Home·Faq와 같은 내용). 화면이 뜨면 바로 바뀌어요 -->
+      <main class="wrap pt-12 pb-8">
+        <h1 class="mt-3 text-display text-ink">명경사주 — 정확하게 계산하고, 있는 그대로 말해요.</h1>
+        <p class="mt-4 text-ui text-sub">명경사주는 천문 계산 만세력으로 사주를 세우는 온라인 사주 사이트예요. 좋은 말만 늘어놓지 않아요. 성향·연애·직업·재물·건강을 강점과 약점 모두, 왜 그렇게 보는지 근거와 함께 알려 드려요.</p>
+        <ul class="mt-8">
+          <li>천문 계산 만세력 — 절기와 합삭을 천문학 공식으로 직접 계산해요.</li>
+          <li>출생 시각 자동 보정 — 서머타임과 표준시 변경, 태어난 곳의 경도까지 반영해요. 서울은 표준시보다 해가 약 32분 늦게 떠요.</li>
+          <li>한국천문연구원 자료와 일치 — 1900~2050년 음력 전 구간을 대조해 확인했어요.</li>
+          <li>좋은 말만 하지 않기 — 모든 해석에 강점·약점·주의와 근거를 함께 붙여요.</li>
+          <li>무료 풀이 — 사주 원판, 오행·용신, 대운·세운·월운, 성향 풀이는 늘 무료예요.</li>
+        </ul>
+        <h2 class="mt-10 text-title2 text-ink">자주 묻는 질문</h2>
+        <h3 class="mt-4 text-ui text-ink">다른 사이트와 결과가 다르게 나와요. 어느 쪽이 맞나요?</h3>
+        <p class="mt-1 text-label text-sub">대부분 출생 시각 보정 차이예요. 명경사주는 서머타임과 태어난 곳의 시차를 자동으로 보정하고, 결과가 갈리는 경계 시각이면 다른 경우의 사주까지 함께 보여 드려요.</p>
+        <h3 class="mt-4 text-ui text-ink">태어난 시간을 모르면 볼 수 없나요?</h3>
+        <p class="mt-1 text-label text-sub">볼 수 있어요. 시주를 뺀 여섯 글자로 풀이하고, 정확도가 낮아지는 부분은 결과 화면에 분명히 표시해요.</p>
+        <h3 class="mt-4 text-ui text-ink">입력한 생년월일시는 어떻게 쓰이나요?</h3>
+        <p class="mt-1 text-label text-sub">사주 계산은 모두 브라우저 안에서 이루어지며, 이름·생년월일·출생 시각은 서버로 보내지 않아요.</p>
+        <noscript><p class="mt-8 text-ui text-ink">내 사주를 보려면 자바스크립트를 켜 주세요.</p></noscript>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
