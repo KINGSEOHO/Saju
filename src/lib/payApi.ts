@@ -148,7 +148,9 @@ export const payApi: AccountApi = {
         if (r.code !== readCode()) writeCode(r.code);
         return { ok: true, code: r.code };
       }
-      return { ok: false, reason: r.reason === 'owned' ? 'owned' : r.reason === 'coupon' || r.reason === 'bad' ? 'coupon' : 'fail' };
+      const why =
+        r.reason === 'owned' ? 'owned' : r.reason === 'coupon_used' ? 'used' : r.reason === 'coupon_expired' ? 'expired' : r.reason === 'coupon' ? 'coupon' : r.reason === 'bad' ? 'where' : 'fail';
+      return { ok: false, reason: why };
     } catch {
       return { ok: false, reason: 'fail' };
     }

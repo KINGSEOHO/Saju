@@ -279,6 +279,14 @@ function redeemNote(r: RedeemResult): PayNote {
 /** 다른 기기에서 산 기록 불러오기 — 이 기기에서 따로 산 것이 있으면 합친다. open: 처음부터 펼쳐 둘 때 (결제 전 확인에서 왔을 때) */
 /** 'FREE-'로 시작하면 무료 코드 — 구매 코드 칸에 함께 받는다 (따로 칸을 두지 않는다: 산 사람이 손해 본 느낌이 들지 않게) */
 const isCoupon = (s: string) => /^FREE/.test(s.toUpperCase().replace(/[^0-9A-Z]/g, ''));
+const COUPON_MSG: Record<Exclude<CouponResult, { ok: true }>['reason'], string> = {
+  owned: '이미 열려 있는 리포트예요. 코드는 쓰지 않았어요.',
+  where: '무료 코드는 이직·진로, 연애·결혼, 돈, 시험·합격 리포트에서 쓸 수 있어요. 그 리포트의 잠금 화면에서 넣어 주세요. 코드는 쓰지 않았어요.',
+  used: '이미 쓴 코드예요.',
+  expired: '사용 기간이 지난 코드예요.',
+  coupon: '없는 코드예요. FREE-로 시작하는 코드를 다시 확인해 주세요.',
+  fail: '잠시 뒤 다시 해 주세요. 코드는 쓰지 않았어요.',
+};
 
 function Redeem({
   onRedeem,
@@ -314,16 +322,9 @@ function Redeem({
         if (busy) return;
         setBusy(true);
         if (isCoupon(code)) {
-          const c = onCoupon ? await onCoupon(code) : ({ ok: false, reason: 'coupon' } as const);
+          const c = onCoupon ? await onCoupon(code) : ({ ok: false, reason: 'where' } as const);
           setBusy(false);
-          if (!c.ok)
-            return setMsg(
-              c.reason === 'owned'
-                ? '이미 열려 있는 리포트예요. 코드는 쓰지 않았어요.'
-                : c.reason === 'coupon'
-                  ? '쓸 수 없는 코드예요. 이미 쓴 코드이거나 기간이 지났을 수 있어요.'
-                  : '잠시 뒤 다시 해 주세요.',
-            );
+          if (!c.ok) return setMsg(COUPON_MSG[c.reason]);
           setOpen(false);
           setCode('');
           setMsg('');

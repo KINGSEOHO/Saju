@@ -51,6 +51,8 @@ export interface Store {
   takeCoupon(hash: string, now: number, use: { code: string; item: string }): Promise<boolean>;
   /** 쓴 뒤 기록에 실패했을 때 되돌린다 */
   releaseCoupon(hash: string): Promise<void>;
+  /** 쓰지 못한 까닭 — 없는 코드 · 이미 쓴 코드 · 기간이 지난 코드 (손님에게 정확히 알려 주려고) */
+  couponState?(hash: string, now: number): Promise<'none' | 'used' | 'expired' | 'ok'>;
   /** 결제 이벤트 — 이 결제에 무료 코드 하나를 준다 (같은 결제면 같은 코드, 남은 코드가 없으면 null) */
   takeGift(paymentId: string, code: string): Promise<string | null>;
   /** 이 계정이 이벤트로 받은 코드들 (어느 결제로 받았는지 함께) */
@@ -284,7 +286,10 @@ export async function useCoupon(store: Store, body: { code?: unknown; coupon?: u
   const open = checkPurchase(await store.purchases(code), { kind: 'one', item, target, amount: PRICES.concern, at: 0 }, { year: 0, title: '' });
   if (open === 'owned') return { ok: false, reason: 'owned' };
   const hash = await couponHash(coupon);
-  if (!(await store.takeCoupon(hash, now, { code, item }))) return { ok: false, reason: 'coupon' };
+  if (!(await store.takeCoupon(hash, now, { code, item }))) {
+    const why = await store.couponState?.(hash, now).catch(() => undefined);
+    return { ok: false, reason: why === 'used' ? 'coupon_used' : why === 'expired' ? 'coupon_expired' : 'coupon' };
+  }
   try {
     await store.addPurchase(code, { kind: 'free', item, target, amount: 0, at: now });
   } catch (e) {

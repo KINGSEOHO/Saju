@@ -78,7 +78,7 @@ export interface AccountApi {
   redeem(code: string): Promise<RedeemResult>;
   /**
    * 무료 코드(FREE-XXXX-XXXX)로 고민 리포트(3,900원짜리) 하나를 연다. 한 번 쓰면 그 코드는 끝.
-   * reason: 'coupon'(없거나 이미 썼거나 기간이 지남) · 'owned'(이미 열려 있어 코드를 쓰지 않음) · 'fail'
+   * reason: 'coupon'(없는 코드) · 'used'(이미 쓴 코드) · 'expired'(기간이 지남) · 'owned'(이미 열려 있어 코드를 쓰지 않음) · 'where'(이 리포트에는 못 씀) · 'fail'
    */
   coupon(input: string, item: ConcernId, target: string): Promise<CouponResult>;
   /** 결제 이벤트로 받은 무료 코드들 */
@@ -94,7 +94,7 @@ export interface Gift {
   used: boolean;
 }
 
-export type CouponResult = { ok: true; code: string } | { ok: false; reason: 'coupon' | 'owned' | 'fail' };
+export type CouponResult = { ok: true; code: string } | { ok: false; reason: 'coupon' | 'used' | 'expired' | 'owned' | 'where' | 'fail' };
 
 export { newCode, normalizeCode } from './code.ts';
 

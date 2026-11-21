@@ -68,6 +68,10 @@ function memStore() {
       return true;
     },
     releaseCoupon: async (hash) => void (coupons.get(hash)!.used = false),
+    async couponState(hash, now) {
+      const c = coupons.get(hash);
+      return !c ? 'none' : c.used ? 'used' : c.expires <= now ? 'expired' : 'ok';
+    },
     async takeGift(pid, code) {
       const had = gifts.find((g) => g.pid === pid);
       if (had) return had.code;
@@ -317,7 +321,7 @@ describe('무료 코드 — 한 번 쓰면 끝, 3,900원짜리 고민 리포트 
     expect(list).toEqual([{ kind: 'free', item: 'career', target: S, amount: 0, at: NOW }]);
     // 다른 계정이 같은 코드를 넣어도 안 된다
     const other = await newAccount(store);
-    expect(await useCoupon(store, { code: other, coupon: 'FREE-AB2C-3DEF', item: 'love', target: 'zzz' }, NOW)).toEqual({ ok: false, reason: 'coupon' });
+    expect(await useCoupon(store, { code: other, coupon: 'FREE-AB2C-3DEF', item: 'love', target: 'zzz' }, NOW)).toEqual({ ok: false, reason: 'coupon_used' });
   });
 
   it('이미 열린 고민이면 코드를 쓰지 않는다', async () => {
@@ -332,7 +336,8 @@ describe('무료 코드 — 한 번 쓰면 끝, 3,900원짜리 고민 리포트 
     const { store, code } = await setup();
     expect((await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'year', target: S }, NOW)).reason).toBe('bad');
     expect((await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'match', target: S }, NOW)).reason).toBe('bad');
-    expect((await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'love', target: S }, EXP + 1)).reason).toBe('coupon');
+    expect((await useCoupon(store, { code, coupon: 'FREE-AB2C-3DEF', item: 'love', target: S }, EXP + 1)).reason).toBe('coupon_expired');
+    expect((await useCoupon(store, { code, coupon: 'FREE-ZZZZ-ZZZZ', item: 'love', target: S }, NOW)).reason).toBe('coupon');
   });
 
   it('무료로 연 고민은 다시 결제하지 않는다 (산 것으로 본다)', async () => {

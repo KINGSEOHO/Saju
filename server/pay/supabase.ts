@@ -124,6 +124,14 @@ const store: Store = {
     if (!r.ok) throw new Error(`db ${r.status}`);
     return Number(await r.json()) || 0;
   },
+  async couponState(hash, now) {
+    const r = await db(`pay_coupons?code_hash=eq.${q(hash)}&select=used_at,expires_at`, {}, '');
+    if (!r.ok) throw new Error(`db ${r.status}`);
+    const [c] = (await r.json()) as { used_at: string | null; expires_at: string }[];
+    if (!c) return 'none';
+    if (c.used_at) return 'used';
+    return Date.parse(c.expires_at) <= now ? 'expired' : 'ok';
+  },
   async releaseCoupon(hash) {
     await db(`pay_coupons?code_hash=eq.${q(hash)}`, { method: 'PATCH', body: JSON.stringify({ used_at: null, used_by: null, used_item: null }) });
   },
