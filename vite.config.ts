@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vitest/config';
 
-// 구글 서치 콘솔·네이버 서치어드바이저 소유 확인 태그 — 저장소 변수 GOOGLE_SITE_VERIFICATION·NAVER_SITE_VERIFICATION에 값만 넣으면 붙는다 (네이버 값은 index.html에 이미 적어 둠 — 공개돼도 되는 값)
+// 구글 서치 콘솔·네이버 서치어드바이저 소유 확인 태그 — 저장소 변수 GOOGLE_SITE_VERIFICATION·NAVER_SITE_VERIFICATION에 값만 넣으면 붙는다
 function siteVerification(): Plugin {
   const tag = (name: string, v?: string) => (v && /^[\w-]+$/.test(v) ? `<meta name="${name}" content="${v}" />` : '');
   return {
