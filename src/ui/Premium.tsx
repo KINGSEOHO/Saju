@@ -14,7 +14,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PAY_LIVE } from '../config/backend.ts';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
 import { GiftBox, showPurchaseCode } from './PurchaseCode.tsx';
-import { PAY_METHODS, useAccount, type Buyer, type CouponResult, type PayMethod, type PayResult, type RedeemResult } from '../lib/account.ts';
+import { EASY_PAY_READY, PAY_METHODS, useAccount, type Buyer, type CouponResult, type PayMethod, type PayResult, type RedeemResult } from '../lib/account.ts';
 import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
 import { Veil } from './common.tsx';
@@ -128,7 +128,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             ? '결제 화면으로 넘어가는 자리예요. 시안이라 실제로 결제되지 않고 바로 열려요.'
             : '결제 화면으로 넘어가요.'}
       </p>
-      {!free && (
+      {!free && EASY_PAY_READY && (
         <fieldset className="mt-4" data-pay-method>
           <legend className="text-label font-semibold text-ink">결제수단</legend>
           <div className="mt-2 grid grid-cols-2 gap-2">

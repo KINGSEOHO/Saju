@@ -33,7 +33,8 @@ export function GiftBox({ code, used }: { code: string; used?: boolean }) {
   };
   return (
     <div className="mt-4 rounded-xl border border-accent/40 px-4 py-4 text-left" data-gift>
-      <p className="text-label font-semibold text-ink">이벤트 선물 · 고민 리포트 무료 코드</p>
+      <p className="text-label font-semibold text-ink">선물 코드 · 고민 리포트 1개 (3,900원짜리)</p>
+      <p className="mt-1 text-cap text-sub">이직·진로, 연애·결혼, 돈, 시험·합격 중 하나를 여는 코드예요. 신년운세·궁합·전체 묶음은 열리지 않아요.</p>
       <div className="mt-2 flex items-center justify-between gap-3">
         <span className={`font-mono text-ui font-bold tracking-wider select-all ${used ? 'text-faint line-through' : 'text-ink'}`}>{code}</span>
         {!used && (
@@ -48,7 +49,7 @@ export function GiftBox({ code, used }: { code: string; used?: boolean }) {
         <ol className="mt-2 list-decimal space-y-0.5 pl-5 text-cap text-ink-2">
           <li>결과 화면 → 고민 리포트 탭에서 보고 싶은 고민(이직·진로, 연애·결혼, 돈, 시험·합격)을 눌러요.</li>
           <li>아래 '구매 코드 넣기'에 이 코드를 넣고 불러오기를 눌러요.</li>
-          <li>한 번 쓰면 끝이고, 12월 31일까지 쓸 수 있어요. 친구에게 선물해도 돼요.</li>
+          <li>한 번 쓰면 끝이고, 12월 31일까지 쓸 수 있어요. 이미 다 열려 있다면 친구에게 선물하세요.</li>
         </ol>
       )}
     </div>
@@ -207,7 +208,8 @@ export function EventPopup({ left }: { left: number }) {
           결제하고 후기 남기면 리포트 하나 더
         </h2>
         <p className="mt-2 text-label text-ink-2">
-          12월 31일까지 결제하고 맨 아래 후기를 남기면 고민 리포트(3,900원) <b className="text-ink">무료 코드 1개</b>를 드려요. 후기 내용·점수와 상관없이 드리고, 직접 써도 되고 친구에게 선물해도 돼요.
+          12월 31일까지 결제하고 맨 아래 후기를 남기면 고민 리포트(3,900원짜리) <b className="text-ink">무료 코드 1개</b>를 드려요. 후기 내용·점수와 상관없이 드려요. 전체 묶음(19,900원)을 사면
+          결제하자마자 친구에게 줄 코드를 드려요.
         </p>
         <p className="mt-3 text-cap text-sub">
           남은 코드 <b className="text-ink tabular-nums">{left}</b>개 · 다 떨어지면 이벤트가 끝나요.

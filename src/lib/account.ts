@@ -47,6 +47,9 @@ export interface Buyer {
   method?: PayMethod;
 }
 
+/** 간편결제 버튼을 보일지 — 이니시스에서 간편결제 사용 설정(V104 오류 해결)이 끝나면 true */
+export const EASY_PAY_READY = false;
+
 /** 결제창에서 고를 수 있는 결제수단 (포트원 V2: CARD, 간편결제는 EASY_PAY + easyPayProvider) */
 export const PAY_METHODS = [
   { id: 'CARD', label: '카드' },

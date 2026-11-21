@@ -357,6 +357,17 @@ describe('결제 이벤트 — 결제하고 후기를 남기면 무료 코드 �
     expect(await claimGift(m.store, { code })).toEqual({ ok: false, reason: 'nopay' });
   });
 
+  it('전체 묶음을 사면 결제하자마자 선물 코드 (같은 결제를 다시 확인해도 같은 코드, 후기로 또 받지는 않음)', async () => {
+    const m = memStore();
+    m.gifts.push({ code: 'FREE-AAAA-BBBB' }, { code: 'FREE-CCCC-DDDD' });
+    const g = fakeGateway();
+    const code = await newAccount(m.store);
+    const r = await buy(m.store, g, code, allOf());
+    expect(r).toMatchObject({ ok: true, gift: 'FREE-AAAA-BBBB' });
+    expect(await confirm(m.store, g.gw, r.paymentId, NOW)).toMatchObject({ ok: true, gift: 'FREE-AAAA-BBBB' });
+    expect(await claimGift(m.store, { code })).toEqual({ ok: false, reason: 'done' });
+  });
+
   it('준비한 코드가 떨어지면 끝', async () => {
     const m = memStore();
     const g = fakeGateway();

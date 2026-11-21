@@ -175,7 +175,7 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   if (!paymentId) return { ok: false, reason: 'bad' };
   const order = await store.getOrder(paymentId);
   if (!order) return { ok: false, reason: 'unknown' };
-  if (order.status === 'paid') return { ok: true, code: order.code };
+  if (order.status === 'paid') return { ok: true, code: order.code, ...(await bundleGift(store, order)) };
   if (order.status === 'cancelled') return { ok: false, reason: 'cancelled' };
   let pay = await gw.getPayment(paymentId);
   // 인증만 끝난 결제(READY) + 승인표가 왔으면 승인을 요청한다. 금액은 화면 말고 주문에 적힌 값으로,
@@ -196,7 +196,7 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   // 같은 결제를 화면과 웹훅이 동시에 확인해도 한 번만 남긴다
   if (!(await store.claimOrder(paymentId))) {
     const again = await store.getOrder(paymentId);
-    return again?.status === 'paid' ? { ok: true, code: order.code } : { ok: false, reason: 'busy' };
+    return again?.status === 'paid' ? { ok: true, code: order.code, ...(await bundleGift(store, order)) } : { ok: false, reason: 'busy' };
   }
   const refundAll = async (reason: string, why: string) => {
     await gw.cancel(paymentId, null, reason);
@@ -211,7 +211,18 @@ export async function confirm(store: Store, gw: Gateway, rawId: unknown, now: nu
   if (check !== 'ok') return refundAll('이미 열린 리포트라 자동 취소', check);
   await store.addPurchase(order.code, { ...order.purchase, at: now, paymentId });
   await store.setOrderStatus(paymentId, 'paid');
-  return { ok: true, code: order.code };
+  return { ok: true, code: order.code, ...(await bundleGift(store, order)) };
+}
+
+/** 전체 묶음(19,900원)을 사면 결제하자마자 친구에게 줄 선물 코드(고민 리포트 3,900원 하나)를 준다. 실패해도 결제는 성공으로 둔다 */
+async function bundleGift(store: Store, order: Order): Promise<{ gift?: string }> {
+  if (order.purchase.kind !== 'all') return {};
+  try {
+    const g = await store.takeGift(order.paymentId, order.code);
+    return g ? { gift: g } : {};
+  } catch {
+    return {};
+  }
 }
 
 /**
