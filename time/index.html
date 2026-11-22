@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>출생시간 보정 계산기 — 서머타임·태어난 곳 시차 | 명경사주</title>
+    <meta name="description" content="1948~1988년 서머타임과 태어난 곳의 경도 차이를 빼서 사주에 쓰는 진짜 출생 시각을 계산해요. 보정 전후로 시주가 바뀌는지 바로 보여 드려요." />
+    <link rel="canonical" href="https://mgsaju.io.kr/time/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="명경사주" />
+    <meta property="og:url" content="https://mgsaju.io.kr/time/" />
+    <meta property="og:title" content="출생시간 보정 계산기 — 내 시주, 서머타임 때문에 달라졌을까?" />
+    <meta property="og:description" content="서머타임과 태어난 곳의 시차를 빼면 시주가 바뀌는지 바로 확인해 보세요." />
+    <meta property="og:image" content="https://mgsaju.io.kr/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#fcfbf8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%2333574d%22/><text x=%2250%22 y=%2268%22 font-size=%2256%22 font-family=%22serif%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>命</text></svg>" />
+  </head>
+  <body class="bg-bg text-ink">
+    <header class="wrap flex items-center justify-between pt-5">
+      <a href="../" class="hanja text-title3 font-bold text-ink">명경사주</a>
+      <a href="../" class="link text-label">내 사주 보기</a>
+    </header>
+    <main class="wrap pt-10 pb-16">
+      <h1 class="hanja text-display text-ink">출생시간 보정 계산기</h1>
+      <p class="mt-4 text-ui text-sub">병원 기록에 적힌 시각이 사주에 쓰는 시각과 같지 않을 수 있어요. 서머타임을 하던 해에 태어났거나, 서울처럼 표준시 기준선(동경 135°)보다 서쪽에서 태어났다면 해의 시각은 시계보다 늦어요. 날짜·시각·태어난 곳을 넣으면 보정한 시각과 시주가 바뀌는지 바로 보여 드려요.</p>
+
+      <div id="calc" class="mt-8">
+        <noscript><p class="panel text-ui">계산기를 쓰려면 자바스크립트를 켜 주세요. 아래 표로도 직접 확인할 수 있어요.</p></noscript>
+      </div>
+
+      <section class="mt-14">
+        <h2 class="text-title2 text-ink">왜 시각을 보정하나요?</h2>
+        <div class="read mt-4 space-y-4">
+          <p>사주의 시(時)는 시계가 아니라 해의 움직임으로 나눠요. 해가 가장 높이 뜨는 때가 오시(午時)의 한가운데예요. 우리나라 시계는 동경 135°(일본 고베 부근)에 맞춰져 있는데, 서울은 동경 약 127°라서 해가 시계보다 약 32분 늦게 움직여요.</p>
+          <p>그래서 서울에서 새벽 1시 20분에 태어났다면 해의 시각으로는 0시 48분쯤이에요. 시계로는 축시(01~03시)지만 사주로는 자시(23~01시)가 돼요. 시주의 두 글자가 통째로 바뀌는 거예요.</p>
+          <p>서머타임을 하던 해에 태어났다면 시계가 1시간 앞당겨져 있었으니 1시간을 더 빼야 해요. 두 보정을 함께 하면 1시간 반 가까이 차이 나기도 해요.</p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <h2 class="text-title2 text-ink">우리나라 서머타임 기간</h2>
+        <p class="mt-3 text-label text-sub">이 기간에 태어났다면 기록된 시각에서 1시간을 빼요. 명경사주가 계산에 쓰는 기간과 같은 표예요.</p>
+        <table class="mt-4 w-full text-left text-label">
+          <thead class="text-sub"><tr><th class="py-2">해</th><th>시작</th><th>끝</th></tr></thead>
+          <tbody class="[&_td]:border-t [&_td]:border-line [&_td]:py-2 tabular-nums">
+<!--dst-rows-->
+          </tbody>
+        </table>
+      </section>
+
+      <section class="mt-12">
+        <h2 class="text-title2 text-ink">표준시가 달랐던 때</h2>
+        <div class="read mt-4 space-y-4">
+          <p>1954년 3월 21일부터 1961년 8월 9일까지는 우리나라 표준시가 동경 127.5° 기준(UTC+8:30)이었어요. 지금 시계보다 30분 늦은 시계라서, 이 시기에 태어난 분은 해의 시각과 시계 차이가 지금보다 작아요. 1908년 4월부터 1911년 말까지도 같은 기준을 썼어요.</p>
+          <p>부모님·조부모님 사주를 볼 때는 이 차이까지 따져야 해요. 계산기에 그때 날짜를 넣으면 저절로 반영돼요.</p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <h2 class="text-title2 text-ink">시·도별 보정 시간</h2>
+        <p class="mt-3 text-label text-sub">시청·도청 자리의 경도로 계산했어요. 경도 1°마다 4분씩 차이 나요. 같은 시·도 안에서도 몇 분씩 다를 수 있어서 계산기에서는 시·군까지 골라요.</p>
+        <table class="mt-4 w-full text-left text-label">
+          <thead class="text-sub"><tr><th class="py-2">시·도</th><th>경도</th><th>시계보다</th></tr></thead>
+          <tbody class="[&_td]:border-t [&_td]:border-line [&_td]:py-2 tabular-nums">
+<!--region-rows-->
+          </tbody>
+        </table>
+      </section>
+
+      <section class="mt-12">
+        <h2 class="text-title2 text-ink">자주 묻는 질문</h2>
+        <h3 class="mt-5 text-ui font-semibold text-ink">다른 만세력과 시주가 달라요.</h3>
+        <p class="read mt-2">대부분 보정을 하는지 차이예요. 서머타임이나 경도 보정을 하지 않는 만세력도 있어요. 어느 방식이 맞는지는 학파마다 의견이 갈려요. 명경사주는 보정한 값을 쓰고, 경계에 걸리면 다른 경우의 사주도 함께 보여 드려요.</p>
+        <h3 class="mt-5 text-ui font-semibold text-ink">태어난 시각을 정확히 모르면요?</h3>
+        <p class="read mt-2">시주를 뺀 여섯 글자로도 사주를 볼 수 있어요. 대충 아는 시각이 시의 경계(홀수 시 정각 앞뒤) 가까이라면, 보정 여부에 따라 결과가 달라질 수 있다는 점을 염두에 두세요.</p>
+        <h3 class="mt-5 text-ui font-semibold text-ink">균시차도 반영하나요?</h3>
+        <p class="read mt-2">계산기는 경도만 보정하는 평균태양시를 써요. 날마다 ±16분 안팎으로 바뀌는 균시차까지 넣는 진태양시도 명경사주 입력 화면의 '계산 기준 바꾸기'에서 고를 수 있어요.</p>
+      </section>
+
+      <p class="mt-14 text-center"><a href="../" class="btn-primary w-full">명경사주에서 내 사주 보기</a></p>
+    </main>
+    <footer class="wrap pb-10 text-center text-cap text-sub">
+      <a href="../#/terms" class="underline">이용약관</a> · <a href="../#/privacy" class="underline">개인정보처리방침</a> · <a href="../#/pricing" class="underline">요금 안내</a>
+    </footer>
+    <script type="module" src="/src/pages/time.tsx"></script>
+  </body>
+</html>

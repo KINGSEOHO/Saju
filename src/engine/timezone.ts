@@ -313,7 +313,7 @@ export const regionOf = (name: string): Region | undefined => REGIONS.find((r) =
 // ---------------------------------------------------------------------------
 
 /** 벽시계 기준 [시작, 끝) 구간 (현지 표준시 분 단위 비교용) */
-interface DstPeriod {
+export interface DstPeriod {
   /** 서머타임 시작: 현지 표준시 기준 */
   start: [number, number, number, number]; // y, m, d, hour
   /** 서머타임 종료: 현지 서머타임 기준 벽시계 */
@@ -325,7 +325,7 @@ function nthWeekdayOnOrAfter(y: number, m: number, d: number, weekday: number): 
   return d + ((weekday - dow + 7) % 7);
 }
 
-function koreaDstPeriods(): DstPeriod[] {
+export function koreaDstPeriods(): DstPeriod[] {
   const p: DstPeriod[] = [];
   // 1948: 6/1 00:00 ~ 9/12 24:00
   p.push({ start: [1948, 6, 1, 0], end: [1948, 9, 13, 0] });
