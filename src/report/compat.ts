@@ -11,6 +11,10 @@
  *  - MBTI: 두 사람 모두 넣었을 때만 아주 작게 반영하고, 주로 대화 방식 안내에 쓴다
  * 점수는 단순한 지표다. 화면에 늘 그 사실을 함께 적는다.
  *
+ * 점수에 넣지 않는 보충 풀이(more · portraits) — 점수는 그대로 두고 근거와 읽을거리만 더한다 (이미 본 사람의 점수가 바뀌지 않게):
+ *  - 태어난 달(월지)끼리의 합·충, 지금 지나는 10년 운(대운)이 각자의 배우자 자리에 주는 영향, 가장 센 기운끼리의 성향 차이
+ *  - 두 사람이 각자 어떤 배우자인지 (일간의 연애 방식, 배우자 자리의 십성·12운성, 배우자 기운의 많고 적음)
+ *
  * 재회는 점수를 매기지 않는다. 헤어진 시기에 운이 관계를 흔들었는지(그해가 배우자 자리를 충했는지, 여자에게 상관·남자에게
  * 겁재의 해였는지, 대운이 바뀐 해였는지), 다시 만나면 반복될 조건, 앞으로 12개월 중 연락하기 좋은 달(배우자 자리와 합하는 달,
  * 인연의 기운이 드는 달)과 피할 달, 지금 할 일만 알려 준다.
@@ -19,7 +23,8 @@ import { BRANCHES, STEMS, controls, generates, type Element, type SajuAnalysis, 
 import { isChung, isHae, isHyungPair, isJahyeong, isPa, isStemChung, isStemHap, isWonjin, isYukhap, samhapPair } from '../engine/interactions.ts';
 import { josa } from '../engine/josa.ts';
 import { monthPillarOf, yearPillarOf } from '../engine/pillars.ts';
-import { groupOf, tenGodOfStem, type TenGod, type TenGodGroup } from '../engine/tenGods.ts';
+import { groupOf, tenGodOfBranch, tenGodOfStem, twelveStage, type TenGod, type TenGodGroup } from '../engine/tenGods.ts';
+import { DAY_MASTER, SPOUSE_PALACE, STAGE_ON_DAY } from './kb.ts';
 import { coupleGaeun, type CoupleGaeun } from './gaeun.ts';
 import { AXES, AXIS_INFO, parseMbti, type Axis } from './mbti.ts';
 import { EL_WORD } from './plain.ts';
@@ -77,6 +82,15 @@ export interface CompatReport {
   gaeun: CoupleGaeun;
   /** 정확도 안내 — 태어난 시간을 모르거나, 계산 기준에 따라 일주가 달라지는 사람이 있을 때 */
   notes: string[];
+  /** 점수에 넣지 않는 보충 풀이 (points 0) — good·bad 목록 뒤쪽에도 들어 있다 */
+  more: Factor[];
+  /** 상세: 두 사람이 각자 어떤 배우자인지 */
+  portraits: Portrait[];
+}
+
+export interface Portrait {
+  who: string;
+  lines: { label: string; text: string; basis: string }[];
 }
 
 export interface ReunionReport {
@@ -606,6 +620,150 @@ function yearSigns(a: SajuAnalysis, b: SajuAnalysis, you: string): YearSign[] {
 }
 
 // ---------------------------------------------------------------------------
+// 점수에 넣지 않는 보충 풀이 (points 0)
+// ---------------------------------------------------------------------------
+/** 태어난 달(월지)끼리 — 자라 온 환경과 생활의 기준 */
+function monthFactor(a: SajuAnalysis, b: SajuAnalysis): Factor | null {
+  const m1 = a.pillars.month.branch;
+  const m2 = b.pillars.month.branch;
+  const basis = `태어난 달(월지) ${bName(m1)} · ${bName(m2)}`;
+  const base = { system: '사주' as const, points: 0 };
+  if (isYukhap(m1, m2))
+    return { ...base, id: 'month-hap', tone: 'good', title: '생활의 기준이 잘 맞물리는 사이', text: '두 사람의 태어난 달 글자가 합(合)을 이뤄요. 월지는 자라 온 환경과 일하는 방식, 가족을 대하는 태도가 담긴 자리라, 살림과 일의 기준을 맞추기가 수월해요.', basis: `${basis} 육합` };
+  if (samhapPair(m1, m2))
+    return { ...base, id: 'month-samhap', tone: 'good', title: '일하고 사는 방향이 같은 사이', text: '두 사람의 태어난 달 글자가 같은 무리(삼합)에 속해요. 무엇을 중요하게 여기는지가 비슷해서, 큰 방향을 정할 때 뜻이 잘 모여요.', basis: `${basis} 삼합` };
+  if (isChung(m1, m2))
+    return {
+      ...base,
+      id: 'month-chung',
+      tone: 'bad',
+      title: '자라 온 방식과 생활의 기준이 부딪히는 사이',
+      text: '두 사람의 태어난 달 글자가 정면으로 부딪혀요. 월지는 자라 온 환경과 생활의 기준이 담긴 자리라, 돈 쓰는 법·가족 행사·일과 쉼의 기준에서 자주 갈려요. 누가 맞는지 따지기보다 돈·집안일·명절처럼 주제별로 규칙을 정해 두세요.',
+      basis: `${basis} 충`,
+    };
+  return null;
+}
+
+/** 지금 지나는 10년 운(대운)이 각자의 배우자 자리에 주는 영향 */
+function daeunFactors(a: SajuAnalysis, b: SajuAnalysis, you: string): Factor[] {
+  const out: Factor[] = [];
+  const add = (x: SajuAnalysis, key: 'me' | 'you') => {
+    const d = x.currentDaeun;
+    if (!d) return;
+    const subj = key === 'me' ? '나는' : josa(you, '은/는');
+    const whose = key === 'me' ? '내' : `${you}의`;
+    const day = x.pillars.day.branch;
+    const span = `${d.startYear}~${d.endYear}년`;
+    const basis = `${whose} 대운 ${STEMS[d.pillar.stem].hanja}${BRANCHES[d.pillar.branch].hanja}(${STEMS[d.pillar.stem].ko}${BRANCHES[d.pillar.branch].ko}, ${span}) · 배우자 자리 ${bName(day)}`;
+    const base = { system: '사주' as const, points: 0 };
+    if (isChung(d.pillar.branch, day))
+      out.push({
+        ...base,
+        id: `daeun-shake-${key}`,
+        tone: 'bad',
+        title: `${subj} 지금 배우자 자리가 흔들리는 10년을 지나요`,
+        text: `${span}의 큰 운이 ${whose} 배우자 자리와 부딪혀요. 이사·이직·가족 문제 같은 변화가 관계로 번지기 쉬운 시기예요. 이 시기의 다툼은 상대 탓보다 시기 탓일 때가 많으니, 큰 결정은 서두르지 마세요.`,
+        basis: `${basis} 충`,
+      });
+    else if (isYukhap(d.pillar.branch, day))
+      out.push({
+        ...base,
+        id: `daeun-bond-${key}`,
+        tone: 'good',
+        title: `${subj} 지금 배우자 자리에 힘이 실리는 10년을 지나요`,
+        text: `${span}의 큰 운이 ${whose} 배우자 자리와 합(合)을 이뤄요. 관계를 정하고 자리 잡기 좋은 시기예요.`,
+        basis: `${basis} 육합`,
+      });
+    else if (groupOf(d.stemTenGod) === spouseGroup(x))
+      out.push({
+        ...base,
+        id: `daeun-spouse-${key}`,
+        tone: 'good',
+        title: `${subj} 지금 인연의 기운이 들어온 10년을 지나요`,
+        text: `${span}의 큰 운에 ${whose} 사주에서 배우자를 뜻하는 기운(${d.stemTenGod})이 들어와 있어요. 연애·결혼 이야기가 구체적으로 오가기 쉬운 시기예요.`,
+        basis: `${whose} 대운 ${STEMS[d.pillar.stem].hanja}${BRANCHES[d.pillar.branch].hanja}(${STEMS[d.pillar.stem].ko}${BRANCHES[d.pillar.branch].ko}, ${span}) · ${d.stemTenGod}`,
+      });
+  };
+  add(a, 'me');
+  add(b, 'you');
+  return out;
+}
+
+const GROUPS: TenGodGroup[] = ['비겁', '식상', '재성', '관성', '인성'];
+/** 가장 센 기운이 같을 때 — 닮아서 같은 데서 막힌다 */
+const STYLE_SAME: Record<TenGodGroup, [string, string]> = {
+  비겁: ['둘 다 스스로 정해야 하는 사이', '둘 다 스스로 정해야 직성이 풀려요. 사소한 선택에서도 양보가 잘 안 나와 힘겨루기가 되기 쉬워요. ‘이건 네가, 이건 내가’ 하고 맡을 영역을 나눠 두세요.'],
+  식상: ['둘 다 할 말이 많은 사이', '둘 다 느낀 것을 말로 풀어야 해요. 말이 겹치고 들어 주는 사람이 없어 서운해지기 쉬워요. 한 사람이 다 말할 때까지 기다리는 순서를 정하세요.'],
+  재성: ['둘 다 실속을 따지는 사이', '둘 다 결과와 손익을 따져요. 계산이 관계 안으로 들어오면 ‘누가 더 했나’를 세게 돼요. 돈과 집안일은 규칙을 한 번 정하고, 그 뒤로는 세지 마세요.'],
+  관성: ['둘 다 기준이 높은 사이', '둘 다 책임과 체면을 무겁게 여겨요. 서로의 실수에 엄격해지기 쉬워요. 집에서는 평가하는 말을 줄이고 수고했다는 말을 늘리세요.'],
+  인성: ['둘 다 먼저 움직이지 않는 사이', '둘 다 생각이 많고 신중해요. 결정이 미뤄지고, 서운함도 말하지 않은 채 쌓이기 쉬워요. 정해야 할 일에는 날짜를 붙여 두세요.'],
+};
+/** 앞 기운이 뒤 기운을 누르는(극) 짝 — x가 앞 기운의 사람, y가 뒤 기운의 사람 */
+const STYLE_CLASH: Record<string, [string, (x: string, y: string) => string]> = {
+  '비겁>재성': ['뜻대로 정하는 쪽과 실속을 따지는 쪽', (x, y) => `${josa(x, '은/는')} 자기 뜻대로 정하고 싶어 하고, ${josa(y, '은/는')} 계획과 실속을 따져요. 돈 쓰는 문제에서 ‘왜 상의 없이 정했냐’로 부딪히기 쉬워요. 일정 금액이 넘는 지출은 함께 정하세요.`],
+  '식상>관성': ['틀을 깨는 쪽과 규칙을 지키는 쪽', (x, y) => `${josa(x, '은/는')} 느낀 대로 말하고 틀을 깨려 하고, ${josa(y, '은/는')} 약속과 규칙을 지키려 해요. 한쪽은 답답하고 한쪽은 불안해져요. 꼭 지킬 규칙 몇 가지만 정하고 나머지는 풀어 두세요.`],
+  '재성>인성': ['당장 움직이는 쪽과 더 알아보는 쪽', (x, y) => `${josa(x, '은/는')} 눈앞의 결과와 현실을 보고, ${josa(y, '은/는')} 충분히 생각하고 준비하려 해요. ‘그래서 언제 할 건데’와 ‘좀 더 알아보고’가 부딪혀요. 알아보는 기한을 함께 정하세요.`],
+  '관성>비겁': ['기준을 세우는 쪽과 간섭이 싫은 쪽', (x, y) => `${josa(x, '은/는')} 책임과 기준을 내세우고, ${josa(y, '은/는')} 간섭받는 것을 싫어해요. 조언이 통제로 들리기 쉬워요. 부탁은 지시가 아니라 이유와 함께 하세요.`],
+  '인성>식상': ['생각한 뒤 말하는 쪽과 말하며 정리하는 쪽', (x, y) => `${josa(x, '은/는')} 생각을 정리한 뒤에 말하고, ${josa(y, '은/는')} 말하면서 정리해요. 한쪽은 몰아붙인다고 느끼고 한쪽은 답이 없다고 느껴요. 다툴 때 ‘10분 뒤에 다시’가 된다는 약속을 해 두세요.`],
+};
+/** 앞 기운이 뒤 기운을 낳는(생) 짝 — 잘 굴러가지만 한쪽으로 굳기 쉽다 */
+const STYLE_FLOW: Record<string, [string, (x: string, y: string) => string]> = {
+  '비겁>식상': ['밀어주는 쪽과 펼치는 쪽', (x, y) => `${x}의 추진력이 ${y}의 표현과 아이디어를 밀어줘요. 다만 밀어주는 쪽이 방향까지 정하려 들면 펼치는 쪽은 숨이 막혀요.`],
+  '식상>재성': ['벌이는 쪽과 챙기는 쪽', (x, y) => `${josa(x, '이/가')} 벌이고 표현하면 ${josa(y, '이/가')} 실속으로 챙겨요. 다만 챙기는 쪽이 ‘쓸데없는 일’이라고 평가하기 시작하면 벌이는 쪽이 입을 닫아요.`],
+  '재성>관성': ['현실을 챙기는 쪽과 책임을 지는 쪽', (x, y) => `${josa(x, '은/는')} 현실을 챙기고 ${josa(y, '은/는')} 책임을 져요. 살림은 탄탄하지만 둘 다 일과 의무에 몰려 둘만의 시간이 가장 먼저 줄어요. 쉬는 날을 일정에 넣으세요.`],
+  '관성>인성': ['이끄는 쪽과 받쳐 주는 쪽', (x, y) => `${josa(x, '이/가')} 책임지고 이끌면 ${josa(y, '이/가')} 받아들이고 받쳐 줘요. 다만 받쳐 주는 쪽이 속마음을 말하지 않으면 이끄는 쪽은 괜찮은 줄 알아요.`],
+  '인성>비겁': ['챙기는 쪽과 밀고 나가는 쪽', (x, y) => `${josa(x, '이/가')} 챙기고 받쳐 주면 ${josa(y, '이/가')} 힘을 얻어 밀고 나가요. 다만 챙김이 지나치면 간섭으로 느껴져요.`],
+};
+
+/** 두 사람의 가장 센 기운끼리 — 어느 쌍에나 그 쌍의 구체적인 부딪힘이 하나는 나오게 */
+function styleFactor(a: SajuAnalysis, b: SajuAnalysis, you: string): Factor {
+  const g1 = topGroup(a);
+  const g2 = topGroup(b);
+  const pct = (x: SajuAnalysis, g: TenGodGroup) => `${g} ${x.elements.groupPercent[g].toFixed(0)}%`;
+  const basis = `가장 센 기운 — 나 ${pct(a, g1)} · ${you} ${pct(b, g2)}`;
+  const base = { system: '사주' as const, points: 0, tone: 'bad' as const, basis };
+  if (g1 === g2) return { ...base, id: `style-same-${GROUPS.indexOf(g1)}`, title: STYLE_SAME[g1][0], text: STYLE_SAME[g1][1] };
+  for (const [table, kind] of [
+    [STYLE_CLASH, 'clash'],
+    [STYLE_FLOW, 'flow'],
+  ] as const) {
+    const fwd = table[`${g1}>${g2}`];
+    if (fwd) return { ...base, id: `style-${kind}-${GROUPS.indexOf(g1)}${GROUPS.indexOf(g2)}`, title: fwd[0], text: fwd[1]('나', you) };
+    const back = table[`${g2}>${g1}`];
+    if (back) return { ...base, id: `style-${kind}-${GROUPS.indexOf(g2)}${GROUPS.indexOf(g1)}`, title: back[0], text: back[1](you, '나') };
+  }
+  return { ...base, id: 'style-none', title: '성향이 다른 사이', text: '두 사람의 가장 센 기운이 달라요. 서로의 방식을 바꾸려 하기보다 맡을 일을 나누세요.' };
+}
+
+/** 두 사람이 각자 어떤 배우자인지 — 일간의 연애 방식, 배우자 자리(일지)의 십성과 12운성, 배우자 기운의 많고 적음 */
+function portraitOf(x: SajuAnalysis, who: string): Portrait {
+  const ds = x.pillars.day.stem;
+  const db = x.pillars.day.branch;
+  const god = tenGodOfBranch(ds, db);
+  const stage = twelveStage(ds, db);
+  const sg = spouseGroup(x);
+  const pct = x.elements.groupPercent[sg];
+  const lines: Portrait['lines'] = [
+    { label: '연애할 때', text: DAY_MASTER[ds].love, basis: `일간 ${sName(ds)}` },
+    { label: '배우자 자리', text: SPOUSE_PALACE[god], basis: `일지 ${bName(db)} · ${god}` },
+    { label: '관계의 결', text: STAGE_ON_DAY[stage], basis: `일지 12운성 ${stage}` },
+  ];
+  if (pct < 5)
+    lines.push({
+      label: '배우자 기운',
+      text: `사주에 배우자를 뜻하는 기운(${sg})이 거의 드러나 있지 않아요. 인연이 없다는 뜻이 아니라, 관계를 저절로 앞순위에 두는 사주가 아니라는 뜻이에요. 시간을 일부러 내야 관계가 자라요.`,
+      basis: `${sg} ${pct.toFixed(0)}%`,
+    });
+  else if (pct >= 35)
+    lines.push({
+      label: '배우자 기운',
+      text: `배우자를 뜻하는 기운(${sg})이 강해요. 관계와 상대에게 쓰는 마음이 큰 만큼, 상대에게 휘둘리거나 지치기도 쉬워요. 자기 시간을 지켜야 오래가요.`,
+      basis: `${sg} ${pct.toFixed(0)}%`,
+    });
+  return { who, lines };
+}
+
+// ---------------------------------------------------------------------------
 // 궁합 리포트
 // ---------------------------------------------------------------------------
 function tierOf(score: number): { tier: string; text: string } {
@@ -658,6 +816,11 @@ export function compatReport(a: SajuAnalysis, b: SajuAnalysis): CompatReport {
   const bad = factors.filter((f) => f.tone === 'bad').sort(byWeight);
   // 점수가 낮으면 부딪히는 점을, 아니면 잘 맞는 점을 먼저 내세운다
   const headline = (score >= 58 ? (good[0] ?? bad[0]) : (bad[0] ?? good[0]))?.title ?? '무난하게 맞춰 가는 사이';
+  // 점수 밖의 보충 풀이 — 점수와 제목을 정한 뒤에 목록 뒤쪽에 붙인다 (성향 차이는 맨 끝)
+  const mf = monthFactor(a, b);
+  const more: Factor[] = [...(mf ? [mf] : []), ...daeunFactors(a, b, you), styleFactor(a, b, you)];
+  good.push(...more.filter((f) => f.tone === 'good'));
+  bad.push(...more.filter((f) => f.tone === 'bad'));
 
   // 반복되는 다툼과 푸는 법
   const conflict: CompatReport['conflict'] = bad.slice(0, 2).map((f) => ({ title: f.title, text: f.text }));
@@ -718,6 +881,8 @@ export function compatReport(a: SajuAnalysis, b: SajuAnalysis): CompatReport {
     advice: advice.slice(0, 4),
     gaeun: coupleGaeun(a, b, you),
     notes: accuracyNotes(a, b, you),
+    more,
+    portraits: [portraitOf(a, '나'), portraitOf(b, you)],
   };
 }
 

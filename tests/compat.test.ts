@@ -50,6 +50,18 @@ describe('궁합', () => {
     }
   });
 
+  it('보충 풀이는 점수에 넣지 않고, 어느 쌍에나 부딪히는 점과 두 사람의 배우자 모습이 나온다', () => {
+    for (const [a, b] of pairs) {
+      const r = compatReport(a, b);
+      for (const f of r.more) expect(f.points).toBe(0);
+      expect(r.score).toBe(Math.max(35, Math.min(97, Math.round(60 + r.factors.reduce((s, f) => s + f.points, 0)))));
+      expect(r.factors.some((f) => r.more.includes(f))).toBe(false);
+      expect(r.bad.length).toBeGreaterThan(0);
+      expect(r.portraits).toHaveLength(2);
+      for (const p of r.portraits) expect(p.lines.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it('조사 자리에 (가)·(를) 같은 임시 표기가 남지 않는다', () => {
     for (const [a, b] of pairs.slice(0, 600)) {
       for (const t of allText(compatReport(a, b))) expect(t).not.toMatch(/\((가|를|는|이|은|을)\)|나이 |나무이|undefined|NaN/);

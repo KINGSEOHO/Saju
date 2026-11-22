@@ -283,6 +283,26 @@ const YEAR_KIND: Record<YearSign['kind'], { label: string; tag: string }> = {
 function CompatDetail({ r }: { r: CompatReport }) {
   return (
     <>
+      <Block title="두 사람은 각자 이런 배우자예요" desc="궁합 이전에, 각자가 관계에서 어떤 사람인지 먼저 봤어요.">
+        <div className="space-y-8">
+          {r.portraits.map((p) => (
+            <div key={p.who}>
+              <p className="font-serif text-title3 font-bold text-ink">{p.who}</p>
+              <dl className="mt-2 border-t border-line">
+                {p.lines.map((l) => (
+                  <div key={l.label} className="border-b border-line py-4">
+                    <dt className="text-label font-semibold text-sub">{l.label}</dt>
+                    <dd className="mt-1 text-ui text-ink-2">{l.text}</dd>
+                    <dd className="mt-1.5 text-cap text-sub">
+                      <Gloss text={l.basis} />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
+        </div>
+      </Block>
       <Block title="반복되는 다툼과 푸는 법" desc="두 사람의 구조에서 자주 생기는 갈등이에요.">
         <ol className="space-y-5">
           {r.conflict.map((c, i) => (
@@ -501,11 +521,11 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
 
       <section className="mt-12">
         <h4 className="text-title2 text-ink">잘 맞는 점</h4>
-        {sealed ? <Veil rows={4} /> : <FactorList items={r.good.slice(0, 3)} empty="타고난 구조에서 특별히 끌어당기는 점은 두드러지지 않아요. 함께 쌓은 시간이 더 중요한 사이예요." />}
+        {sealed ? <Veil rows={4} /> : <FactorList items={r.good.slice(0, 4)} empty="타고난 구조에서 특별히 끌어당기는 점은 두드러지지 않아요. 함께 쌓은 시간이 더 중요한 사이예요." />}
       </section>
       <section className="mt-10">
         <h4 className="text-title2 text-ink">부딪히는 점</h4>
-        {sealed ? <Veil rows={4} /> : <FactorList items={r.bad.slice(0, 3)} empty="타고난 구조에서 크게 부딪히는 점은 없어요." />}
+        {sealed ? <Veil rows={4} /> : <FactorList items={r.bad.slice(0, 4)} empty="타고난 구조에서 크게 부딪히는 점은 없어요." />}
       </section>
 
       <section className="mt-10">
