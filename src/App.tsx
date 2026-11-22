@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { type BirthInput } from './engine/index.ts';
 import { flushQueue } from './lib/api.ts';
 import { track } from './lib/funnel.ts';
@@ -283,43 +283,6 @@ const PROOF: [string, string, string][] = [
   ['15,000건', '사주 네 기둥', '무작위로 뽑아 다른 만세력 계산과 대조했고 모두 같았어요'],
 ];
 
-/** 명경사주가 다른 네 가지 — 첫 화면 위쪽에 한눈에, 아래에서 하나씩 실제 예시로 */
-const STRENGTHS: { short: string; title: string; text: string }[] = [
-  { short: '시차 보정', title: '시계가 아니라 해의 시각으로 계산해요', text: '서울은 시계보다 해가 32분 늦어요. 서머타임과 태어난 곳의 시차를 빼서 사주에 쓰는 진짜 시각을 구해요.' },
-  { short: '직설 풀이', title: '좋게 포장하지 않고 있는 그대로 말해요', text: '강점 옆에 약점을 나란히 적고, 왜 그렇게 보는지 근거를 붙여요.' },
-  { short: '웹툰 요약', title: '긴 풀이를 웹툰으로 요약해요', text: '내 사주에서 나온 장면으로 4화까지 그려요. 글을 다 읽지 않아도 내가 어떤 사람인지 보여요.' },
-  { short: 'MBTI 결합', title: 'MBTI와 사주를 나란히 놓고 봐요', text: 'MBTI는 내가 고른 겉모습, 사주는 타고난 속이에요. 네 글자마다 같은 곳과 다른 곳을 짚어 드려요.' },
-];
-
-function Strength({ no, children }: { no: number; children: ReactNode }) {
-  const s = STRENGTHS[no - 1];
-  return (
-    <section className="mt-14" aria-labelledby={`why-${no}`}>
-      <div className="flex items-start gap-3">
-        <span aria-hidden className="hanja flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-title3 font-bold text-on-accent">
-          {no}
-        </span>
-        <div>
-          <h2 id={`why-${no}`} className="text-title2 text-ink">
-            {s.title}
-          </h2>
-          <p className="mt-2 text-ui text-sub">{s.text}</p>
-        </div>
-      </div>
-      <div className="mt-5">{children}</div>
-    </section>
-  );
-}
-
-const Sample = ({ part, min }: { part: 'card' | 'toon' | 'mbti'; min: string }) => (
-  <div className={min}>
-    <Suspense fallback={<p className="py-10 text-center text-label text-sub">예시를 계산하는 중…</p>}>
-      <HomeSample part={part} />
-    </Suspense>
-  </div>
-);
-const SAMPLE_NOTE = '예시 · 김명경(지어낸 인물) 1995년 12월 25일 03:10 서울';
-
 function Home() {
   const year = seasonYear();
   return (
@@ -331,20 +294,10 @@ function Home() {
           <br />
           있는 그대로 말해요.
         </h1>
-
-        <ol className="mt-7 grid grid-cols-2 gap-2.5" aria-label="명경사주가 다른 네 가지">
-          {STRENGTHS.map((s, i) => (
-            <li key={s.short} className="flex items-center gap-2.5 rounded-xl border border-line px-3.5 py-3">
-              <span aria-hidden className="hanja text-title2 font-bold text-accent">
-                {i + 1}
-              </span>
-              <span className="text-ui font-bold text-ink">{s.short}</span>
-            </li>
-          ))}
-        </ol>
+        <p className="mt-4 text-ui text-sub">강점과 약점을 모두, 왜 그렇게 보는지 근거와 함께 알려 드려요.</p>
 
         {year && (
-          <div className="panel mt-6 flex items-center gap-4">
+          <div className="panel mt-8 flex items-center gap-4">
             <span className="hanja flex shrink-0 flex-col items-center justify-center rounded-xl border border-ink/70 px-3 py-2 text-[26px] leading-[1.1] font-bold text-ink" aria-hidden>
               <span>丁</span>
               <span>未</span>
@@ -363,25 +316,26 @@ function Home() {
           </div>
         )}
 
-        <Strength no={1}>
+        <section className="mt-12" aria-labelledby="sample-h">
+          <h2 id="sample-h" className="text-title2 text-ink">
+            이런 결과를 받아요
+          </h2>
+          <p className="mt-1 text-label text-sub">예시 · 김명경(지어낸 인물) 1995년 12월 25일 03:10 서울</p>
+          <div className="mt-4 min-h-[420px]">
+            <Suspense fallback={<p className="py-10 text-center text-label text-sub">예시를 계산하는 중…</p>}>
+              <HomeSample />
+            </Suspense>
+          </div>
+        </section>
+
+        <section className="mt-14" aria-labelledby="time-h">
+          <h2 id="time-h" className="text-title2 text-ink">
+            시계의 시각과 사주의 시각은 달라요
+          </h2>
+          <p className="mt-2 text-ui text-sub">1988년 7월 15일 새벽 1시 40분, 서울에서 태어났다면 서머타임 60분과 서울의 시차 32분을 빼요. 축시가 자시로 바뀌어요.</p>
           <TimeShift />
-          <p className="mt-3 text-label text-sub">1988년 7월 15일 새벽 1시 40분 서울 출생이라면 서머타임 60분과 시차 32분을 빼요. 축시가 자시로 바뀌어요.</p>
-        </Strength>
-
-        <Strength no={2}>
-          <Sample part="card" min="min-h-[330px]" />
-          <p className="mt-2 text-center text-cap text-sub">{SAMPLE_NOTE}</p>
-        </Strength>
-
-        <Strength no={3}>
-          <Sample part="toon" min="min-h-[240px]" />
-          <p className="mt-2 text-center text-cap text-sub">같은 예시 사주로 그린 1화의 한 컷</p>
-        </Strength>
-
-        <Strength no={4}>
-          <Sample part="mbti" min="min-h-[250px]" />
-          <p className="mt-2 text-center text-cap text-sub">같은 예시에 MBTI를 ENFJ로 넣었을 때</p>
-        </Strength>
+          <p className="mt-3 text-label text-sub">서머타임, 표준시가 달랐던 시기, 태어난 곳의 경도까지 저절로 반영해요.</p>
+        </section>
 
         <section className="mt-14" aria-labelledby="proof-h">
           <h2 id="proof-h" className="text-title2 text-ink">
