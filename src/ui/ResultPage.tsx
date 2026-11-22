@@ -462,9 +462,9 @@ export default function Result({ input }: { input: BirthInput }) {
 
   return (
     <div className="wrap pb-20">
-      <div className="no-print flex items-start justify-between gap-4 pt-5">
-        <p className="text-cap text-sub">{[input.name, input.gender === 'male' ? '남성' : '여성', born, input.placeName, `만 ${a.age}세`].filter(Boolean).join(' · ')}</p>
-        <div className="flex shrink-0 gap-3 text-cap font-semibold">
+      <div className="no-print flex flex-wrap items-start justify-between gap-x-4 gap-y-2 pt-5">
+        <p className="min-w-[11rem] flex-1 text-cap text-sub">{[input.name, input.gender === 'male' ? '남성' : '여성', born, input.placeName, `만 ${a.age}세`].filter(Boolean).join(' · ')}</p>
+        <div className="ml-auto flex shrink-0 gap-3 text-cap font-semibold">
           <button type="button" className="tap text-accent" onClick={edit}>
             정보 수정
           </button>
