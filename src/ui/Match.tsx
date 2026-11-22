@@ -390,44 +390,67 @@ function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
 }
 
 const BOND_LINE = {
-  good: { cls: 'stroke-accent', dash: undefined, word: '잘 맞아요' },
-  bad: { cls: 'stroke-ink', dash: '7 6', word: '부딪혀요' },
-  neutral: { cls: 'stroke-faint', dash: '2 5', word: '담담해요' },
+  good: { cls: 'stroke-accent', fill: 'fill-accent', dash: undefined },
+  bad: { cls: 'stroke-ink', fill: 'fill-ink', dash: '7 6' },
+  neutral: { cls: 'stroke-faint', fill: 'fill-faint', dash: '2 5' },
 } as const;
+
+/** 선의 방향 — 누가 누구에게 힘을 주는지. toYou 내가 상대에게 · toMe 상대가 나에게 · both 서로 끌림 · same 닮은 꼴 · clash 서로 부딪힘 */
+function bondDir(id: string | undefined): 'toYou' | 'toMe' | 'both' | 'same' | 'clash' | 'none' {
+  if (!id) return 'none';
+  if (id === 'stem-feed' || id === 'stem-lead') return 'toYou';
+  if (id === 'stem-fed' || id === 'stem-led') return 'toMe';
+  if (id === 'stem-hap' || id === 'branch-hap' || id === 'branch-samhap') return 'both';
+  if (id === 'stem-same' || id === 'stem-rival' || id === 'branch-same' || id === 'branch-jahyeong') return 'same';
+  return 'clash';
+}
+const DIR_WORD = { toYou: '내가 → 상대에게', toMe: '상대가 → 나에게', both: '서로 끌려요', same: '서로 닮았어요', clash: '서로 부딪혀요', none: '특별한 관계는 두드러지지 않아요' } as const;
 
 /**
  * 두 사람의 일주(나를 뜻하는 글자와 배우자 자리)를 마주 놓고 선으로 잇는 그림.
- * 끌어당기면 이어진 포인트 색 선, 부딪히면 끊어진 먹색 선, 특별한 관계가 없으면 옅은 점선.
- * 아직 열지 않은 상대는 선의 종류를 알려 주지 않는다 (물음표).
+ * 화살표가 힘이 가는 방향이고(한쪽이 키워 주거나 이끌면 한 방향, 서로 끌리면 마주 보는 화살표), 선 아래에 그 관계의 이름을 적는다.
+ * 잘 맞으면 이어진 포인트 색 선, 부딪히면 끊어진 먹색 선, 특별한 관계가 없으면 옅은 점선.
+ * 아직 열지 않은 상대는 선의 종류와 방향을 알려 주지 않는다 (물음표).
  */
 function BondDiagram({ a, b, r, sealed }: { a: SajuAnalysis; b: SajuAnalysis; r: CompatReport; sealed: boolean }) {
   const rows = [
-    { y: 58, label: '나를 뜻하는 글자', me: STEMS[a.pillars.day.stem].hanja, you: STEMS[b.pillars.day.stem].hanja, f: r.factors.find((x) => x.id.startsWith('stem-')) },
-    { y: 134, label: '배우자 자리', me: BRANCHES[a.pillars.day.branch].hanja, you: BRANCHES[b.pillars.day.branch].hanja, f: r.factors.find((x) => x.id.startsWith('branch-')) },
+    { y: 62, label: '나를 뜻하는 글자', me: STEMS[a.pillars.day.stem].hanja, you: STEMS[b.pillars.day.stem].hanja, f: r.factors.find((x) => x.id.startsWith('stem-')) },
+    { y: 178, label: '배우자 자리', me: BRANCHES[a.pillars.day.branch].hanja, you: BRANCHES[b.pillars.day.branch].hanja, f: r.factors.find((x) => x.id.startsWith('branch-')) },
   ];
-  const desc = sealed ? '두 사람의 일주를 마주 놓은 그림' : `두 사람의 일주를 마주 놓은 그림. ${rows.map((x) => `${x.label}는 ${BOND_LINE[x.f?.tone ?? 'neutral'].word}`).join(', ')}`;
+  const desc = sealed ? '두 사람의 일주를 마주 놓은 그림' : `두 사람의 일주를 마주 놓은 그림. ${rows.map((x) => `${x.label}: ${DIR_WORD[bondDir(x.f?.id)]}${x.f ? `, ${x.f.title}` : ''}`).join('. ')}`;
+  /** 화살촉 — 끝점 x에서 dir(1 오른쪽 · -1 왼쪽)을 향한다 */
+  const head = (x: number, y: number, dir: 1 | -1, cls: string) => <path d={`M${x} ${y} l${-11 * dir} -7 v14 z`} className={cls} />;
   return (
-    <svg viewBox="0 0 320 186" className="mt-6 w-full" role="img" aria-label={desc}>
-      <text x="48" y="16" textAnchor="middle" className="fill-sub text-[12px] font-semibold">
+    <svg viewBox="0 0 320 236" className="mt-6 w-full" role="img" aria-label={desc}>
+      <text x="44" y="14" textAnchor="middle" className="fill-sub text-[12px] font-semibold">
         나
       </text>
-      <text x="272" y="16" textAnchor="middle" className="fill-sub text-[12px] font-semibold">
+      <text x="276" y="14" textAnchor="middle" className="fill-sub text-[12px] font-semibold">
         상대
       </text>
       {rows.map((x) => {
         const line = BOND_LINE[sealed ? 'neutral' : (x.f?.tone ?? 'neutral')];
+        const dir = sealed ? 'none' : bondDir(x.f?.id);
         return (
           <g key={x.label}>
-            <line x1="82" x2="238" y1={x.y} y2={x.y} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={line.dash} className={line.cls} />
-            {!sealed && x.f?.tone === 'bad' && <path d={`M154 ${x.y - 9} l12 18 M166 ${x.y - 9} l-12 18`} strokeWidth="2" strokeLinecap="round" className="stroke-ink" />}
-            {!sealed && x.f?.tone === 'good' && <circle cx="160" cy={x.y} r="5" className="fill-accent" />}
+            <line x1="84" x2="236" y1={x.y} y2={x.y} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={line.dash} className={line.cls} />
+            {dir === 'toYou' && head(240, x.y, 1, line.fill)}
+            {dir === 'toMe' && head(80, x.y, -1, line.fill)}
+            {dir === 'both' && (
+              <>
+                {head(160, x.y, 1, line.fill)}
+                {head(160, x.y, -1, line.fill)}
+              </>
+            )}
+            {dir === 'same' && <path d={`M152 ${x.y - 5} h16 M152 ${x.y + 5} h16`} strokeWidth="2.5" strokeLinecap="round" className={`${line.cls} [paint-order:stroke]`} />}
+            {dir === 'clash' && <path d={`M154 ${x.y - 9} l12 18 M166 ${x.y - 9} l-12 18`} strokeWidth="2.5" strokeLinecap="round" className="stroke-ink" />}
             <text x="160" y={x.y - 16} textAnchor="middle" className="fill-sub text-[11px]">
               {x.label}
             </text>
-            <text x="160" y={x.y + 24} textAnchor="middle" paintOrder="stroke" strokeWidth="4" className={`stroke-bg text-[13px] font-bold ${sealed ? 'fill-accent' : 'fill-ink'}`}>
-              {sealed ? '?' : line.word}
+            <text x="160" y={x.y + 24} textAnchor="middle" className={`text-[12px] font-semibold ${sealed ? 'fill-accent' : 'fill-ink-2'}`}>
+              {sealed ? '?' : DIR_WORD[dir]}
             </text>
-            {[48, 272].map((cx, i) => (
+            {[44, 276].map((cx, i) => (
               <g key={cx}>
                 <rect x={cx - 30} y={x.y - 30} width="60" height="60" rx="12" strokeWidth="1.2" className="fill-paper stroke-paper-edge" />
                 <text x={cx} y={x.y + 11} textAnchor="middle" className="hanja fill-ink text-[30px] font-bold">
@@ -435,6 +458,11 @@ function BondDiagram({ a, b, r, sealed }: { a: SajuAnalysis; b: SajuAnalysis; r:
                 </text>
               </g>
             ))}
+            {!sealed && x.f && (
+              <text x="160" y={x.y + 52} textAnchor="middle" className="fill-ink text-[14px] font-bold">
+                {x.f.title}
+              </text>
+            )}
           </g>
         );
       })}

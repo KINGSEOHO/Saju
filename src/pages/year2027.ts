@@ -35,7 +35,7 @@ export interface Page {
   html: string;
 }
 
-function shell(o: { dir: string; title: string; desc: string; ogTitle: string; body: string }): string {
+function shell(o: { dir: string; title: string; desc: string; ogTitle: string; body: string; script?: string }): string {
   const up = o.dir
     .split('/')
     .map(() => '..')
@@ -71,7 +71,7 @@ ${o.body}
     <footer class="wrap pb-10 text-center text-cap text-sub">
       <a href="${up}/time/" class="underline">출생시간 보정 계산기</a> · <a href="${up}/#/terms" class="underline">이용약관</a> · <a href="${up}/#/privacy" class="underline">개인정보처리방침</a> · <a href="${up}/#/pricing" class="underline">요금 안내</a>
     </footer>
-    <script type="module" src="/src/pages/static.ts"></script>
+    <script type="module" src="/src/pages/${o.script ?? 'static'}.ts"></script>
   </body>
 </html>
 `;
@@ -213,8 +213,11 @@ function indexPage(): Page {
       <p class="mt-4 text-ui text-sub">${YEAR}년은 ${Y_KO}년(${Y_HANJA}年)이에요. 같은 해라도 태어난 날의 윗글자(일간)에 따라 그 해의 글자가 뜻하는 것이 달라요. 열 가지 일간마다 무엇이 들어오는 해인지, 왜 그렇게 보는지 근거와 함께 적었어요.</p>
 
       <section class="mt-10">
-        <h2 class="text-title2 text-ink">내 일간 고르기</h2>
-        <p class="mt-2 text-label text-sub">일간을 모른다면 <a href="../" class="link">생년월일을 넣어 확인</a>할 수 있어요. 띠와는 다른 글자예요.</p>
+        <h2 class="text-title2 text-ink">내 일간 찾기</h2>
+        <p class="mt-2 text-label text-sub">일간은 태어난 날의 윗글자예요. 띠(태어난 해)와는 다른 글자라서, 양력 생일을 골라 찾아요. 음력 생일이면 양력으로 바꿔 넣어 주세요.</p>
+        <div id="stem-finder" class="panel mt-4"><noscript>일간을 찾으려면 자바스크립트를 켜 주세요. 아래 목록에서 바로 골라도 돼요.</noscript></div>
+        <p class="mt-2 text-cap text-sub">밤 11시 반쯤 뒤에 태어났다면 다음 날의 글자일 수 있어요. <a href="../" class="link">내 사주 보기</a>에서 시각까지 넣으면 정확히 나와요. 입력한 값은 서버로 보내지 않아요.</p>
+        <h3 class="mt-8 text-title3 text-ink">일간을 알고 있다면</h3>
         <ul class="mt-4 border-t border-line">
 ${cards}
         </ul>
@@ -251,6 +254,7 @@ ${cta('..', `일간만으로는 절반이에요. 여덟 글자 전체로 ${YEAR}
       desc: `${YEAR} ${Y_KO}년(${Y_HANJA}年)이 갑목부터 계수까지 일간마다 어떤 해인지, 입춘과 열두 달 절기 시각까지 근거와 함께 정리했어요.`,
       ogTitle: `${YEAR}년 ${Y_KO}년 운세, 내 일간으로 보기`,
       body,
+      script: 'finder',
     }),
   };
 }
