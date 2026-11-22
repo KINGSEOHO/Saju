@@ -108,13 +108,9 @@ const FAQ: { q: string; a: ReactNode }[] = [
 export function Faq() {
   return (
     <section className="no-print wrap pt-16 pb-8" aria-labelledby="faq-title">
-      <p className="kicker">자주 묻는 질문</p>
-      <h2 id="faq-title" className="mt-2 text-title1 text-ink">
-        듣기 좋은 말보다,
-        <br />
-        정확한 사실을
+      <h2 id="faq-title" className="text-title2 text-ink">
+        자주 묻는 질문
       </h2>
-      <p className="mt-3 text-label text-sub">명경사주가 다른 사주 서비스와 어떻게 다른지 솔직하게 답해 드려요.</p>
       <div className="mt-8 border-t border-line">
         {FAQ.map((f) => (
           <details key={f.q} className="group border-b border-line">

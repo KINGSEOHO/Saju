@@ -162,14 +162,6 @@ export default function App() {
   );
 }
 
-const FEATURES: [string, string][] = [
-  ['천문 계산 만세력', '절기와 합삭을 천문학 공식으로 직접 계산해요.'],
-  ['출생 시각 자동 보정', '서머타임과 표준시 변경, 태어난 곳의 경도까지 반영해요.'],
-  ['한국천문연구원 자료와 일치', '1900~2050년 음력 전 구간을 대조해 확인했어요.'],
-  ['좋은 말만 하지 않기', '모든 해석에 강점·약점·주의와 근거를 함께 붙여요.'],
-  ['내 사주로 그린 개그 웹툰', '결과 화면에서 4화까지 볼 수 있어요.'],
-];
-
 /** 이 기기에 남은 최근 본 사주 — 누르면 입력 없이 바로 결과로. 새 정보는 아래 '내 사주 보기'로 */
 function RecentList() {
   const [list, setList] = useState<Recent[]>(loadRecent);
@@ -208,26 +200,130 @@ function RecentList() {
   );
 }
 
+const NoSample = () => <></>;
+const HomeSample = lazy(() => import('./ui/HomeSample.tsx').catch(() => ({ default: NoSample })));
+
+/** 신년운세 시즌(10월~이듬해 입춘 무렵)에 첫 화면에서 보여 주는 해 — 검색용 페이지(/2027/…)가 있는 해만 잇는다 */
+function seasonYear(): number | null {
+  const kst = new Date(Date.now() + 9 * 3600_000);
+  const y = kst.getUTCMonth() + 1 >= 10 ? kst.getUTCFullYear() + 1 : kst.getUTCFullYear();
+  return y === 2027 ? y : null;
+}
+
+/** 보정 계산기 예시(1988-07-15 01:40 서울)를 시간 띠로 — 기록된 시각이 자시 쪽으로 옮겨 가는 모습 */
+function TimeShift() {
+  // 23시~03시를 0~300으로. 자시 23~01, 축시 01~03
+  const x = (h: number, m: number) => (((h + 1) % 24) * 60 + m) * (300 / 240);
+  const from = x(1, 40);
+  const to = x(0, 7);
+  return (
+    <svg viewBox="0 0 300 96" className="mt-5 w-full" role="img" aria-label="기록된 시각 1시 40분이 서머타임 60분과 서울의 시차 32분을 빼면 0시 7분이 되어, 축시가 자시로 바뀌어요">
+      <rect x="0" y="52" width="150" height="26" rx="6" className="fill-accent" />
+      <rect x="150" y="52" width="150" height="26" rx="6" className="fill-fill" />
+      <text x="75" y="70" textAnchor="middle" className="fill-on-accent text-[12px] font-bold">
+        자시 子
+      </text>
+      <text x="225" y="70" textAnchor="middle" className="fill-sub text-[12px] font-bold">
+        축시 丑
+      </text>
+      <text x="0" y="92" className="fill-sub text-[10px]">
+        23시
+      </text>
+      <text x="150" y="92" textAnchor="middle" className="fill-sub text-[10px]">
+        1시
+      </text>
+      <text x="300" y="92" textAnchor="end" className="fill-sub text-[10px]">
+        3시
+      </text>
+      <path d={`M${from} 40 V30 H${to + 5}`} fill="none" strokeWidth="1.5" className="stroke-ink" />
+      <path d={`M${to} 46 l5 -9 h-10 z`} className="fill-ink" />
+      <circle cx={from} cy="46" r="4" className="fill-bg stroke-ink" strokeWidth="1.5" />
+      <text x={from} y="18" textAnchor="middle" className="fill-sub text-[11px]">
+        기록 01:40
+      </text>
+      <text x={to} y="18" textAnchor="middle" className="fill-ink text-[11px] font-bold">
+        사주 00:07
+      </text>
+    </svg>
+  );
+}
+
+const PROOF: [string, string, string][] = [
+  ['55,152일', '음력 변환', '1900~2050년 하루도 빠짐없이 한국천문연구원 자료와 같아요'],
+  ['1분 이내', '절기 시각', '1900~2100년 전 구간이 독립된 천문 계산과 맞아요'],
+  ['15,000건', '사주 네 기둥', '무작위로 뽑아 다른 만세력 계산과 대조했고 모두 같았어요'],
+];
+
 function Home() {
+  const year = seasonYear();
   return (
     <>
       <RecentList />
-      <div className="wrap pt-12 pb-4">
-        <p className="kicker">정밀 만세력 · 근거 있는 풀이</p>
-        <h1 className="mt-3 text-display text-ink">
+      <div className="wrap pt-10 pb-4">
+        <h1 className="text-display text-ink">
           정확하게 계산하고,
           <br />
           있는 그대로 말해요.
         </h1>
-        <p className="mt-4 text-ui text-sub">좋은 말만 늘어놓지 않아요. 성향·연애·직업·재물·건강을 강점과 약점 모두, 왜 그렇게 보는지 근거와 함께 알려 드려요.</p>
-        <dl className="mt-10 border-t border-line">
-          {FEATURES.map(([t, d]) => (
-            <div key={t} className="border-b border-line py-5">
-              <dt className="font-serif text-title3 font-bold text-ink">{t}</dt>
-              <dd className="mt-1 text-label text-sub">{d}</dd>
+        <p className="mt-4 text-ui text-sub">강점과 약점을 모두, 왜 그렇게 보는지 근거와 함께 알려 드려요.</p>
+
+        {year && (
+          <div className="panel mt-8 flex items-center gap-4">
+            <span className="hanja flex shrink-0 flex-col items-center justify-center rounded-xl border border-ink/70 px-3 py-2 text-[26px] leading-[1.1] font-bold text-ink" aria-hidden>
+              <span>丁</span>
+              <span>未</span>
+            </span>
+            <div className="min-w-0">
+              <p className="text-title3 font-bold text-ink">{year} 정미년, 내 운은 어떻게 흐를까요?</p>
+              <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-label">
+                <a href={`./${year}/`} className="link">
+                  일간별 {year} 운세
+                </a>
+                <a href="./time/" className="link">
+                  출생시간 보정 계산기
+                </a>
+              </p>
             </div>
-          ))}
-        </dl>
+          </div>
+        )}
+
+        <section className="mt-12" aria-labelledby="sample-h">
+          <h2 id="sample-h" className="text-title2 text-ink">
+            이런 결과를 받아요
+          </h2>
+          <p className="mt-1 text-label text-sub">예시 · 김명경(지어낸 인물) 1995년 12월 25일 03:10 서울</p>
+          <div className="mt-4 min-h-[420px]">
+            <Suspense fallback={<p className="py-10 text-center text-label text-sub">예시를 계산하는 중…</p>}>
+              <HomeSample />
+            </Suspense>
+          </div>
+        </section>
+
+        <section className="mt-14" aria-labelledby="time-h">
+          <h2 id="time-h" className="text-title2 text-ink">
+            시계의 시각과 사주의 시각은 달라요
+          </h2>
+          <p className="mt-2 text-ui text-sub">1988년 7월 15일 새벽 1시 40분, 서울에서 태어났다면 서머타임 60분과 서울의 시차 32분을 빼요. 축시가 자시로 바뀌어요.</p>
+          <TimeShift />
+          <p className="mt-3 text-label text-sub">서머타임, 표준시가 달랐던 시기, 태어난 곳의 경도까지 저절로 반영해요.</p>
+        </section>
+
+        <section className="mt-14" aria-labelledby="proof-h">
+          <h2 id="proof-h" className="text-title2 text-ink">
+            계산은 이렇게 확인했어요
+          </h2>
+          <ul className="mt-4 border-t border-line">
+            {PROOF.map(([n, what, how]) => (
+              <li key={n} className="grid grid-cols-[7.5rem_1fr] items-center gap-4 border-b border-line py-5">
+                <span className="hanja text-[26px] leading-tight font-bold text-accent tabular-nums">{n}</span>
+                <span>
+                  <span className="block text-ui font-semibold text-ink">{what}</span>
+                  <span className="mt-0.5 block text-label text-sub">{how}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
       <Faq />
     </>
