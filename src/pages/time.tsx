@@ -17,47 +17,74 @@ const hhmm = (ms: number) => {
 };
 const sign = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(Math.round(n))}분`;
 
+const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+const YEARS = range(1900, new Date().getFullYear()).reverse();
+
+/** 아이폰의 날짜·시각 칸은 자기 너비를 고집해 칸 밖으로 넘쳐서, 어디서나 같은 고르기 칸을 쓴다 */
+function Pick({ label, value, set, list, unit }: { label: string; value: number; set: (n: number) => void; list: number[]; unit: string }) {
+  return (
+    <select aria-label={label} className="field min-w-0 px-3 tabular-nums" value={value} onChange={(e) => set(Number(e.target.value))}>
+      {list.map((n) => (
+        <option key={n} value={n}>
+          {n}
+          {unit}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function Calc() {
-  const [date, setDate] = useState('1988-07-15');
-  const [time, setTime] = useState('01:40');
+  const [y, setY] = useState(1988);
+  const [m, setM] = useState(7);
+  const [d, setD] = useState(15);
+  const [h, setH] = useState(1);
+  const [mi, setMi] = useState(40);
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
   const [region, setRegion] = useState(KOREA[0].name);
   const [city, setCity] = useState(KOREA[0].cities[0].name);
   const [gender, setGender] = useState<'male' | 'female'>('female');
   const cities = KOREA.find((r) => r.name === region)!.cities;
   const out = useMemo(() => {
-    const [y, m, d] = date.split('-').map(Number);
-    const [h, mi] = time.split(':').map(Number);
     const c = cities.find((x) => x.name === city) ?? cities[0];
-    if (!y || y < 1900 || y > 2100 || !m || !d || Number.isNaN(h) || Number.isNaN(mi)) return null;
-    const input: BirthInput = { gender, calendar: 'solar', year: y, month: m, day: d, hour: h, minute: mi, longitude: c.longitude, timeZone: c.timeZone, placeName: c.name };
+    const input: BirthInput = { gender, calendar: 'solar', year: y, month: m, day: Math.min(d, days), hour: h, minute: mi, longitude: c.longitude, timeZone: c.timeZone, placeName: c.name };
     const real = computePillars(input);
     // 보정을 하나도 하지 않는 계산: 시계 시각을 그대로 동경 135° 표준시로 본다
     const raw = computePillars({ ...input, longitude: 135, timeZone: 'Etc/GMT-9' });
     return { input, real, raw, c };
-  }, [date, time, city, cities, gender]);
+  }, [y, m, d, days, h, mi, city, cities, gender]);
 
   return (
     <div className="panel">
-      <div className="grid grid-cols-2 gap-3">
-        <label className="col-span-2 block">
-          <span className="text-label font-semibold text-ink">태어난 날 (양력)</span>
-          <input type="date" className="field mt-2" min="1900-01-01" max="2100-12-31" value={date} onChange={(e) => setDate(e.target.value)} />
-        </label>
-        <label className="block">
-          <span className="text-label font-semibold text-ink">기록된 시각</span>
-          <input type="time" className="field mt-2" value={time} onChange={(e) => setTime(e.target.value)} />
-        </label>
-        <label className="block">
-          <span className="text-label font-semibold text-ink">성별</span>
-          <select className="field mt-2" value={gender} onChange={(e) => setGender(e.target.value as 'male' | 'female')}>
+      <div role="group" aria-label="태어난 날 (양력)" className="min-w-0">
+        <p className="text-label font-semibold text-ink">태어난 날 (양력)</p>
+        <div className="mt-2 grid grid-cols-[1.4fr_1fr_1fr] gap-2">
+          <Pick label="년" value={y} set={setY} list={YEARS} unit="년" />
+          <Pick label="월" value={m} set={setM} list={range(1, 12)} unit="월" />
+          <Pick label="일" value={Math.min(d, days)} set={setD} list={range(1, days)} unit="일" />
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <div role="group" aria-label="기록된 시각" className="col-span-2 min-w-0">
+          <p className="text-label font-semibold text-ink">기록된 시각</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <Pick label="시" value={h} set={setH} list={range(0, 23)} unit="시" />
+            <Pick label="분" value={mi} set={setMi} list={range(0, 59)} unit="분" />
+          </div>
+        </div>
+        <label className="block min-w-0">
+          <span className="block text-label font-semibold text-ink">성별</span>
+          <select className="field mt-2 min-w-0 px-3" value={gender} onChange={(e) => setGender(e.target.value as 'male' | 'female')}>
             <option value="female">여자</option>
             <option value="male">남자</option>
           </select>
         </label>
-        <label className="block">
-          <span className="text-label font-semibold text-ink">태어난 곳</span>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <label className="block min-w-0">
+          <span className="block text-label font-semibold text-ink">태어난 곳</span>
           <select
-            className="field mt-2"
+            className="field mt-2 min-w-0 px-3"
             value={region}
             onChange={(e) => {
               setRegion(e.target.value);
@@ -71,9 +98,9 @@ function Calc() {
             ))}
           </select>
         </label>
-        <label className="block">
-          <span className="text-label font-semibold text-ink">시·군</span>
-          <select className="field mt-2" value={city} onChange={(e) => setCity(e.target.value)} disabled={cities.length < 2}>
+        <label className="block min-w-0">
+          <span className="block text-label font-semibold text-ink">시·군</span>
+          <select className="field mt-2 min-w-0 px-3" value={city} onChange={(e) => setCity(e.target.value)} disabled={cities.length < 2}>
             {cities.map((c) => (
               <option key={c.name} value={c.name}>
                 {c.label ?? c.name}
@@ -82,7 +109,7 @@ function Calc() {
           </select>
         </label>
       </div>
-      {out ? <Result {...out} /> : <p className="mt-5 text-label text-sub">1900~2100년 사이 날짜와 시각을 넣어 주세요.</p>}
+      <Result {...out} />
     </div>
   );
 }
