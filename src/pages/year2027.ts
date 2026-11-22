@@ -9,6 +9,7 @@ import { fmtKst, ipchunMs, jieAround, yearMonthPillarsAt, yearPillarOf } from '.
 import { TEN_GOD_HANJA, tenGodOfBranch, tenGodOfStem, type TenGod } from '../engine/tenGods.ts';
 import { DAY_MASTER } from '../report/kb.ts';
 import { GOD } from '../report/luckReading.ts';
+import { stemArt } from './stemArt.ts';
 
 export const YEAR = 2027;
 const SITE = 'https://mgsaju.io.kr';
@@ -123,7 +124,8 @@ function stemPage(i: number): Page {
       <p class="mt-4 text-ui text-sub">태어난 날의 윗글자(일간)가 ${josa(name, '이라/라')}면, ${YEAR}년 ${Y_KO}년(${Y_HANJA}年)은 상반기에 ${head(a.neutralHead)}, 하반기에 ${head(b.neutralHead)}로 흘러요. 왜 그렇게 보는지 근거부터 적을게요.</p>
 
       <div class="panel mt-8">
-        <p class="text-label font-semibold text-ink">${dm.image}</p>
+        <div class="mx-auto mb-4 max-w-[280px]">${stemArt(i, dm.image)}</div>
+        <p class="text-center text-label font-semibold text-ink">${dm.image}</p>
         <dl class="mt-4 space-y-3 text-label">
           <div class="flex justify-between gap-4"><dt class="text-sub">${YEAR}년의 윗글자 ${yStem}</dt><dd class="text-right font-semibold text-ink">${name}에게 ${gs}(${TEN_GOD_HANJA[gs]})</dd></div>
           <div class="flex justify-between gap-4"><dt class="text-sub">${YEAR}년의 아랫글자 ${yBranch}</dt><dd class="text-right font-semibold text-ink">${name}에게 ${gb}(${TEN_GOD_HANJA[gb]})</dd></div>

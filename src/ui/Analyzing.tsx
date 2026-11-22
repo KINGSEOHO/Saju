@@ -46,6 +46,28 @@ export function Analyzing({ a, onDone }: { a: SajuAnalysis; onDone: () => void }
         <span>明</span>
         <span>鏡</span>
       </span>
+      {/* 여덟 글자가 해 → 달 → 날 → 시 순서로 한 기둥씩 세워진다 (이 사람의 실제 글자) */}
+      <div className="mx-auto mt-6 flex flex-row-reverse justify-center gap-2.5" aria-hidden>
+        {(
+          [
+            ['해', a.pillars.year],
+            ['달', a.pillars.month],
+            ['날', a.pillars.day],
+            ['시', a.pillars.hour],
+          ] as const
+        ).map(([name, p], i) => (
+          <div
+            key={name}
+            className={`w-14 text-center transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none ${n > i ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'}`}
+          >
+            <div className={`hanja flex flex-col items-center rounded-xl border py-2 text-[26px] leading-[1.2] font-bold ${p ? 'border-ink/70 text-ink' : 'border-dashed border-faint text-faint'}`}>
+              <span>{p ? pillarHanja(p)[0] : '?'}</span>
+              <span>{p ? pillarHanja(p)[1] : '?'}</span>
+            </div>
+            <div className="mt-1 text-cap text-sub">{name}</div>
+          </div>
+        ))}
+      </div>
       <h1 className="mt-5 text-center text-title2 text-ink">{a.input.name ? `${a.input.name}님의 사주를 계산하고 있어요` : '사주를 계산하고 있어요'}</h1>
       <div className="mx-auto mt-6 h-1 w-full max-w-[22rem] overflow-hidden rounded-full bg-fill" aria-hidden>
         {/* 너비 대신 transform으로 늘린다 (움직임이 매끄럽고 화면을 다시 배치하지 않는다) */}

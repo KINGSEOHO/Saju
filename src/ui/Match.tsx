@@ -5,7 +5,7 @@
  * 상대 정보는 이 기기 안에서만 계산한다 (partnerDraft.ts).
  */
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { analyze, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
+import { analyze, BRANCHES, STEMS, type BirthInput, type SajuAnalysis } from '../engine/index.ts';
 import { OVERSEAS, REGIONS, regionOf } from '../engine/timezone.ts';
 import { checkDate, checkTime, formatTime, formatYmd } from '../lib/birthDraft.ts';
 import { checkBreakup, formatYm, loadPartner, partnerInput, savePartner, type PartnerDraft } from '../lib/partnerDraft.ts';
@@ -389,6 +389,59 @@ function usePartnerLock(a: SajuAnalysis, b: SajuAnalysis) {
   };
 }
 
+const BOND_LINE = {
+  good: { cls: 'stroke-accent', dash: undefined, word: '잘 맞아요' },
+  bad: { cls: 'stroke-ink', dash: '7 6', word: '부딪혀요' },
+  neutral: { cls: 'stroke-faint', dash: '2 5', word: '담담해요' },
+} as const;
+
+/**
+ * 두 사람의 일주(나를 뜻하는 글자와 배우자 자리)를 마주 놓고 선으로 잇는 그림.
+ * 끌어당기면 이어진 포인트 색 선, 부딪히면 끊어진 먹색 선, 특별한 관계가 없으면 옅은 점선.
+ * 아직 열지 않은 상대는 선의 종류를 알려 주지 않는다 (물음표).
+ */
+function BondDiagram({ a, b, r, sealed }: { a: SajuAnalysis; b: SajuAnalysis; r: CompatReport; sealed: boolean }) {
+  const rows = [
+    { y: 58, label: '나를 뜻하는 글자', me: STEMS[a.pillars.day.stem].hanja, you: STEMS[b.pillars.day.stem].hanja, f: r.factors.find((x) => x.id.startsWith('stem-')) },
+    { y: 134, label: '배우자 자리', me: BRANCHES[a.pillars.day.branch].hanja, you: BRANCHES[b.pillars.day.branch].hanja, f: r.factors.find((x) => x.id.startsWith('branch-')) },
+  ];
+  const desc = sealed ? '두 사람의 일주를 마주 놓은 그림' : `두 사람의 일주를 마주 놓은 그림. ${rows.map((x) => `${x.label}는 ${BOND_LINE[x.f?.tone ?? 'neutral'].word}`).join(', ')}`;
+  return (
+    <svg viewBox="0 0 320 186" className="mt-6 w-full" role="img" aria-label={desc}>
+      <text x="48" y="16" textAnchor="middle" className="fill-sub text-[12px] font-semibold">
+        나
+      </text>
+      <text x="272" y="16" textAnchor="middle" className="fill-sub text-[12px] font-semibold">
+        상대
+      </text>
+      {rows.map((x) => {
+        const line = BOND_LINE[sealed ? 'neutral' : (x.f?.tone ?? 'neutral')];
+        return (
+          <g key={x.label}>
+            <line x1="82" x2="238" y1={x.y} y2={x.y} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={line.dash} className={line.cls} />
+            {!sealed && x.f?.tone === 'bad' && <path d={`M154 ${x.y - 9} l12 18 M166 ${x.y - 9} l-12 18`} strokeWidth="2" strokeLinecap="round" className="stroke-ink" />}
+            {!sealed && x.f?.tone === 'good' && <circle cx="160" cy={x.y} r="5" className="fill-accent" />}
+            <text x="160" y={x.y - 16} textAnchor="middle" className="fill-sub text-[11px]">
+              {x.label}
+            </text>
+            <text x="160" y={x.y + 24} textAnchor="middle" paintOrder="stroke" strokeWidth="4" className={`stroke-bg text-[13px] font-bold ${sealed ? 'fill-accent' : 'fill-ink'}`}>
+              {sealed ? '?' : line.word}
+            </text>
+            {[48, 272].map((cx, i) => (
+              <g key={cx}>
+                <rect x={cx - 30} y={x.y - 30} width="60" height="60" rx="12" strokeWidth="1.2" className="fill-paper stroke-paper-edge" />
+                <text x={cx} y={x.y + 11} textAnchor="middle" className="hanja fill-ink text-[30px] font-bold">
+                  {i ? x.you : x.me}
+                </text>
+              </g>
+            ))}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Relation }) {
   const lock = usePartnerLock(a, b);
   const r = useMemo(() => compatReport(a, b), [a, b]);
@@ -410,6 +463,7 @@ function CompatView({ a, b, rel }: { a: SajuAnalysis; b: SajuAnalysis; rel: Rela
           <span className="tag-pos mb-2 ml-auto">{r.tier}</span>
         </div>
         <TierScale score={r.score} />
+        <BondDiagram a={a} b={b} r={r} sealed={sealed} />
         {sealed ? <Veil rows={2} /> : <p className="mt-4 text-ui text-ink-2">{r.tierText}</p>}
         <Notice title="점수는 참고만 하세요" text={SCORE_NOTE} />
         {r.notes.map((t) => (
