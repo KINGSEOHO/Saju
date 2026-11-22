@@ -199,3 +199,104 @@ export function ScorePill({ score }: { score: number }) {
     </span>
   );
 }
+
+const WHEEL_AT: Record<Element, [number, number]> = { wood: [160, 52], fire: [262, 126], earth: [223, 246], metal: [97, 246], water: [58, 126] };
+const WHEEL_OPACITY = [1, 0.72, 0.5, 0.34, 0.22];
+
+/**
+ * 다섯 기운을 그림으로 — 서로 낳아 주는 순서(나무→불→흙→쇠→물)로 둥글게 놓고, 센 기운일수록 크고 진한 원으로 그린다.
+ * 없는 기운은 점선 빈 원. 색은 포인트 색 하나의 농담만 쓴다.
+ */
+export function ElementWheel({ percent, me }: { percent: Record<Element, number>; me: Element }) {
+  const rank = [...ELEMENTS].sort((a, b) => percent[b] - percent[a]);
+  const r = (e: Element) => (percent[e] > 0 ? 17 + Math.sqrt(percent[e]) * 4.2 : 20);
+  return (
+    <svg viewBox="0 0 320 312" className="mx-auto w-full max-w-[340px]" role="img" aria-label={`다섯 기운의 세기. ${rank.map((e) => `${EL_WORD[e]} ${percent[e].toFixed(0)}%`).join(', ')}`}>
+      {ELEMENTS.map((e, i) => {
+        const [x1, y1] = WHEEL_AT[e];
+        const [x2, y2] = WHEEL_AT[ELEMENTS[(i + 1) % 5]];
+        return <line key={e} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="1" strokeDasharray="2 4" className="stroke-line-strong" />;
+      })}
+      {ELEMENTS.map((e) => {
+        const [x, y] = WHEEL_AT[e];
+        const none = percent[e] <= 0;
+        const dark = rank.indexOf(e) < 2 && !none;
+        return (
+          <g key={e}>
+            <circle cx={x} cy={y} r={r(e) + 2} className="fill-bg" />
+            {none ? (
+              <circle cx={x} cy={y} r={r(e)} strokeWidth="1.5" strokeDasharray="4 4" className="fill-bg stroke-faint" />
+            ) : (
+              <circle cx={x} cy={y} r={r(e)} className="fill-accent" opacity={WHEEL_OPACITY[rank.indexOf(e)]} />
+            )}
+            {me === e && <circle cx={x} cy={y} r={r(e) + 5} fill="none" strokeWidth="1.5" className="stroke-ink" />}
+            <text x={x} y={y - 1} textAnchor="middle" className={`hanja text-[19px] font-bold ${dark ? 'fill-on-accent' : none ? 'fill-faint' : 'fill-ink'}`}>
+              {ELEMENT_HANJA[e]}
+            </text>
+            <text x={x} y={y + 14} textAnchor="middle" className={`text-[11px] font-semibold tabular-nums ${dark ? 'fill-on-accent' : none ? 'fill-faint' : 'fill-ink'}`}>
+              {none ? '없음' : `${percent[e].toFixed(0)}%`}
+            </text>
+            <text x={x} y={y + r(e) + (me === e ? 22 : 17)} textAnchor="middle" className="fill-sub text-[12px]">
+              {EL_WORD[e]}
+              {me === e ? ' · 나' : ''}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+export interface LifePoint {
+  key: string | number;
+  /** 아래 눈금 — '4세' */
+  label: string;
+  score: number;
+  now?: boolean;
+}
+
+/** 인생 흐름을 선 하나로 — 10년 운의 점수를 이어 그리고 '지금'을 점으로 찍는다. 가운데 점선이 보통(50점) */
+export function LifeLine({ data, ariaLabel }: { data: LifePoint[]; ariaLabel: string }) {
+  const W = 320;
+  const H = 150;
+  const [top, bottom, pad] = [26, 106, 18];
+  const x = (i: number) => pad + (i * (W - pad * 2)) / Math.max(1, data.length - 1);
+  const y = (s: number) => bottom - (Math.max(0, Math.min(100, s)) / 100) * (bottom - top);
+  const pts = data.map((d, i) => [x(i), y(d.score)] as const);
+  // 점 사이를 부드럽게 (가로 방향 곡선)
+  const path = pts.map(([px, py], i) => (i === 0 ? `M${px} ${py}` : `C${(pts[i - 1][0] + px) / 2} ${pts[i - 1][1]} ${(pts[i - 1][0] + px) / 2} ${py} ${px} ${py}`)).join(' ');
+  const best = data.reduce((b, d, i) => (d.score > data[b].score ? i : b), 0);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={ariaLabel}>
+      <line x1={pad} x2={W - pad} y1={y(50)} y2={y(50)} strokeWidth="1" strokeDasharray="3 4" className="stroke-line-strong" />
+      <text x={pad} y={bottom + 12} className="fill-sub text-[10px]">
+        점선 = 보통
+      </text>
+      <path d={`${path} L${pts[pts.length - 1][0]} ${bottom} L${pts[0][0]} ${bottom} Z`} className="fill-accent" opacity="0.1" />
+      <path d={path} fill="none" strokeWidth="2.5" strokeLinecap="round" className="stroke-accent" />
+      {data.map((d, i) => (
+        <g key={d.key}>
+          {d.now ? (
+            <>
+              <circle cx={pts[i][0]} cy={pts[i][1]} r="9" className="fill-accent" opacity="0.2" />
+              <circle cx={pts[i][0]} cy={pts[i][1]} r="5" className="fill-accent" />
+              <text x={pts[i][0]} y={pts[i][1] - 14} textAnchor="middle" paintOrder="stroke" strokeWidth="4" className="fill-ink stroke-bg text-[12px] font-bold">
+                지금
+              </text>
+            </>
+          ) : (
+            <circle cx={pts[i][0]} cy={pts[i][1]} r="3" strokeWidth="1.5" className="fill-bg stroke-accent" />
+          )}
+          {i === best && !d.now && (
+            <text x={pts[i][0]} y={pts[i][1] - 10} textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'} className="fill-accent text-[10px] font-semibold">
+              가장 좋은 때
+            </text>
+          )}
+          <text x={pts[i][0]} y={H - 8} textAnchor="middle" className={`text-[10px] tabular-nums ${d.now ? 'fill-ink font-bold' : 'fill-sub'}`}>
+            {d.label}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}

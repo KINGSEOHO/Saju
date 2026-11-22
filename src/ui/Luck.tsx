@@ -5,7 +5,7 @@ import { groupOf } from '../engine/tenGods.ts';
 import { readLuck, type LuckReading } from '../report/luckReading.ts';
 import { seasonOf } from '../report/season.ts';
 import { DECADE_THEME } from '../report/storyKb.ts';
-import { DivergingBars, ScorePill } from './Charts.tsx';
+import { DivergingBars, LifeLine, ScorePill } from './Charts.tsx';
 import { Chevron, Gloss, SectionTitle } from './common.tsx';
 
 function roleLine(l: LuckPillar) {
@@ -347,17 +347,11 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
           <p className="mt-2 mb-8 text-cap text-sub">
             {d.forward ? '순행' : '역행'} 대운 · {d.basisJie}까지 {d.diffDays.toFixed(2)}일 ÷ 3 = 만 {d.startAgeYears}세 {d.startAgeMonths}개월 (전통 대운수 {d.daeunsu})
           </p>
-          <DivergingBars
-            ariaLabel="대운별 점수"
-            data={d.list.map((x) => ({
-              key: x.pillar.index,
-              label: pillarHanja(x.pillar),
-              sub: `${Math.floor(x.startAge)}세`,
-              score: x.score,
-              highlight: a.currentDaeun?.pillar.index === x.pillar.index,
-              tooltip: `${x.startYear}~${x.endYear}년 (만 ${Math.floor(x.startAge)}세~)\n${roleLine(x)}${x.flags.length ? '\n' + x.flags.join('\n') : ''}`,
-            }))}
+          <LifeLine
+            ariaLabel={`10년 운의 흐름. ${d.list.map((x) => `만 ${Math.floor(x.startAge)}세부터 ${x.score}점`).join(', ')}`}
+            data={d.list.map((x) => ({ key: x.pillar.index, label: `${Math.floor(x.startAge)}세`, score: x.score, now: a.currentDaeun?.pillar.index === x.pillar.index }))}
           />
+          <p className="mt-1 text-center text-cap text-sub">선이 위로 갈수록 내게 유리한 10년이에요. 가운데 점선이 보통이에요.</p>
           <ul className="mt-6 border-t border-line">
             {d.list.map((x) => {
               const current = a.currentDaeun?.pillar.index === x.pillar.index;

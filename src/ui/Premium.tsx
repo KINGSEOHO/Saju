@@ -57,6 +57,19 @@ function Teaser({ lines }: { lines: string[] }) {
           </li>
         ))}
       </ul>
+      {/* 신년운세에는 열두 달 달력이 들어 있다 — 어떤 모양인지만 빈 칸으로 (색·답은 넣지 않는다) */}
+      {lines.some((t) => t.includes('기회의 달')) && (
+        <div className="mt-5 border-t border-paper-edge pt-4">
+          <p className="text-label text-sub">열두 달이 좋은 달 · 보통 · 조심할 달로 칠해진 달력도 들어 있어요.</p>
+          <div className="mt-3 grid grid-cols-6 gap-1.5" aria-hidden>
+            {Array.from({ length: 12 }, (_, i) => (
+              <span key={i} className="flex h-9 items-center justify-center rounded-lg border border-dashed border-accent text-label font-bold text-accent">
+                ?
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

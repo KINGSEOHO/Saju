@@ -20,7 +20,7 @@ import { DECADE_THEME } from '../report/storyKb.ts';
 import { ElementsPanel, InteractionsPanel, StrengthPanel } from './Analysis.tsx';
 import { Analyzing } from './Analyzing.tsx';
 import { goToStep } from './BirthForm.tsx';
-import { ElementStrip } from './Charts.tsx';
+import { ElementWheel } from './Charts.tsx';
 import { Chevron, Disclosure, Gloss, GLOSSARY, Lead, scrollMotion, Term } from './common.tsx';
 import { ConcernBridge } from './ConcernBridge.tsx';
 import { DetailCards } from './DetailCards.tsx';
@@ -619,10 +619,10 @@ export default function Result({ input }: { input: BirthInput }) {
           <div className="mt-8">
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="font-sans text-label font-semibold text-ink">다섯 기운의 세기</h3>
-              <span className="text-micro text-sub">태어난 계절과 숨은 기운까지 반영</span>
+              <span className="text-micro text-sub">원이 클수록 센 기운 · 점선은 서로 낳아 주는 순서</span>
             </div>
             <div className="mt-4">
-              <ElementStrip percent={a.elements.percent} me={STEMS[p.day.stem].element} />
+              <ElementWheel percent={a.elements.percent} me={STEMS[p.day.stem].element} />
             </div>
           </div>
 
