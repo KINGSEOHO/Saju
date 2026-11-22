@@ -43,6 +43,7 @@ describe('이용자 기록 이름표는 바뀌지 않는다', () => {
       review: 'mg_review_v1',
       demoCoupons: 'mg_demo_coupons',
       eventSeen: 'mg_event_seen_v1',
+      textSize: 'mg_text_size_v1',
     });
     expect(STORAGE_PREFIX).toEqual({ hits: 'myeong-hits:', gaeunRoutine: 'gaeun-routine-' });
   });

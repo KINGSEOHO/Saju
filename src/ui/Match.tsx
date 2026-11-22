@@ -289,7 +289,7 @@ function CompatDetail({ r }: { r: CompatReport }) {
             <li key={c.title} className="flex gap-4">
               <span className="w-4 shrink-0 font-serif text-title3 font-bold text-ink tabular-nums">{i + 1}</span>
               <div>
-                <p className="font-serif text-[17px] font-bold text-ink">{c.title}</p>
+                <p className="font-serif text-[1.0625rem] font-bold text-ink">{c.title}</p>
                 <p className="read mt-1">{c.text}</p>
               </div>
             </li>
@@ -300,7 +300,7 @@ function CompatDetail({ r }: { r: CompatReport }) {
         <div className="space-y-4">
           {r.talk.map((t) => (
             <div key={t.who} className="panel">
-              <p className="font-serif text-[17px] font-bold text-ink">{t.who}</p>
+              <p className="font-serif text-[1.0625rem] font-bold text-ink">{t.who}</p>
               <p className="mt-3 flex gap-2.5 text-ui text-ink-2">
                 <span className="tag-pos h-fit shrink-0">좋아요</span>
                 <span>{t.good}</span>
@@ -566,7 +566,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
             <ul className="border-t border-line">
               {r.good.map((g) => (
                 <li key={g.w.startMs} className="border-b border-line py-4">
-                  <p className="font-serif text-[17px] font-bold text-ink">{monthTitle(a, g.w)}</p>
+                  <p className="font-serif text-[1.0625rem] font-bold text-ink">{monthTitle(a, g.w)}</p>
                   <p className="mt-1 text-ui text-ink-2">{g.why}</p>
                 </li>
               ))}
@@ -580,7 +580,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
             <ul className="border-t border-line">
               {r.avoid.map((g) => (
                 <li key={g.w.startMs} className="border-b border-line py-4">
-                  <p className="font-serif text-[17px] font-bold text-ink">{monthTitle(a, g.w)}</p>
+                  <p className="font-serif text-[1.0625rem] font-bold text-ink">{monthTitle(a, g.w)}</p>
                   <p className="mt-1 text-ui text-ink-2">{g.why}</p>
                 </li>
               ))}
@@ -603,7 +603,7 @@ function ReunionView({ a, b, p, onEdit }: { a: SajuAnalysis; b: SajuAnalysis; p:
           <div className="space-y-4">
             {c.talk.map((t) => (
               <div key={t.who} className="panel">
-                <p className="font-serif text-[17px] font-bold text-ink">{t.who}</p>
+                <p className="font-serif text-[1.0625rem] font-bold text-ink">{t.who}</p>
                 <p className="mt-3 flex gap-2.5 text-ui text-ink-2">
                   <span className="tag-pos h-fit shrink-0">좋아요</span>
                   <span>{t.good}</span>

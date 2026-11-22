@@ -60,16 +60,25 @@ export function upcomingSwitch(a: SajuAnalysis, w: Wolun): { when: string; next:
   return { when: `${t} ${next.jieName}`, next };
 }
 
-/** 좋은 것은 포인트 색 점, 조심할 것은 먹색 점, 참고는 회색 점 */
-function Points({ title, items, dot, titleCls }: { title: string; items: string[]; dot: string; titleCls: string }) {
+/** 할 일과 피할 일을 칸으로 나눠 한눈에 — 좋은 것은 포인트 색 칸(○), 조심할 것은 먹색 테두리 칸(✕), 참고는 테두리 없이 */
+function Points({ title, items, kind }: { title: string; items: string[]; kind: 'do' | 'dont' | 'note' }) {
+  const box = kind === 'do' ? 'rounded-2xl bg-accent-tint p-4' : kind === 'dont' ? 'rounded-2xl border-2 border-ink p-4' : '';
+  const mark = kind === 'do' ? '○' : kind === 'dont' ? '✕' : '';
   return (
-    <div>
-      <h4 className={`font-sans text-label font-semibold ${titleCls}`}>{title}</h4>
-      <ul className="mt-2 space-y-2">
+    <div className={box}>
+      <h4 className={`flex items-center gap-2 font-sans text-ui font-bold ${kind === 'do' ? 'text-accent-strong' : kind === 'dont' ? 'text-ink' : 'text-label text-sub'}`}>
+        {mark && (
+          <span aria-hidden className={`flex size-6 items-center justify-center rounded-full text-[0.8125rem] ${kind === 'do' ? 'bg-accent text-on-accent' : 'bg-ink text-bg'}`}>
+            {mark}
+          </span>
+        )}
+        {title}
+      </h4>
+      <ul className="mt-3 space-y-2.5">
         {items.map((t, i) => (
           <li key={i} className="flex gap-2.5">
-            <span aria-hidden className={`mt-[0.7em] size-1.5 shrink-0 rounded-full ${dot}`} />
-            <span className="font-serif text-[16px] leading-[1.75] text-ink-2">
+            <span aria-hidden className={`mt-[0.7em] size-1.5 shrink-0 rounded-full ${kind === 'do' ? 'bg-accent' : kind === 'dont' ? 'bg-ink' : 'bg-faint'}`} />
+            <span className="font-serif text-[1rem] leading-[1.75] text-ink">
               <Gloss text={t} />
             </span>
           </li>
@@ -81,10 +90,12 @@ function Points({ title, items, dot, titleCls }: { title: string; items: string[
 
 function ReadingLists({ r }: { r: LuckReading }) {
   return (
-    <div className="space-y-6">
-      <Points title="이렇게 하면 좋아요" items={r.good} dot="bg-accent" titleCls="text-accent" />
-      <Points title="이건 조심하세요" items={r.caution} dot="bg-ink" titleCls="text-ink" />
-      {r.notes.length > 0 && <Points title="함께 알아 두세요" items={r.notes} dot="bg-faint" titleCls="text-sub" />}
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Points title="이렇게 하세요" items={r.good} kind="do" />
+        <Points title="이건 피하세요" items={r.caution} kind="dont" />
+      </div>
+      {r.notes.length > 0 && <Points title="함께 알아 두세요" items={r.notes} kind="note" />}
     </div>
   );
 }
@@ -115,7 +126,7 @@ export function FeaturedReading({
           {label} <span className="font-normal text-sub">· {sub}</span>
         </p>
         <div className="flex items-baseline gap-2">
-          <span className="hanja text-[17px] font-bold text-ink">{pillarHanja(pillar)}</span>
+          <span className="hanja text-[1.0625rem] font-bold text-ink">{pillarHanja(pillar)}</span>
           <ScorePill score={score} />
         </div>
       </div>
@@ -164,7 +175,7 @@ function MonthRow({ a, w }: { a: SajuAnalysis; w: Wolun }) {
         </div>
         <ScorePill score={w.score} />
       </div>
-      <p className="mt-2 font-serif text-[17px] leading-snug font-bold text-ink">{r.headline}</p>
+      <p className="mt-2 font-serif text-[1.0625rem] leading-snug font-bold text-ink">{r.headline}</p>
       {!open && (
         <dl className="mt-3 space-y-2 text-label text-ink-2">
           <div className="flex gap-2.5">
@@ -310,7 +321,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
                       </div>
                       <ScorePill score={s.combined} />
                     </div>
-                    {!ahead(s.year) && <p className="mt-1.5 font-serif text-[16px] leading-[1.7] text-ink-2">{readLuck(a, s, '해', s.combined).headline}</p>}
+                    {!ahead(s.year) && <p className="mt-1.5 font-serif text-[1rem] leading-[1.7] text-ink-2">{readLuck(a, s, '해', s.combined).headline}</p>}
                     {!ahead(s.year) && s.flags.length > 0 && (
                       <p className="mt-1 text-cap text-sub">
                         <Gloss text={s.flags.join(' · ')} />
@@ -362,7 +373,7 @@ export function LuckPanel({ a }: { a: SajuAnalysis }) {
                     </div>
                     <ScorePill score={x.score} />
                   </div>
-                  <p className="mt-2 font-serif text-[17px] font-bold text-ink">{DECADE_THEME[groupOf(x.stemTenGod)].label}의 10년</p>
+                  <p className="mt-2 font-serif text-[1.0625rem] font-bold text-ink">{DECADE_THEME[groupOf(x.stemTenGod)].label}의 10년</p>
                   <p className="mt-1 text-cap text-sub">
                     <Gloss text={`${roleLine(x)} · 12운성 ${x.stage}`} />
                   </p>

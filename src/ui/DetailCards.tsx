@@ -198,7 +198,7 @@ function Back({ title }: { title: string }) {
           <path key={r} d="M0 0 q6 -6 12 0 q-6 4 -2 8 q4 2 6 -2" stroke={INK} strokeOpacity="0.35" strokeWidth="0.7" fill="none" transform={`translate(${x} ${y}) rotate(${r})`} />
         ))}
       </svg>
-      <span className="hanja relative flex size-14 flex-col items-center justify-center rounded-md text-[17px] leading-[1.05] font-bold" style={{ background: '#a8392c', color: '#f6efe2' }}>
+      <span className="hanja relative flex size-14 flex-col items-center justify-center rounded-md text-[1.0625rem] leading-[1.05] font-bold" style={{ background: '#a8392c', color: '#f6efe2' }}>
         <span>明</span>
         <span>鏡</span>
       </span>

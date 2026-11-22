@@ -6,6 +6,7 @@ import { clearDraft } from './lib/birthDraft.ts';
 import { decodeInput } from './lib/share.ts';
 import { loadRecent, removeRecent, saveRecent, type Recent } from './lib/recent.ts';
 import { STORAGE } from './lib/storageKeys.ts';
+import { TEXT_SIZES, loadTextSize, saveTextSize } from './lib/textSize.ts';
 import { Admin } from './ui/Admin.tsx';
 import { BirthFlow, FLOW_STEPS, goToStep } from './ui/BirthForm.tsx';
 import { BottomBar } from './ui/common.tsx';
@@ -63,6 +64,31 @@ if (PREVIEW) {
   }
 }
 
+/** 글자 크기 고르기 — '가' 세 개 (어른들이 바로 알아보는 모양). 머리말에 늘 있다 */
+function TextSize() {
+  const [cur, setCur] = useState(loadTextSize);
+  return (
+    <div className="flex items-end gap-0.5 rounded-lg bg-fill p-0.5" role="group" aria-label="글자 크기">
+      {TEXT_SIZES.map((t, i) => (
+        <button
+          key={t.label}
+          type="button"
+          aria-pressed={cur === i}
+          aria-label={`글자 ${t.label}`}
+          className={`flex size-8 items-center justify-center rounded-md font-bold ${cur === i ? 'bg-bg text-ink ring-1 ring-line' : 'text-sub'}`}
+          style={{ fontSize: 12 + i * 3 }}
+          onClick={() => {
+            saveTextSize(i);
+            setCur(i);
+          }}
+        >
+          가
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function App() {
   const [route, setRoute] = useState<Route>(parseRoute);
   // 결과를 열면 이 기기의 '최근 본 사주'에 남긴다 (첫 화면에서 바로 불러오기)
@@ -110,18 +136,21 @@ export default function App() {
             </span>
             <span className="hanja text-[19px] font-bold text-ink">명경사주</span>
           </a>
-          {route.name === 'result' && (
-            <button
-              type="button"
-              className="tap text-label font-semibold text-sub"
-              onClick={() => {
-                clearDraft();
-                goToStep(1);
-              }}
-            >
-              새로 보기
-            </button>
-          )}
+          <div className="flex items-center gap-4">
+            <TextSize />
+            {route.name === 'result' && (
+              <button
+                type="button"
+                className="tap text-label font-semibold text-sub"
+                onClick={() => {
+                  clearDraft();
+                  goToStep(1);
+                }}
+              >
+                새로 보기
+              </button>
+            )}
+          </div>
         </div>
       </header>
       <main className="flex-1">

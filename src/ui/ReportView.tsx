@@ -8,7 +8,7 @@ import { seasonOf } from '../report/season.ts';
 import type { StoryPara } from '../report/story.ts';
 import { DivergingBars } from './Charts.tsx';
 import { ConcernBridge } from './ConcernBridge.tsx';
-import { Gloss, Lead, SectionTitle, TONE_STYLE } from './common.tsx';
+import { Chevron, Gloss, Lead, SectionTitle, TONE_STYLE } from './common.tsx';
 import { SectionRating } from './Feedback.tsx';
 
 const TAB_ORDER: SectionId[] = ['summary', 'personality', 'love', 'career', 'wealth', 'health'];
@@ -58,19 +58,61 @@ const WHEN: Record<'past' | 'now' | 'future', { label: string; tag: string; dot:
   future: { label: '다가올 시간', tag: 'tag-pos', dot: 'bg-bg border-accent' },
 };
 
+/** 첫 문장만 굵게 먼저 — 나머지 설명과 근거는 '자세히'를 눌러야 펼친다 (인쇄할 때는 모두 나온다) */
+function Para({ text, basis, showEvidence, open, onToggle, muted }: { text: string; basis?: string; showEvidence: boolean; open: boolean; onToggle: () => void; muted?: boolean }) {
+  const m = text.match(/^([\s\S]+?[.!?。][”"’)]?)(\s+)([\s\S]+)$/);
+  if (!m || m[1].length < 10)
+    return (
+      <>
+        <p className={`read mt-2 ${muted ? 'text-sub' : ''}`}>
+          <Gloss text={text} />
+        </p>
+        <Evidence text={basis} show={showEvidence} />
+      </>
+    );
+  return (
+    <>
+      <p className={`read mt-2 font-bold ${muted ? 'text-sub' : 'text-ink'}`}>
+        <Gloss text={m[1]} />
+      </p>
+      <div className={open ? '' : 'hidden print:block'}>
+        <p className={`read mt-2 ${muted ? 'text-sub' : ''}`}>
+          <Gloss text={m[3]} />
+        </p>
+        <Evidence text={basis} show={showEvidence} />
+      </div>
+      <button type="button" className="no-print tap mt-2 flex items-center gap-1 text-label font-semibold text-accent" aria-expanded={open} onClick={onToggle}>
+        {open ? '접기' : '자세히'}
+        <Chevron open={open} className="size-4" />
+      </button>
+    </>
+  );
+}
+
 function StoryView({ story, showEvidence }: { story: StoryPara[]; showEvidence: boolean }) {
   const firstWhen = story.findIndex((x) => x.when);
+  const [open, setOpen] = useState<Set<number>>(new Set());
+  const all = open.size >= story.length;
+  const toggle = (i: number) =>
+    setOpen((o) => {
+      const n = new Set(o);
+      if (!n.delete(i)) n.add(i);
+      return n;
+    });
   return (
     <article>
+      <div className="no-print mb-6 flex items-center justify-between gap-3 rounded-xl bg-subtle px-4 py-3">
+        <p className="text-label text-ink-2">굵은 한 줄만 읽어도 돼요.</p>
+        <button type="button" className="tap shrink-0 text-label font-semibold text-accent" onClick={() => setOpen(all ? new Set() : new Set(story.map((_, i) => i)))}>
+          {all ? '모두 접기' : '모두 펼치기'}
+        </button>
+      </div>
       {story.map((p, i) => {
         if (!p.when) {
           return (
-            <section key={i} className="mb-10">
+            <section key={i} className="mb-8">
               <h3 className="text-title3 text-ink">{p.title}</h3>
-              <p className="read mt-3">
-                <Lead text={p.text} />
-              </p>
-              <Evidence text={p.basis} show={showEvidence} />
+              <Para text={p.text} basis={p.basis} showEvidence={showEvidence} open={open.has(i)} onToggle={() => toggle(i)} />
             </section>
           );
         }
@@ -82,13 +124,10 @@ function StoryView({ story, showEvidence }: { story: StoryPara[]; showEvidence: 
               <span aria-hidden className="absolute top-2 -bottom-8 -left-7 ml-[5px] w-px bg-line" />
               <span aria-hidden className={`absolute top-[7px] -left-7 size-[11px] rounded-full border-2 ${w.dot}`} />
               <div className="flex flex-wrap items-center gap-2">
-                <h4 className={`font-serif text-[17px] font-bold ${p.when === 'past' ? 'text-sub' : 'text-ink'}`}>{p.title}</h4>
+                <h4 className={`font-serif text-[1.0625rem] font-bold ${p.when === 'past' ? 'text-sub' : 'text-ink'}`}>{p.title}</h4>
                 <span className={w.tag}>{w.label}</span>
               </div>
-              <p className={`read mt-2 ${p.when === 'past' ? 'text-sub' : ''}`}>
-                <Lead text={p.text} />
-              </p>
-              <Evidence text={p.basis} show={showEvidence} />
+              <Para text={p.text} basis={p.basis} showEvidence={showEvidence} open={open.has(i)} onToggle={() => toggle(i)} muted={p.when === 'past'} />
             </div>
           </section>
         );
@@ -127,7 +166,7 @@ function SectionBody({ a, sec, showEvidence }: { a: SajuAnalysis; sec: ReportSec
           {mode === 'story' && sec.readMinutes && <span className="shrink-0 text-cap text-sub">약 {sec.readMinutes}분</span>}
         </div>
         <div className="space-y-12">
-          {mode === 'story' && sec.story && <StoryView story={sec.story.filter((p) => p.title !== timing?.para).slice(0, trimmed ? 1 : undefined)} showEvidence={showEvidence} />}
+          {mode === 'story' && sec.story && <StoryView key={sec.id} story={sec.story.filter((p) => p.title !== timing?.para).slice(0, trimmed ? 1 : undefined)} showEvidence={showEvidence} />}
           {mode === 'cards' &&
             sec.blocks
               .filter((b) => b.heading !== timing?.block)

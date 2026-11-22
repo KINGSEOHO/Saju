@@ -42,7 +42,7 @@ export function Analyzing({ a, onDone }: { a: SajuAnalysis; onDone: () => void }
   const ratio = Math.min(1, n / steps.length);
   return (
     <div className="wrap flex min-h-[70vh] flex-col justify-center py-12" role="status" aria-live="polite">
-      <span aria-hidden className="seal mx-auto size-14 text-[17px]">
+      <span aria-hidden className="seal mx-auto size-14 text-[1.0625rem]">
         <span>明</span>
         <span>鏡</span>
       </span>

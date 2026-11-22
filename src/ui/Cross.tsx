@@ -145,7 +145,7 @@ function TtiSection({ x }: { x: CrossReport }) {
               </span>
               <span className={YEAR_TONE[y.tone].tag}>{YEAR_TONE[y.tone].label}</span>
             </div>
-            <p className="mt-1.5 font-serif text-[17px] font-bold text-ink">{y.line}</p>
+            <p className="mt-1.5 font-serif text-[1.0625rem] font-bold text-ink">{y.line}</p>
             <p className="mt-1 text-label text-ink-2">
               <Gloss text={y.text} />
             </p>
@@ -175,7 +175,7 @@ function Dots({ items, dot = 'bg-accent' }: { items: string[]; dot?: string }) {
       {items.map((g) => (
         <li key={g} className="flex gap-2.5">
           <span aria-hidden className={`mt-[0.7em] size-1.5 shrink-0 rounded-full ${dot}`} />
-          <span className="font-serif text-[16px] leading-[1.75] text-ink-2">
+          <span className="font-serif text-[1rem] leading-[1.75] text-ink-2">
             <Gloss text={g} />
           </span>
         </li>
@@ -494,7 +494,7 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
                 {j.fit.env.map((e) => (
                   <li key={e.el} className="border-b border-line py-5">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="font-serif text-[17px] font-bold text-ink">
+                      <span className="font-serif text-[1.0625rem] font-bold text-ink">
                         {elWord(e.el)} = {e.short}
                       </span>
                       <span className={ENV_TONE[e.tone].tag}>{ENV_TONE[e.tone].label}</span>
@@ -527,7 +527,7 @@ export function JobPanel({ a, x }: { a: SajuAnalysis; x: CrossReport }) {
       )}
 
       <Block title="지금의 운">
-        <p className="font-serif text-[17px] font-bold text-ink">{j.now.title}</p>
+        <p className="font-serif text-[1.0625rem] font-bold text-ink">{j.now.title}</p>
         <p className="read mt-2">
           <Lead text={j.now.text} />
         </p>

@@ -19,7 +19,7 @@ export function GaeunRows({ title, note, items, tone }: { title: string; note?: 
           <div key={it.key} className="grid grid-cols-[5.5rem_1fr] gap-3 border-b border-line py-4">
             <dt className="pt-0.5 text-label font-semibold text-sub">{it.label}</dt>
             <dd className="min-w-0">
-              <p className="font-serif text-[16px] leading-[1.75] text-ink-2">
+              <p className="font-serif text-[1rem] leading-[1.75] text-ink-2">
                 <Gloss text={it.value} />
               </p>
               <p className="mt-1.5 text-cap text-sub">
@@ -135,7 +135,7 @@ export function GaeunTaste({ g, sealed = false }: { g: ConcernGaeun; sealed?: bo
             {t.label}
             {side && <span className={side === 'close' ? 'tag-pos' : 'tag-neg'}>{side === 'close' ? '가까이할 것' : '멀리할 것'}</span>}
           </p>
-          <p className="mt-1 font-serif text-[17px] leading-[1.7] font-bold text-ink">
+          <p className="mt-1 font-serif text-[1.0625rem] leading-[1.7] font-bold text-ink">
             <Gloss text={t.value} />
           </p>
           <p className="mt-1.5 text-cap text-sub">

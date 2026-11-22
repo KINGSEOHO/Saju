@@ -22,7 +22,7 @@ export function ElementBars({ percent, count, me, label = '세력' }: { percent:
     <div role="list" aria-label={`오행 ${label} 분포`}>
       {order.map((e) => (
         <div key={e} role="listitem" className="grid grid-cols-[5.5rem_1fr_4.25rem] items-center gap-3 py-2">
-          <div className="flex items-baseline gap-1 font-serif text-[16px] font-bold whitespace-nowrap text-ink">
+          <div className="flex items-baseline gap-1 font-serif text-[1rem] font-bold whitespace-nowrap text-ink">
             {EL_WORD[e]}
             <span className="text-label font-normal text-sub">{ELEMENT_HANJA[e]}</span>
             {me === e && <span className="ml-1 self-center rounded border border-accent px-1 font-sans text-[11px] leading-4 font-bold text-accent">나</span>}
@@ -50,7 +50,7 @@ export function ElementStrip({ percent, me }: { percent: Record<Element, number>
           <div className="flex h-16 items-end justify-center border-b border-line">
             <div className={`w-7 rounded-t-[3px] ${shade.get(e)}`} style={{ height: `${Math.max(percent[e] > 0 ? 4 : 0, (percent[e] / max) * 100)}%` }} />
           </div>
-          <div className="mt-2 font-serif text-[15px] font-bold text-ink">
+          <div className="mt-2 font-serif text-[0.9375rem] font-bold text-ink">
             {EL_WORD[e]}
             <span className="ml-0.5 text-micro font-normal text-sub">{ELEMENT_HANJA[e]}</span>
           </div>
@@ -71,7 +71,7 @@ export function GroupBars({ data }: { data: { label: string; sub: ReactNode; val
       {data.map((d) => (
         <div key={d.label} className="grid grid-cols-[8.5rem_1fr_2.75rem] items-center gap-3 py-2">
           <div className="min-w-0">
-            <div className="font-serif text-[15px] leading-snug font-bold text-ink">{d.label}</div>
+            <div className="font-serif text-[0.9375rem] leading-snug font-bold text-ink">{d.label}</div>
             <div className="mt-0.5 text-micro text-sub">{d.sub}</div>
           </div>
           <div className="h-2 overflow-hidden rounded bg-fill" title={`${d.label} ${d.value.toFixed(1)}%`}>

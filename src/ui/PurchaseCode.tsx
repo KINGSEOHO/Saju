@@ -123,7 +123,7 @@ export function PurchaseCodeDialog() {
       {/* 바깥을 눌러도 닫히지 않는다 — 코드를 저장하고 '저장했어요'로 닫게 */}
       <div className="sheet-backdrop absolute inset-0" aria-hidden />
       <div className="sheet-panel relative max-h-[calc(100dvh-2rem)] w-full max-w-[360px] overflow-y-auto rounded-2xl border border-line bg-bg p-6 text-center">
-        <span aria-hidden className="seal mx-auto size-12 text-[15px]">
+        <span aria-hidden className="seal mx-auto size-12 text-[0.9375rem]">
           <span>明</span>
           <span>鏡</span>
         </span>

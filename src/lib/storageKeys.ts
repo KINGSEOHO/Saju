@@ -31,6 +31,8 @@ export const STORAGE = {
   demoCoupons: 'mg_demo_coupons',
   /** 결제 이벤트 안내 창을 이번 탭에서 봤는지 (sessionStorage) */
   eventSeen: 'mg_event_seen_v1',
+  /** 글자 크기 (0 보통 · 1 크게 · 2 더 크게) */
+  textSize: 'mg_text_size_v1',
 } as const;
 
 /** 사람·날짜마다 이름이 달라지는 기록의 앞부분 */

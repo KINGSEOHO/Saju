@@ -17,7 +17,7 @@ import type { Report, Statement, YearSignal } from '../report/generate.ts';
 import { seasonKey } from '../report/season.ts';
 import { Gloss, Lead, TONE_STYLE, Veil } from './common.tsx';
 import { GaeunDetail, GaeunTaste } from './Gaeun.tsx';
-import { monthTitle, upcomingMonths } from './Luck.tsx';
+import { monthLabel, monthTitle, upcomingMonths } from './Luck.tsx';
 import { CAN_PAY, Premium, useUnlock } from './Premium.tsx';
 import { PAY_LIVE } from '../config/backend.ts';
 
@@ -96,7 +96,7 @@ function MonthList({ a, list, empty }: { a: SajuAnalysis; list: MonthSign[]; emp
     <ul className="mt-2 border-t border-line">
       {list.map((m) => (
         <li key={m.w.startMs} className="border-b border-line py-4">
-          <p className="font-serif text-[17px] font-bold text-ink">{monthTitle(a, m.w)}</p>
+          <p className="font-serif text-[1.0625rem] font-bold text-ink">{monthTitle(a, m.w)}</p>
           <p className="mt-1 text-ui text-ink-2">{m.why}</p>
         </li>
       ))}
@@ -104,20 +104,57 @@ function MonthList({ a, list, empty }: { a: SajuAnalysis; list: MonthSign[]; emp
   );
 }
 
+/** 열두 달을 한눈에 — 칸을 누르면 그 달 풀이가 아래에 나온다. 달마다의 긴 목록은 '달마다 모두 보기'에 */
 function Calendar({ a, rows }: { a: SajuAnalysis; rows: MonthRow[] }) {
+  const [sel, setSel] = useState(() =>
+    Math.max(
+      0,
+      rows.findIndex((r) => r.now),
+    ),
+  );
+  const [all, setAll] = useState(false);
+  const cur = rows[sel];
+  const cell = (r: MonthRow) => (r.tone === 'positive' ? 'bg-accent text-on-accent' : r.tone === 'negative' ? 'bg-ink text-bg' : 'bg-fill text-ink');
   return (
-    <ul className="border-t border-line">
-      {rows.map((r) => (
-        <li key={r.w.startMs} className={`border-b border-line py-3.5 ${r.past ? 'opacity-45' : ''}`}>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-label font-semibold text-ink">{monthTitle(a, r.w)}</span>
-            {r.now && <span className="text-micro font-bold text-accent">지금</span>}
-            <span className={`${SIG_TAG[r.tone]} ml-auto`}>{r.tag}</span>
-          </div>
-          <p className="mt-1 text-ui text-ink-2">{r.text}</p>
-        </li>
-      ))}
-    </ul>
+    <div>
+      <div className="grid grid-cols-4 gap-2" role="group" aria-label="열두 달 한눈에 보기">
+        {rows.map((r, i) => (
+          <button
+            key={r.w.startMs}
+            type="button"
+            aria-pressed={i === sel}
+            onClick={() => setSel(i)}
+            className={`rounded-xl px-1 py-2.5 text-center ${cell(r)} ${r.past ? 'opacity-45' : ''} ${i === sel ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg' : ''}`}
+          >
+            <span className="block text-ui font-bold tabular-nums">{monthLabel(a, r.w).title.split('월')[0]}월</span>
+            <span className="mt-0.5 block text-cap font-semibold">{r.tag}</span>
+          </button>
+        ))}
+      </div>
+      {cur && (
+        <div className="panel mt-4" aria-live="polite">
+          <p className="text-label font-semibold text-ink">
+            {monthTitle(a, cur.w)} {cur.now && <span className="text-accent">· 지금</span>}
+          </p>
+          <p className="mt-2 text-ui text-ink">{cur.text}</p>
+        </div>
+      )}
+      <button type="button" className="no-print tap mt-4 flex items-center gap-1 text-label font-semibold text-accent" aria-expanded={all} onClick={() => setAll((v) => !v)}>
+        {all ? '접기' : '달마다 모두 보기'}
+      </button>
+      <ul className={`mt-3 border-t border-line ${all ? '' : 'hidden print:block'}`}>
+        {rows.map((r) => (
+          <li key={r.w.startMs} className={`border-b border-line py-3.5 ${r.past ? 'opacity-45' : ''}`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-label font-semibold text-ink">{monthTitle(a, r.w)}</span>
+              {r.now && <span className="text-micro font-bold text-accent">지금</span>}
+              <span className={`${SIG_TAG[r.tone]} ml-auto`}>{r.tag}</span>
+            </div>
+            <p className="mt-1 text-ui text-ink-2">{r.text}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -136,7 +173,7 @@ function ExamMonth({ a }: { a: SajuAnalysis }) {
       {r && r.ok && (
         <div className="panel mt-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-serif text-[17px] font-bold text-ink">{monthTitle(a, r.w)}</span>
+            <span className="font-serif text-[1.0625rem] font-bold text-ink">{monthTitle(a, r.w)}</span>
             <span className={SIG_TAG[r.tone]}>{r.tag}</span>
           </div>
           <p className="read mt-2">{r.text}</p>
@@ -246,7 +283,7 @@ function ConcernDetail({ a, c }: { a: SajuAnalysis; c: ConcernReport }) {
         <Block title={d.story.title} desc={d.story.desc}>
           {d.story.paras.map((p) => (
             <section key={p.title} className="mb-8">
-              <h5 className="font-serif text-[17px] font-bold text-ink">{p.title}</h5>
+              <h5 className="font-serif text-[1.0625rem] font-bold text-ink">{p.title}</h5>
               <p className="read mt-2">
                 <Lead text={p.text} />
               </p>

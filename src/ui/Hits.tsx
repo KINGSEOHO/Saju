@@ -110,7 +110,7 @@ export function HitsCard({ a }: { a: SajuAnalysis }) {
           {ans[h.id] && (
             <div className="mt-5 border-t border-line pt-4">
               <p className="text-label font-semibold text-ink">{ans[h.id] === 'no' ? '이번엔 빗나갔네요. 명경이는 이렇게 봤어요' : '명경이는 이렇게 봤어요'}</p>
-              <p className="mt-1.5 font-serif text-[16px] leading-[1.75] text-ink-2">
+              <p className="mt-1.5 font-serif text-[1rem] leading-[1.75] text-ink-2">
                 <Gloss text={h.why} />
               </p>
               <p className="mt-1.5 text-cap text-sub">

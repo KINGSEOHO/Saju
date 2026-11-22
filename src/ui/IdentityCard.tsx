@@ -26,11 +26,11 @@ export function IdentityCardView({ card, title }: { card: IdentityCard; title: s
         <dl className="mt-7 grid grid-cols-2 border-y border-line">
           <div className="border-r border-line py-3.5 pr-3">
             <dt className="text-micro font-semibold text-sub">겉</dt>
-            <dd className="mt-0.5 font-serif text-[16px] leading-snug font-bold text-ink">{card.outer}</dd>
+            <dd className="mt-0.5 font-serif text-[1rem] leading-snug font-bold text-ink">{card.outer}</dd>
           </div>
           <div className="py-3.5 pl-4">
             <dt className="text-micro font-semibold text-sub">속</dt>
-            <dd className="mt-0.5 font-serif text-[16px] leading-snug font-bold text-ink">{card.inner}</dd>
+            <dd className="mt-0.5 font-serif text-[1rem] leading-snug font-bold text-ink">{card.inner}</dd>
           </div>
         </dl>
         <p className="mt-4 text-center text-cap text-sub">
@@ -44,7 +44,7 @@ export function IdentityCardView({ card, title }: { card: IdentityCard; title: s
           {card.cards.map((c) => (
             <li key={c.system} className="grid grid-cols-[4.75rem_1fr] gap-3 border-b border-line py-3">
               <span className="pt-0.5 text-micro font-semibold text-sub">{c.system}</span>
-              <span className="font-serif text-[15px] leading-snug font-bold text-ink">{c.line}</span>
+              <span className="font-serif text-[0.9375rem] leading-snug font-bold text-ink">{c.line}</span>
             </li>
           ))}
         </ul>

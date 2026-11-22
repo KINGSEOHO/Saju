@@ -116,7 +116,7 @@ export function ElementsPanel({ a }: { a: SajuAnalysis }) {
       <div className="mt-6 grid grid-cols-5 border-t border-l border-line text-center">
         {(['비견', '겁재', '식신', '상관', '편재', '정재', '편관', '정관', '편인', '정인'] as const).map((t) => (
           <div key={t} className={`border-r border-b border-line px-0.5 py-2.5 ${tgc[t] ? 'text-ink' : 'text-sub'}`}>
-            <div className="font-serif text-[15px] font-bold">{t}</div>
+            <div className="font-serif text-[0.9375rem] font-bold">{t}</div>
             <div className="mt-0.5 text-[10px] leading-tight">{TEN_GOD_PLAIN[t]}</div>
             <div className="mt-1 text-label font-bold tabular-nums">{tgc[t]}</div>
           </div>
@@ -210,7 +210,7 @@ export function StrengthPanel({ a }: { a: SajuAnalysis }) {
               return (
                 <div key={r} className={`rounded-xl px-0.5 py-2.5 text-center ${s.box}`}>
                   <div className={`text-[11px] leading-tight font-semibold ${s.sub}`}>{ROLE_LABEL[r]}</div>
-                  <div className="mt-1 font-serif text-[17px] font-bold whitespace-nowrap">{EL_WORD[e]}</div>
+                  <div className="mt-1 font-serif text-[1.0625rem] font-bold whitespace-nowrap">{EL_WORD[e]}</div>
                   <div className={`hanja text-micro ${s.sub}`}>{ELEMENT_HANJA[e]}</div>
                   <div className={`mt-0.5 text-[10px] ${s.sub}`}>
                     <Term t={r} />
@@ -315,7 +315,7 @@ export function InteractionsPanel({ a }: { a: SajuAnalysis }) {
               <li key={i} className="border-b border-line py-4">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className={good ? 'tag-pos' : 'tag-neg'}>{INTER_PLAIN[it.kind] ?? it.kind}</span>
-                  <span className="font-serif text-[17px] font-bold text-ink">{it.chars}</span>
+                  <span className="font-serif text-[1.0625rem] font-bold text-ink">{it.chars}</span>
                   <span className="text-cap text-sub">
                     <Term t={it.kind} />
                     {it.adjacent ? ' · 바로 옆이라 힘이 큼' : ''}
@@ -336,7 +336,7 @@ export function InteractionsPanel({ a }: { a: SajuAnalysis }) {
         {[...goodSinsal, ...otherSinsal].map((s) => (
           <li key={s.name} className="border-b border-line py-4">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="font-serif text-[17px] font-bold text-ink">{SINSAL_NICK[s.name] ?? s.name}</span>
+              <span className="font-serif text-[1.0625rem] font-bold text-ink">{SINSAL_NICK[s.name] ?? s.name}</span>
               <span className="text-cap text-sub">
                 <Term t={s.name.replace(/\(.*\)$/, '')}>{s.name}</Term>
               </span>

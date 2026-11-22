@@ -631,7 +631,7 @@ export default function Result({ input }: { input: BirthInput }) {
               <div key={f.label} className="flex items-baseline justify-between gap-4 border-b border-line py-3.5">
                 <dt className="text-label text-sub">{f.label}</dt>
                 <dd className="text-right">
-                  <div className="font-serif text-[17px] font-bold text-ink">{f.value}</div>
+                  <div className="font-serif text-[1.0625rem] font-bold text-ink">{f.value}</div>
                   {f.sub && (
                     <div className="mt-0.5 text-micro text-sub">
                       <Term t={f.term}>{f.sub}</Term>

@@ -310,7 +310,7 @@ export function BirthFlow({ step }: { step: number }) {
                     advancing.current = true;
                     window.setTimeout(() => goToStep(4), 220);
                   }}
-                  className={`flex h-16 w-full items-center justify-between rounded-2xl border px-5 text-left text-[17px] font-semibold transition-colors ${d.gender === v ? 'border-accent bg-accent-soft text-accent' : 'border-line text-ink active:bg-fill'}`}
+                  className={`flex h-16 w-full items-center justify-between rounded-2xl border px-5 text-left text-[1.0625rem] font-semibold transition-colors ${d.gender === v ? 'border-accent bg-accent-soft text-accent' : 'border-line text-ink active:bg-fill'}`}
                 >
                   {l}
                   <span aria-hidden className={`flex size-5 items-center justify-center rounded-full border-2 ${d.gender === v ? 'border-accent' : 'border-faint'}`}>
