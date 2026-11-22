@@ -1,8 +1,19 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vitest/config';
 import { dstRows, regionRows } from './src/pages/seoTables.ts';
+import { pages } from './src/pages/year2027.ts';
+
+// 일간별 운세 페이지(/2027/…)는 엔진·풀이 지식에서 뽑아 만든다 — 만든 파일은 저장소에 넣지 않는다(.gitignore)
+const generated: Record<string, string> = {};
+if (!process.env.VITEST)
+  for (const p of pages()) {
+    mkdirSync(resolve(__dirname, p.dir), { recursive: true });
+    writeFileSync(resolve(__dirname, p.dir, 'index.html'), p.html);
+    generated[p.dir.replace('/', '-')] = resolve(__dirname, p.dir, 'index.html');
+  }
 
 // 구글 서치 콘솔·네이버 서치어드바이저 소유 확인 태그 — 저장소 변수 GOOGLE_SITE_VERIFICATION·NAVER_SITE_VERIFICATION에 값만 넣으면 붙는다
 function siteVerification(): Plugin {
@@ -26,7 +37,7 @@ export default defineConfig({
     // 웹툰·교차 검증은 따로 불러오므로, 경고 기준만 조금 올린다.
     chunkSizeWarningLimit: 600,
     // 검색으로 들어오는 진짜 주소 페이지 (#/ 해시 주소가 아니라 따로 색인돼요)
-    rollupOptions: { input: { main: resolve(__dirname, 'index.html'), time: resolve(__dirname, 'time/index.html') } },
+    rollupOptions: { input: { main: resolve(__dirname, 'index.html'), time: resolve(__dirname, 'time/index.html'), ...generated } },
   },
   server: {
     port: 5173,

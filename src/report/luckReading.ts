@@ -23,7 +23,7 @@ export interface LuckReading {
   evidence: string;
 }
 
-interface GodText {
+export interface GodText {
   theme: string;
   favHead: string;
   unfavHead: string;
@@ -39,7 +39,7 @@ interface GodText {
 }
 
 // {p} = 달 / 해
-const GOD: Record<TenGod, GodText> = {
+export const GOD: Record<TenGod, GodText> = {
   비견: {
     defend: '혼자 결정하기보다 믿을 만한 사람과 상의하고, 지출 계획부터 세우세요.',
     theme: '자기 주도',

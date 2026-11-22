@@ -7,3 +7,4 @@ data/*.db-*
 .env
 dist-preview
 .hallmark/
+/2027/
