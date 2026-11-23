@@ -67,7 +67,16 @@ const FUNNEL_ITEMS: [string, string][] = [
   ['match', '궁합·재회'],
 ];
 
-export function computeFunnel(events: FunnelEvent[]): Funnel {
+/**
+ * 기록이 일어난 때 — 보낼 때 적어 둔 원래 시각(meta.at)이 있으면 그것을, 없으면 시트에 들어온 시각을 쓴다.
+ * (저장에 실패해 다음 방문 때 다시 보낸 기록은 들어온 시각이 늦어서, 날짜별 숫자가 틀어지지 않게)
+ */
+export function withOriginalTime<T extends { created_at: string; meta?: Meta }>(rows: T[]): T[] {
+  return rows.map((r) => (typeof r.meta?.at === 'string' && r.meta.at ? { ...r, created_at: r.meta.at } : r));
+}
+
+export function computeFunnel(rawEvents: FunnelEvent[]): Funnel {
+  const events = withOriginalTime(rawEvents);
   const visits = events.filter((e) => e.type === 'visit').map((e) => String(e.created_at));
   const since = visits.length ? visits.reduce((m, t) => (t < m ? t : m)) : null;
   const ev = since ? events.filter((e) => String(e.created_at) >= since) : [];
@@ -135,7 +144,7 @@ const fmtTime = (s: string) => (s ? s.replace('T', ' ').slice(0, 19) : '');
 export function computeStats(raw: RawData): Stats {
   const fb = raw.feedback ?? [];
   const rv = raw.reviews ?? [];
-  const ev = raw.events ?? [];
+  const ev = withOriginalTime(raw.events ?? []);
   const analyses = ev.filter((e) => e.type === 'analyze');
 
   const sections = SECTIONS.map((s) => {

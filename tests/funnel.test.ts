@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRICE_OPTIONS, PRICE_ORDER } from '../src/config/plans.ts';
 import { FUNNEL_EVENTS } from '../src/lib/funnel.ts';
-import { computeFunnel, type RawData } from '../src/lib/stats.ts';
+import { computeFunnel, withOriginalTime, type RawData } from '../src/lib/stats.ts';
 
 const sent: { type: string; meta: unknown }[] = [];
 vi.mock('../src/lib/api.ts', () => ({
@@ -102,6 +102,16 @@ describe('단계별 측정 — 계산', () => {
   });
 });
 
+describe('다시 보낸 기록의 날짜', () => {
+  it('원래 시각(meta.at)이 있으면 들어온 시각 대신 그것으로 센다', () => {
+    const late: Ev[] = [
+      { created_at: '2026-11-23T02:00:00.000Z', session_id: 'a', type: 'visit', meta: { at: '2026-11-22T14:00:00.000Z' } },
+      { created_at: '2026-11-23T02:00:01.000Z', session_id: 'b', type: 'visit', meta: {} },
+    ];
+    expect(withOriginalTime(late).map((e) => e.created_at)).toEqual(['2026-11-22T14:00:00.000Z', '2026-11-23T02:00:01.000Z']);
+  });
+});
+
 describe('받는 쪽(시트 스크립트·자체 서버)과 이름이 같다', () => {
   const gas = readFileSync(new URL('../docs/google-apps-script.gs', import.meta.url), 'utf8');
   const server = readFileSync(new URL('../server/index.mjs', import.meta.url), 'utf8');
@@ -123,8 +133,8 @@ describe('받는 쪽(시트 스크립트·자체 서버)과 이름이 같다', (
   it('측정에 쓰는 항목·선택·금액 열은 맨 뒤에 붙인다 (예전 행의 열 위치가 그대로)', () => {
     const keys = [...gas.slice(gas.indexOf('var META'), gas.indexOf('];', gas.indexOf('var META'))).matchAll(/\['(\w+)',/g)].map((x) => x[1]);
     expect(keys.slice(0, 13)).toEqual(['dayStem', 'dayPillar', 'gender', 'ageGroup', 'strength', 'gyeokguk', 'yongsin', 'yongsinMethod', 'confidence', 'timeKnown', 'calendar', 'mbti', 'jobCat']);
-    expect(keys.slice(13)).toEqual(['item', 'offer', 'amount', 'src', 'medium', 'app', 'ref']);
-    expect(listIn(server, 'const META_KEYS')).toEqual(expect.arrayContaining(['item', 'offer', 'amount', 'src', 'medium', 'app', 'ref']));
+    expect(keys.slice(13)).toEqual(['item', 'offer', 'amount', 'src', 'medium', 'app', 'ref', 'at']);
+    expect(listIn(server, 'const META_KEYS')).toEqual(expect.arrayContaining(['item', 'offer', 'amount', 'src', 'medium', 'app', 'ref', 'at']));
   });
 
   it('리뷰에서 묻는 가격을 시트 스크립트와 서버가 모두 받는다', () => {

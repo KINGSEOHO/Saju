@@ -152,7 +152,14 @@ export async function checkConnection(): Promise<{ ok: boolean; target: string; 
   }
 }
 
-export async function send(kind: Kind, body: unknown): Promise<'sent' | 'queued' | 'rejected'> {
+/** 보낼 때의 시각을 meta.at에 적어 둔다 — 저장에 실패해 나중에 다시 보내도 언제 일어난 일인지 남게 */
+function stamped(body: unknown): unknown {
+  const b = (body ?? {}) as { meta?: Record<string, unknown> };
+  return { ...b, meta: { ...(b.meta ?? {}), at: new Date().toISOString() } };
+}
+
+export async function send(kind: Kind, raw: unknown): Promise<'sent' | 'queued' | 'rejected'> {
+  const body = stamped(raw);
   const res = await post(kind, body);
   if (res === 'retry') {
     enqueue(kind, body);
