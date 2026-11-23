@@ -13,6 +13,7 @@ import type { Actor } from '../comic/types.ts';
 import { BRANCHES, STEMS, type SajuAnalysis } from '../engine/index.ts';
 import { send, sessionId } from '../lib/api.ts';
 import { shareKakao, siteUrl } from '../lib/kakao.ts';
+import { tagged } from '../lib/source.ts';
 import { externalHint, IN_APP_NAME, inApp, openExternal } from '../lib/inapp.ts';
 import { downloadBlob, escXml, saveImage, showImage, SVG_FONT, SVG_SERIF, svgStringToPng } from '../lib/svgImage.ts';
 import { hitScore } from './Hits.tsx';
@@ -340,7 +341,7 @@ export function ShareButtons({ kit }: { kit: ShareKit }) {
   /** 인스타 스토리의 '링크' 스티커에 바로 붙일 수 있게 주소를 복사해 둔다 */
   const copySite = async () => {
     try {
-      await navigator.clipboard.writeText(siteUrl());
+      await navigator.clipboard.writeText(tagged(siteUrl(), 'instagram', 'story', 'story'));
       return true;
     } catch {
       return false;
@@ -476,14 +477,14 @@ function InviteFriend() {
     const url = siteUrl();
     try {
       if (navigator.share) {
-        await navigator.share({ title: '명경사주', text: INVITE, url });
+        await navigator.share({ title: '명경사주', text: INVITE, url: tagged(url, 'share_sheet', 'invite') });
         return;
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
     }
     try {
-      await navigator.clipboard.writeText(`${INVITE}\n${url}`);
+      await navigator.clipboard.writeText(`${INVITE}\n${tagged(url, 'copy', 'invite')}`);
       setNote('초대 문구를 복사했어요. 친구나 연인에게 붙여 넣어 보내 보세요.');
     } catch {
       setNote(`이 주소를 보내 주세요: ${url}`);

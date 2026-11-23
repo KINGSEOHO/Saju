@@ -123,8 +123,8 @@ describe('받는 쪽(시트 스크립트·자체 서버)과 이름이 같다', (
   it('측정에 쓰는 항목·선택·금액 열은 맨 뒤에 붙인다 (예전 행의 열 위치가 그대로)', () => {
     const keys = [...gas.slice(gas.indexOf('var META'), gas.indexOf('];', gas.indexOf('var META'))).matchAll(/\['(\w+)',/g)].map((x) => x[1]);
     expect(keys.slice(0, 13)).toEqual(['dayStem', 'dayPillar', 'gender', 'ageGroup', 'strength', 'gyeokguk', 'yongsin', 'yongsinMethod', 'confidence', 'timeKnown', 'calendar', 'mbti', 'jobCat']);
-    expect(keys.slice(13)).toEqual(['item', 'offer', 'amount']);
-    expect(listIn(server, 'const META_KEYS')).toEqual(expect.arrayContaining(['item', 'offer', 'amount']));
+    expect(keys.slice(13)).toEqual(['item', 'offer', 'amount', 'src', 'medium', 'app', 'ref']);
+    expect(listIn(server, 'const META_KEYS')).toEqual(expect.arrayContaining(['item', 'offer', 'amount', 'src', 'medium', 'app', 'ref']));
   });
 
   it('리뷰에서 묻는 가격을 시트 스크립트와 서버가 모두 받는다', () => {

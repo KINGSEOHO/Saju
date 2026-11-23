@@ -33,6 +33,8 @@ export const STORAGE = {
   eventSeen: 'mg_event_seen_v1',
   /** 글자 크기 (0 보통 · 1 크게 · 2 더 크게) */
   textSize: 'mg_text_size_v1',
+  /** 이번 방문에 들어온 경로 (sessionStorage) — lib/source.ts */
+  source: 'mg_source_v1',
 } as const;
 
 /** 사람·날짜마다 이름이 달라지는 기록의 앞부분 */

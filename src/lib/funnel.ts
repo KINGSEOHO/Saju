@@ -2,13 +2,15 @@
  * 단계별 측정 — 사이트에 들어온 사람이 결제까지 단계마다 몇 명 남는지 센다.
  *   접속 → 결과 봄 → 고민 리포트 펼침 → 상세나 가격 화면까지 봄 → 결제 버튼 → 결제 완료
  *
- * 보내는 것: 단계 이름 · 어느 고민인지(item) · 고른 선택지(offer) · 금액(amount) · 이 기기의 무작위 번호(sessionId)뿐.
+ * 보내는 것: 단계 이름 · 어느 고민인지(item) · 고른 선택지(offer) · 금액(amount) · 이 기기의 무작위 번호(sessionId),
+ * 그리고 2026-12-01부터 들어온 경로(lib/source.ts — 주소 꼬리표·앱 종류·넘어온 사이트 도메인)뿐.
  * 이름·생년월일·출생 시각·상대 정보는 보내지 않는다.
  * 같은 단계·같은 항목은 한 번 방문(탭)에 한 번만 센다 — 펼쳤다 접었다 해도 한 번.
  * 시안(PAYWALL_DEMO)에서는 어디에도 보내지 않고, 이 기기 안에만 남겨 시안 상자에서 확인한다.
  */
 import { PAYWALL_DEMO } from '../config/plans.ts';
 import { send, sessionId } from './api.ts';
+import { sourceMeta } from './source.ts';
 
 export type Step = 'visit' | 'analyze' | 'concern_open' | 'match_result' | 'detail_view' | 'lock_view' | 'pay_click' | 'paid';
 /** 서버·시트가 받는 이벤트 종류 (docs/google-apps-script.gs, server/index.mjs와 같게) */
@@ -64,7 +66,7 @@ export function track(step: Step, meta: FunnelMeta = {}, once = true): void {
     window.dispatchEvent(new Event('mg-funnel'));
     return;
   }
-  void send('events', { sessionId: sessionId(), type: step, meta });
+  void send('events', { sessionId: sessionId(), type: step, meta: { ...meta, ...sourceMeta() } });
 }
 
 /** 시안 전용 — 이 기기에서 남긴 단계 (보내지 않은 것) */

@@ -81,7 +81,7 @@ const FUNNEL_TYPES = ['visit', 'analyze', 'concern_open', 'match_result', 'detai
 const EVENT_TYPES = new Set(['share', 'print', 'premium_interest', ...FUNNEL_TYPES]);
 const CHART_KEYS = ['dayPillar', 'dayStem', 'gender', 'ageGroup', 'strength', 'gyeokguk', 'yongsin', 'yongsinMethod', 'confidence', 'timeKnown', 'calendar', 'mbti', 'jobCat'];
 // 단계별 측정(이벤트)용 — 어느 고민 · 고른 선택지 · 금액
-const META_KEYS = [...CHART_KEYS, 'item', 'offer', 'amount'];
+const META_KEYS = [...CHART_KEYS, 'item', 'offer', 'amount', 'src', 'medium', 'app', 'ref'];
 
 const int15 = (v) => (Number.isInteger(v) && v >= 1 && v <= 5 ? v : null);
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) || null : null);

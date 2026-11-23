@@ -4,6 +4,8 @@
  *   카카오 SDK로 카드 모양 메시지를 보낸다. (카카오 개발자 콘솔에 사이트 도메인을 등록해야 한다)
  * - 키가 없거나 SDK를 못 불러오면 휴대폰 공유 창(여기서 카카오톡 선택), 그것도 없으면 링크 복사.
  */
+import { tagged } from './source.ts';
+
 const KEY = (import.meta.env.VITE_KAKAO_KEY as string | undefined) ?? '';
 const SDK = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js';
 
@@ -50,8 +52,9 @@ export function siteUrl(): string {
 export type ShareResult = 'kakao' | 'sheet' | 'copied' | 'cancelled' | 'failed';
 
 /** image: 이 사람만의 카드 사진 — 카카오에 올려 메시지 사진으로 쓰고, 실패하면 사이트 기본 미리보기 사진 */
-export async function shareKakao(o: { title: string; description: string; image?: File }): Promise<ShareResult> {
+export async function shareKakao(o: { title: string; description: string; image?: File; campaign?: string }): Promise<ShareResult> {
   const url = siteUrl();
+  const link = tagged(url, 'kakao', o.campaign);
   const k = await loadKakao();
   if (k) {
     let img = { imageUrl: `${url}og.png`, imageWidth: 1200, imageHeight: 630 };
@@ -66,30 +69,30 @@ export async function shareKakao(o: { title: string; description: string; image?
     try {
       k.Share.sendDefault({
         objectType: 'feed',
-        content: { title: o.title, description: o.description, ...img, link: { mobileWebUrl: url, webUrl: url } },
-        buttons: [{ title: '나도 명경이한테 사주 보기', link: { mobileWebUrl: url, webUrl: url } }],
+        content: { title: o.title, description: o.description, ...img, link: { mobileWebUrl: link, webUrl: link } },
+        buttons: [{ title: '나도 명경이한테 사주 보기', link: { mobileWebUrl: link, webUrl: link } }],
       });
       return 'kakao';
     } catch {
       /* 아래 방법으로 */
     }
   }
-  return shareLink(`${o.title}\n${o.description}`);
+  return shareLink(`${o.title}\n${o.description}`, o.campaign);
 }
 
 /** 휴대폰 공유 창 → 없으면 링크 복사 */
-export async function shareLink(text: string): Promise<ShareResult> {
+export async function shareLink(text: string, campaign?: string): Promise<ShareResult> {
   const url = siteUrl();
   if (navigator.share) {
     try {
-      await navigator.share({ title: '명경사주', text, url });
+      await navigator.share({ title: '명경사주', text, url: tagged(url, 'share_sheet', campaign) });
       return 'sheet';
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
     }
   }
   try {
-    await navigator.clipboard.writeText(`${text}\n${url}`);
+    await navigator.clipboard.writeText(`${text}\n${tagged(url, 'copy', campaign)}`);
     return 'copied';
   } catch {
     return 'failed';
