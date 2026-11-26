@@ -6,7 +6,7 @@
  * 그림체: 굵은 손그림 선(살짝 흔들리는 필터) + 단색 면 + 점 눈. 카메라는 full(전신)·bust(상반신)·face(얼굴).
  */
 import { useId, type ReactNode } from 'react';
-import { clamp, d, lighten, type Pt } from './draw.ts';
+import { clamp, d, type Pt } from './draw.ts';
 import { BEHIND_FX, FxBehind, FxFront } from './fx.tsx';
 import { Backdrop, DARK_BG, EMOTION_BG, FRONT_PROPS, OVERLAY_PROPS, PropArt } from './stage.tsx';
 import { textWidth, widest, wrap, wrapBalanced } from './text.ts';
@@ -594,16 +594,16 @@ function MarkView({ m, dark }: { m: Mark; dark?: boolean }) {
 }
 
 /** 회차 표지 글씨 (왼쪽) */
-function CoverText({ c, tint }: { c: NonNullable<Panel['cover']>; tint: string }) {
+function CoverText({ c }: { c: NonNullable<Panel['cover']> }) {
   const titleLines = wrap(c.title, 46, 280, 3);
   const tagLines = wrap(c.tagline, 19, 260, 4);
   let y = 76;
   const plateH = 154 + (titleLines.length - 1) * 56 + 48 + tagLines.length * 28 - 6;
   return (
     <g>
-      <rect x={14} y={22} width={300} height={plateH} rx={14} fill="#ffffff" opacity={0.82} />
-      <text x={30} y={46} fontSize={14} fontWeight={800} fill="#6b5f57" letterSpacing={2}>
-        명경사주 · 사주 개그 웹툰
+      <rect x={14} y={22} width={300} height={plateH} rx={14} fill="#ffffff" opacity={0.86} />
+      <text x={30} y={46} fontSize={14} fontWeight={800} fill="#6b5f57">
+        명경사주 · 내 사주로 그린 웹툰
       </text>
       <rect x={30} y={60} width={textWidth(c.kicker, 20) + 28} height={34} rx={4} fill={INK} transform="rotate(-3 40 76)" />
       <text x={44} y={84} fontSize={20} fontWeight={900} fill={WHITE} transform="rotate(-3 40 76)">
@@ -613,7 +613,6 @@ function CoverText({ c, tint }: { c: NonNullable<Panel['cover']>; tint: string }
         y = 154 + i * 56;
         return (
           <g key={i} transform={`rotate(-2 30 ${y})`}>
-            <rect x={26} y={y - 16} width={textWidth(l, 46) + 10} height={20} fill={lighten(tint, 0.2)} opacity={0.9} />
             <text x={30} y={y} fontSize={46} fontWeight={900} fill={WHITE} stroke={WHITE} strokeWidth={9} strokeLinejoin="round">
               {l}
             </text>
@@ -628,6 +627,34 @@ function CoverText({ c, tint }: { c: NonNullable<Panel['cover']>; tint: string }
           {l}
         </text>
       ))}
+    </g>
+  );
+}
+
+/**
+ * 수묵 담채 톤 — 컷 전체의 색을 옅게 빼고(담채) 한지색으로 물들인다. 사이트의 한지·먹 톤과 한 벌로 보이게.
+ * 흰색은 한지색, 검정은 먹색이 되고, 원래 색은 옅게만 남는다. 글자는 흔들지 않고 색만 바꾼다(이미지로 저장할 때도 그대로 나온다).
+ */
+function Tone({ id }: { id: string }) {
+  return (
+    <filter id={id} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+      <feColorMatrix type="saturate" values="0.4" />
+      <feColorMatrix type="matrix" values="0.93 0 0 0 0.035  0 0.91 0 0 0.03  0 0 0.85 0 0.02  0 0 0 1 0" />
+    </filter>
+  );
+}
+
+/** 붉은 낙관 — 표지와 장 제목 귀퉁이에 (톤 필터 밖에 그려 붉은색을 살린다) */
+function PanelSeal({ x, y }: { x: number; y: number }) {
+  return (
+    <g>
+      <rect x={x} y={y} width={30} height={34} rx={3} fill="#a8392c" opacity={0.9} />
+      <text x={x + 15} y={y + 15} fontSize={12} fontWeight={700} textAnchor="middle" fill="#fdf6ec" fontFamily={SERIF}>
+        明
+      </text>
+      <text x={x + 15} y={y + 29} fontSize={12} fontWeight={700} textAnchor="middle" fill="#fdf6ec" fontFamily={SERIF}>
+        鏡
+      </text>
     </g>
   );
 }
@@ -796,8 +823,9 @@ export function PanelArt({ p, label }: { p: Panel; label?: string }) {
           <rect width={W} height={H} />
         </clipPath>
         <Wobble id={`${u}w`} seed={seed} scale={p.drama ? 1.6 : 2.6} />
+        <Tone id={`${u}t`} />
       </defs>
-      <g clipPath={`url(#${u}clip)`}>
+      <g clipPath={`url(#${u}clip)`} filter={`url(#${u}t)`}>
         <rect width={W} height={H} fill={PAPER} />
         <g filter={`url(#${u}w)`}>
           <Scene bg={p.drama && !p.cover ? (EMOTION_BG.has(p.bg) ? p.bg : 'drama') : p.bg} cam={cam} cast={p.cast} props={p.props} drama={p.drama} seed={seed} />
@@ -813,7 +841,7 @@ export function PanelArt({ p, label }: { p: Panel; label?: string }) {
         {(p.marks ?? []).map((m, i) => (
           <MarkView key={`m${i}`} m={m} dark={dark} />
         ))}
-        {p.cover && <CoverText c={p.cover} tint={tint} />}
+        {p.cover && <CoverText c={p.cover} />}
         {L.cap && <CaptionView cap={L.cap} drama={p.drama} />}
         {L.bubbles.map((b, i) => (
           <BubbleText key={`bt${i}`} b={b} serif={p.drama} />
@@ -821,7 +849,8 @@ export function PanelArt({ p, label }: { p: Panel; label?: string }) {
         {p.badge && <Badge text={p.badge} W={W} />}
         {p.basis && <BasisTag text={p.basis} H={H} dark={dark} />}
       </g>
-      <rect x={1.5} y={1.5} width={W - 3} height={H - 3} fill="none" stroke={INK} strokeWidth={3} />
+      {p.cover && <PanelSeal x={W - 48} y={18} />}
+      <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke={INK} strokeWidth={2} />
     </svg>
   );
 }
@@ -857,8 +886,10 @@ function SplitArt({ p, label }: { p: Panel; label?: string }) {
           </clipPath>
         ))}
         <Wobble id={`${u}w`} seed={seed} />
+        <Tone id={`${u}t`} />
       </defs>
       <rect width={PW} height={H} fill={WHITE} />
+      <g filter={`url(#${u}t)`}>
       {halves.map(([h, x], i) => {
         const L = layoutHalf(h, H, p.basis);
         const tagW = textWidth(h.label, 18) + 30;
@@ -890,6 +921,7 @@ function SplitArt({ p, label }: { p: Panel; label?: string }) {
         );
       })}
       {p.basis && <BasisTag text={p.basis} H={H} dark={DARK_BG.has(A.bg) || DARK_BG.has(B.bg)} />}
+      </g>
     </svg>
   );
 }
@@ -942,7 +974,7 @@ export function TextBeatArt({ b }: { b: TextBeat }) {
     return (
       <svg {...svgProps}>
         <rect width={W} height={H} fill={PAPER} />
-        <path d={d`M ${40} ${y0 + (lines.length - 1) * 44 + 14} Q ${W / 2} ${y0 + (lines.length - 1) * 44 + 2} ${W - 40} ${y0 + (lines.length - 1) * 44 + 16}`} stroke="#ffd84d" strokeWidth={16} strokeLinecap="round" fill="none" opacity={0.85} />
+        <path d={d`M ${40} ${y0 + (lines.length - 1) * 44 + 14} Q ${W / 2} ${y0 + (lines.length - 1) * 44 + 2} ${W - 40} ${y0 + (lines.length - 1) * 44 + 16}`} stroke="#33574d" strokeWidth={10} strokeLinecap="round" fill="none" opacity={0.28} />
         {b.no && (
           <g>
             <rect x={W / 2 - textWidth(b.no, 16) / 2 - 14} y={y0 - 70} width={textWidth(b.no, 16) + 28} height={28} rx={14} fill={INK} />
@@ -963,7 +995,8 @@ export function TextBeatArt({ b }: { b: TextBeat }) {
             {`근거 · ${b.basis}`}
           </text>
         )}
-        <rect x={1.5} y={1.5} width={W - 3} height={H - 3} fill="none" stroke={INK} strokeWidth={3} />
+        <PanelSeal x={W - 48} y={16} />
+        <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke={INK} strokeWidth={2} />
       </svg>
     );
   }
@@ -976,8 +1009,8 @@ export function TextBeatArt({ b }: { b: TextBeat }) {
         <>
           <defs>
             <linearGradient id={`${u}g`} x1={0} y1={0} x2={1} y2={1}>
-              <stop offset="0" stopColor="#fff1f4" />
-              <stop offset="1" stopColor="#eef2ff" />
+              <stop offset="0" stopColor="#f6f2e9" />
+              <stop offset="1" stopColor="#efe9da" />
             </linearGradient>
           </defs>
           <rect width={W} height={H} fill={`url(#${u}g)`} />
@@ -997,7 +1030,7 @@ export function TextBeatArt({ b }: { b: TextBeat }) {
           {`근거 · ${b.basis}`}
         </text>
       )}
-      <rect x={1.5} y={1.5} width={W - 3} height={H - 3} fill="none" stroke={INK} strokeWidth={3} />
+      <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke={INK} strokeWidth={2} />
     </svg>
   );
 }

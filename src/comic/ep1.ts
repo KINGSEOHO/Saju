@@ -619,7 +619,7 @@ export function personaEpisode(a: SajuAnalysis, x: CrossReport | null): Comic {
   const beats: Beat[] = [];
 
   // 표지
-  beats.push(cut(c, '표지', '', { bg: 'burst', cast: [c.me(430, 'grin', 'hips', { dir: -1, sym: 'jump' })], talk: [] }, { cover: { kicker: '1화', title: '나라는 사람', tagline: `${dm} — ${D.tag}` } }));
+  beats.push(cut(c, '표지', '', { bg: 'burst', cast: [c.me(430, 'smile', 'hips', { dir: -1, sym: 'jump' })], talk: [] }, { cover: { kicker: '1화', title: '나라는 사람', tagline: `${dm} — ${D.tag}` } }));
 
   // 도입 — 명경이 등장
   beats.push(

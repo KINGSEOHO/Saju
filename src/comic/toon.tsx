@@ -10,7 +10,7 @@ import { d, darken, heartPath, lighten, starPath, type Pt } from './draw.ts';
 import type { Acc, Actor, Age, Face, Held, MonsterKind, Sym, Wear } from './types.ts';
 
 export const INK = '#1f1b1a';
-export const PAPER = '#fffdf7';
+export const PAPER = '#fbf7ee';
 const SKIN = '#ffe2c6';
 const PANTS = '#4b5066';
 const SHOE = '#2f2a28';
@@ -988,53 +988,6 @@ function FaceArt({ face, D, pen, lx }: { face: Face; D: Dims; pen: Pen; lx: numb
   }
 }
 
-/** 극화체 얼굴 — 갑자기 진지해지는 컷 */
-function DramaFace({ face, D, pen, lx }: { face: Face; D: Dims; pen: Pen; lx: number }) {
-  const { rx, ry } = D;
-  const L: Pt = [lx - 16, 2];
-  const R: Pt = [lx + 16, 2];
-  const angry = face === 'angry' || face === 'rage';
-  const shock = face === 'shock' || face === 'scream' || face === 'surprised';
-  const sad = face === 'sad' || face === 'cry';
-  const line = { fill: 'none', stroke: INK, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  return (
-    <g>
-      {/* 얼굴 그늘 (빗금) */}
-      <path d={d`M ${-rx * 0.98} ${-ry * 0.1} C ${-rx} ${ry * 0.5} ${-rx * 0.6} ${ry * 0.98} ${0} ${ry} L ${-rx * 0.2} ${ry * 0.4} Q ${-rx * 0.6} ${ry * 0.2} ${-rx * 0.98} ${-ry * 0.1} Z`} fill="#3a2f2f" opacity={0.22} />
-      <g stroke={INK} strokeWidth={pen.t * 0.6} opacity={0.55}>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <path key={i} d={d`M ${-rx * 0.86 + i * 7} ${ry * 0.08 + i * 4} l ${10} ${-9}`} />
-        ))}
-      </g>
-      {/* 눈썹 */}
-      <path d={d`M ${L[0] - 13} ${L[1] - (angry ? 16 : 10)} Q ${L[0]} ${L[1] - 14} ${L[0] + 10} ${L[1] - (angry ? 6 : sad ? 14 : 9)} M ${R[0] + 13} ${R[1] - (angry ? 16 : 10)} Q ${R[0]} ${R[1] - 14} ${R[0] - 10} ${R[1] - (angry ? 6 : sad ? 14 : 9)}`} {...line} strokeWidth={pen.f * 1.7} />
-      {/* 눈 */}
-      {[L, R].map(([x, y], i) => (
-        <g key={i}>
-          <path d={d`M ${x - 10} ${y} Q ${x} ${y - (shock ? 9 : 6)} ${x + 10} ${y} Q ${x} ${y + (shock ? 9 : 5)} ${x - 10} ${y} Z`} fill="#ffffff" stroke={INK} strokeWidth={pen.f * 0.9} />
-          <circle cx={x + 1} cy={y} r={shock ? 2 : 3.6} fill={INK} />
-          {!shock && <circle cx={x + 2.2} cy={y - 1.4} r={1.2} fill="#ffffff" />}
-          <path d={d`M ${x - 9} ${y + 6} Q ${x} ${y + 9} ${x + 8} ${y + 6}`} {...line} strokeWidth={pen.t * 0.6} />
-        </g>
-      ))}
-      {/* 코 */}
-      <path d={d`M ${lx + 3} ${ry * 0.06} L ${lx + 7} ${ry * 0.34} L ${lx + 1} ${ry * 0.38}`} {...line} strokeWidth={pen.t * 0.9} />
-      {/* 입 */}
-      {shock ? (
-        <path d={d`M ${lx - 8} ${ry * 0.6} Q ${lx + 1} ${ry * 0.5} ${lx + 10} ${ry * 0.6} Q ${lx + 1} ${ry * 0.76} ${lx - 8} ${ry * 0.6} Z`} fill="#4a2020" stroke={INK} strokeWidth={pen.t} />
-      ) : (
-        <g>
-          <path d={d`M ${lx - 10} ${ry * 0.6} Q ${lx + 1} ${ry * (angry ? 0.56 : sad ? 0.66 : 0.58)} ${lx + 11} ${ry * 0.6}`} {...line} strokeWidth={pen.f * 1.2} />
-          <path d={d`M ${lx - 4} ${ry * 0.7} L ${lx + 6} ${ry * 0.7}`} {...line} strokeWidth={pen.t * 0.6} />
-        </g>
-      )}
-      {/* 땀 한 방울 */}
-      {(shock || sad) && <path d={d`M ${rx * 0.72} ${-ry * 0.3} q ${5} ${10} ${0} ${14} q ${-5} ${-4} ${0} ${-14} Z`} fill={TEAR} stroke={INK} strokeWidth={pen.t * 0.7} />}
-      {face === 'cry' && <path d={d`M ${R[0] + 2} ${R[1] + 7} Q ${R[0] + 4} ${ry * 0.5} ${R[0]} ${ry * 0.7}`} stroke={TEAR} strokeWidth={pen.t * 1.4} fill="none" />}
-    </g>
-  );
-}
-
 function starPath5(cx: number, cy: number, r: number): string {
   let s = '';
   for (let i = 0; i < 10; i++) {
@@ -1717,7 +1670,8 @@ export function Toon({ a, z, drama }: { a: Actor } & ToonOpts) {
         <path d={headPath(D.rx * 0.96, D.ry * 0.96)} fill={look.hair === 'bald3' ? skin : look.hairColor} stroke={INK} strokeWidth={pen.w * 0.9} />
       ) : (
         <g>
-          {drama || a.face === 'serious' ? <DramaFace face={a.face} D={D} pen={pen} lx={lx} /> : <FaceArt face={a.face} D={D} pen={pen} lx={lx} />}
+          {/* 극화체 얼굴(DramaFace)은 그림체가 따로 놀아서 쓰지 않는다 — 진지한 컷도 같은 얼굴로, 분위기는 배경과 먹선이 맡는다 */}
+          <FaceArt face={a.face} D={D} pen={pen} lx={lx} />
           {look.mustache && <path d={d`M ${lx - 13} ${D.ry * 0.38} Q ${lx - 6} ${D.ry * 0.3} ${lx} ${D.ry * 0.38} Q ${lx + 6} ${D.ry * 0.3} ${lx + 13} ${D.ry * 0.38} Q ${lx + 6} ${D.ry * 0.48} ${lx} ${D.ry * 0.42} Q ${lx - 6} ${D.ry * 0.48} ${lx - 13} ${D.ry * 0.38} Z`} fill="#3a3230" stroke={INK} strokeWidth={pen.t * 0.8} />}
         </g>
       )}
