@@ -638,8 +638,8 @@ function CoverText({ c }: { c: NonNullable<Panel['cover']> }) {
 function Tone({ id }: { id: string }) {
   return (
     <filter id={id} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
-      <feColorMatrix type="saturate" values="0.4" />
-      <feColorMatrix type="matrix" values="0.93 0 0 0 0.035  0 0.91 0 0 0.03  0 0 0.85 0 0.02  0 0 0 1 0" />
+      <feColorMatrix type="saturate" values="0.72" />
+      <feColorMatrix type="matrix" values="0.96 0 0 0 0.03  0 0.95 0 0 0.03  0 0 0.9 0 0.025  0 0 0 1 0" />
     </filter>
   );
 }

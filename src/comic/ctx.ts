@@ -196,12 +196,64 @@ function wearFor(c: Ctx, bg: Bg, age: Age): Wear {
   return casual;
 }
 
-const dressCast = (cast: Actor[], bg: Bg, c: Ctx): Actor[] => cast.map((x) => (x.role === 'me' && !x.wear ? { ...x, wear: wearFor(c, bg, x.age ?? c.age) } : x));
+/**
+ * 그냥 서 있기만 하던 인물에게 표정에 어울리는 자세를 준다 — 컷마다 같은 자세가 되풀이되지 않게.
+ * 손에 든 것이 없고 자세를 따로 정하지 않은(stand) 사람만 바꾼다. 같은 사주면 늘 같은 그림이 나오게 컷 내용으로 고른다.
+ */
+const POSE_FOR: Partial<Record<Face, Pose[]>> = {
+  smug: ['cross', 'hips', 'shrug'],
+  proud: ['hips', 'fist', 'cross'],
+  happy: ['cheer', 'wave', 'jump', 'fist'],
+  grin: ['cheer', 'fist', 'hips'],
+  star: ['cheer', 'jump', 'fist'],
+  love: ['cheer', 'wave'],
+  money: ['cheer', 'fist'],
+  smile: ['wave', 'hips', 'stand'],
+  plain: ['stand', 'shrug', 'think'],
+  blank: ['stand', 'shrug'],
+  think: ['think'],
+  nervous: ['shrug', 'facepalm', 'stand'],
+  tired: ['facepalm', 'shrug'],
+  dead: ['facepalm', 'shrug'],
+  sad: ['facepalm', 'stand'],
+  cry: ['facepalm', 'stand'],
+  shock: ['jump', 'stand'],
+  surprised: ['jump', 'stand'],
+  scream: ['jump', 'cheer'],
+  angry: ['fist', 'hips'],
+  rage: ['fist', 'hips'],
+  serious: ['cross', 'fist'],
+};
+/** 주인공의 표정을 가끔 한 단계 과장한다 (같은 감정 안에서만 — 뜻은 바뀌지 않게) */
+const LOUDER: Partial<Record<Face, Face>> = { plain: 'blank', sad: 'cry', surprised: 'shock', shock: 'scream', angry: 'rage', tired: 'dead', happy: 'star' };
+
+function hashOf(text: string): number {
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function livelyCast(cast: Actor[], key: string): Actor[] {
+  return cast.map((x, i) => {
+    // 거울·몬스터, 돌처럼 굳은 사람(stone)은 그대로 둔다
+    if (x.role === 'mirror' || x.role === 'monster' || x.acc?.includes('stone')) return x;
+    const h = hashOf(`${key}|${i}|${x.x}|${x.face}`);
+    let out = x;
+    if (x.role === 'me' && !x.front && LOUDER[x.face] && h % 3 === 0) out = { ...out, face: LOUDER[x.face] as Face };
+    const pool = POSE_FOR[x.face];
+    if (x.pose === 'stand' && !x.held && pool) out = { ...out, pose: pool[(h >>> 3) % pool.length] };
+    return out;
+  });
+}
+
+const dressCast = (cast: Actor[], bg: Bg, c: Ctx, key = ''): Actor[] =>
+  livelyCast(cast, `${c.episode}|${bg}|${key}`).map((x) => (x.role === 'me' && !x.wear ? { ...x, wear: wearFor(c, bg, x.age ?? c.age) } : x));
 
 /** 주인공 옷만 장면에 맞춘다 (인생 연대기처럼 장면마다 나이가 다른 경우) */
 export function dress(s: Scene, c: Ctx): Scene {
-  const split = s.split?.map((h) => ({ ...h, cast: dressCast(h.cast, h.bg, c) })) as Panel['split'];
-  return { ...s, cast: dressCast(s.cast, s.bg, c), ...(split ? { split } : {}) };
+  const key = s.talk.map((l) => l.text).join('/');
+  const split = s.split?.map((h) => ({ ...h, cast: dressCast(h.cast, h.bg, c, h.label) })) as Panel['split'];
+  return { ...s, cast: dressCast(s.cast, s.bg, c, key), ...(split ? { split } : {}) };
 }
 
 /** 나이에 맞게 대사·인물을 고른다 */
