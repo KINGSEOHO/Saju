@@ -5,6 +5,7 @@
 
 ## 1. 대화와 진행 방식
 
+- 새 세션을 시작하면 이 문서 다음에 `docs/HANDOFF.md`(지금 상태와 남은 일)와 `docs/marketing-sync.md`(최근 변경 기록)를 읽어요. 큰 작업을 마치면 `docs/HANDOFF.md`를 고쳐 둬요.
 - 답은 한국어로, 쉬운 말로 해요. 전문 용어는 풀어서 써요.
 - 사용자가 고르라고 하지 않는 한 판단해서 진행하고, 결과는 **시안(미리보기)** 으로 먼저 보여 줘요.
 - 실제 사이트 반영(푸시)은 사용자가 분명히 허락했을 때만 해요 ("올려 줘", "반영해 줘" 등). 허락은 그때 그 건에만 해당해요.
@@ -15,7 +16,7 @@
 
 | 브랜치 | 쓰임 |
 | --- | --- |
-| `draft/concern-report` | 시안. 로컬에서 먼저 작업하고 커밋하는 곳 (푸시하지 않음) |
+| `draft/concern-report` | 시안. 여기서 먼저 작업하고 커밋하는 곳 (원격에도 올려 둬요 — 실제 사이트에는 영향 없음) |
 | `claude/wonderful-maxwell-o98pwg` | 실제 사이트. 푸시하면 GitHub Pages로 바로 배포됨 (새 주소 https://mgsaju.io.kr — 예전 github.io 주소는 새 주소로 넘어감) |
 
 - 배포: 시안 브랜치를 실제 브랜치로 fast-forward 한 뒤 `git push -u origin claude/wonderful-maxwell-o98pwg`.
