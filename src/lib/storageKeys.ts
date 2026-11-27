@@ -35,6 +35,8 @@ export const STORAGE = {
   textSize: 'mg_text_size_v1',
   /** 이번 방문에 들어온 경로 (sessionStorage) — lib/source.ts */
   source: 'mg_source_v1',
+  /** 결제할 때 넣은 구매자 정보 — 손님이 '이 기기에 기억하기'를 골랐을 때만 (lib/buyerMemo.ts) */
+  buyer: 'mg_buyer_v1',
 } as const;
 
 /** 사람·날짜마다 이름이 달라지는 기록의 앞부분 */

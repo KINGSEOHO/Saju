@@ -15,6 +15,7 @@ import { PAY_LIVE } from '../config/backend.ts';
 import { BETA_FREE, PAYWALL_DEMO } from '../config/plans.ts';
 import { GiftBox, showPurchaseCode } from './PurchaseCode.tsx';
 import { EASY_PAY_READY, PAY_METHODS, useAccount, type Buyer, type CouponResult, type PayMethod, type PayResult, type RedeemResult } from '../lib/account.ts';
+import { loadBuyer, rememberBuyer } from '../lib/buyerMemo.ts';
 import { entOf, purchaseOf, type Offer, type SeasonKey } from '../lib/entitlements.ts';
 import { track } from '../lib/funnel.ts';
 import { Veil } from './common.tsx';
@@ -119,10 +120,13 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
   const [adult, setAdult] = useState(false);
   const [privacy, setPrivacy] = useState(false);
   // 실제 결제에서는 결제대행사(이니시스)가 구매자 이메일을 필수로 받는다 — 시안에서는 묻지 않는다
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [method, setMethod] = useState<PayMethod>('CARD');
+  // 지난번에 '이 기기에 기억하기'를 골랐다면 그 값으로 채워 둔다 (다른 고민을 또 살 때 다시 넣지 않게)
+  const [saved] = useState(loadBuyer);
+  const [email, setEmail] = useState(saved?.email ?? '');
+  const [name, setName] = useState(saved?.name ?? '');
+  const [phone, setPhone] = useState(saved?.phone ?? '');
+  const [method, setMethod] = useState<PayMethod>(saved?.method && PAY_METHODS.some((m) => m.id === saved.method) ? saved.method : 'CARD');
+  const [keep, setKeep] = useState(!!saved);
   const needEmail = !free && PAY_LIVE;
   const digits = phone.replace(/\D/g, '');
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) && name.trim().length > 0 && /^01\d{8,9}$/.test(digits);
@@ -159,7 +163,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
       {needEmail && (
         <div className="mt-4">
           <div className="panel rounded-xl px-4 py-3">
-            <p className="text-body font-semibold text-ink">명경사주는 이 정보를 받거나 저장하지 않아요.</p>
+            <p className="text-body font-semibold text-ink">명경사주 서버는 이 정보를 받거나 저장하지 않아요.</p>
             <p className="mt-1 text-label text-sub">결제에 필요해서 결제대행사로만 바로 넘어가요.</p>
           </div>
           <p className="mt-4 text-label font-semibold text-ink">구매자 정보 (필수)</p>
@@ -185,6 +189,12 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          <label className="mt-3 flex cursor-pointer items-start gap-3 text-cap text-ink-2" data-pay-keep>
+            <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={keep} onChange={(e) => setKeep(e.target.checked)} />
+            <span>
+              <b className="text-ink">(선택)</b> 다음에 살 때 다시 넣지 않게 이 휴대폰(브라우저)에만 기억해요. 서버로는 보내지 않고, 체크를 풀고 결제하면 지워져요.
+            </span>
+          </label>
           <p className="mt-2 text-cap text-sub">
             이름·휴대폰 번호·이메일은 결제대행사가 결제 처리와 결제 안내를 위해 꼭 받는 정보예요. 결제대행사에만 넘기고 명경사주 서버에는 저장하지 않아요. 보관은 전자상거래법에 따라 5년이에요.
             입력하지 않으면 결제할 수 없어요(
@@ -240,7 +250,11 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
         <button
           type="button"
           className="btn-primary"
-          onClick={() => onYes(needEmail ? { name: name.trim(), phone: digits, email: email.trim(), method } : undefined)}
+          onClick={() => {
+            const buyer = needEmail ? { name: name.trim(), phone: digits, email: email.trim(), method } : undefined;
+            if (buyer) rememberBuyer(buyer, keep);
+            onYes(buyer);
+          }}
           disabled={busy || (!free && !(agree && adult && privacy)) || (needEmail && !emailOk)}
           aria-busy={busy}
         >
