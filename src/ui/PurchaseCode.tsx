@@ -33,10 +33,15 @@ export function GiftBox({ code, used }: { code: string; used?: boolean }) {
   };
   return (
     <div className="mt-4 rounded-xl border border-accent/40 px-4 py-4 text-left" data-gift>
-      <p className="text-label font-semibold text-ink">선물 코드 · 고민 리포트 1개 (3,900원짜리)</p>
-      <p className="mt-1 text-cap text-sub">이직·진로, 연애·결혼, 돈, 시험·합격 중 하나를 여는 코드예요. 신년운세·궁합·전체 묶음은 열리지 않아요.</p>
+      <p className="flex flex-wrap items-center gap-2 text-label font-semibold text-ink">
+        <span className="tag-pos">선물용</span>
+        친구에게 주는 선물 코드
+      </p>
+      <p className="mt-1 text-cap text-sub">
+        FREE로 시작해요. 고민 리포트 1개(3,900원짜리)를 여는 코드예요 — 이직·진로, 연애·결혼, 돈, 시험·합격 중 하나. 신년운세·궁합·전체 묶음은 열리지 않아요.
+      </p>
       <div className="mt-2 flex items-center justify-between gap-3">
-        <span className={`font-mono text-ui font-bold tracking-wider select-all ${used ? 'text-faint line-through' : 'text-ink'}`}>{code}</span>
+        <span className={`font-mono text-ui font-bold tracking-wider whitespace-nowrap select-all ${used ? 'text-faint line-through' : 'text-ink'}`}>{code}</span>
         {!used && (
           <button type="button" className="btn-small shrink-0" onClick={copy}>
             {copied ? '복사했어요' : '복사'}
@@ -130,12 +135,19 @@ export function PurchaseCodeDialog() {
         <h2 id="pay-code-title" className="mt-3 text-title3 font-bold text-ink">
           {shown?.title}
         </h2>
-        <p className="mt-1 text-label text-sub">아래 구매 코드를 꼭 저장해 주세요.</p>
-        <div className="panel mt-5 rounded-xl px-4 py-4">
-          <p className="font-mono text-title2 font-bold tracking-wider text-ink select-all">{code}</p>
-          <button type="button" className="btn-small mt-3" onClick={copy}>
-            {copied ? '복사했어요' : '코드 복사'}
-          </button>
+        <p className="mt-1 text-label text-sub">{shown?.gift ? '코드가 두 개예요. 내 코드는 저장하고, 선물 코드는 친구에게 주세요.' : '아래 구매 코드를 꼭 저장해 주세요.'}</p>
+        <div className="panel mt-5 rounded-xl px-4 py-4 text-left" data-my-code>
+          <p className="flex flex-wrap items-center gap-2 text-label font-semibold text-ink">
+            <span className="tag-neg">내 것</span>
+            내 구매 코드
+          </p>
+          <p className="mt-1 text-cap text-sub">MG로 시작해요. 다른 휴대폰이나 브라우저에서 내 리포트를 다시 열 때 넣는 코드예요. 남에게 주지 마세요 — 이 코드를 넣은 사람에게도 내 리포트가 열려요.</p>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <span className="font-mono text-title3 font-bold tracking-wider whitespace-nowrap text-ink select-all">{code}</span>
+            <button type="button" className="btn-small shrink-0" onClick={copy}>
+              {copied ? '복사했어요' : '복사'}
+            </button>
+          </div>
         </div>
         {shown?.gift && <GiftBox code={shown.gift} />}
         {!shown?.gift && shown?.title === '결제됐어요' && left > 0 && (
@@ -155,7 +167,7 @@ export function PurchaseCodeDialog() {
           </div>
         )}
         <p className="mt-4 text-left text-cap leading-relaxed text-sub">
-          다른 휴대폰이나 브라우저에서 열 때, 또는 기록이 지워졌을 때 이 코드를 넣으면 다시 결제하지 않고 열 수 있어요. 캡처하거나 메모에 붙여 두세요.
+          기록이 지워졌을 때도 내 구매 코드를 넣으면 다시 결제하지 않고 열 수 있어요. 캡처하거나 메모에 붙여 두세요.
         </p>
         <button ref={okRef} type="button" className="btn-primary mt-5 w-full" onClick={() => setShown(null)}>
           저장했어요

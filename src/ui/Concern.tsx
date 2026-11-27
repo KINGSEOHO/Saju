@@ -486,14 +486,17 @@ function CodeBox({ u }: { u: Unlock }) {
   };
   return (
     <div className="panel mb-6">
-      <p className="text-label font-semibold text-ink">내 구매 코드</p>
+      <p className="flex flex-wrap items-center gap-2 text-label font-semibold text-ink">
+        <span className="tag-neg">내 것</span>
+        내 구매 코드
+      </p>
       <div className="mt-2 flex items-center justify-between gap-3">
         <span className="font-mono text-title3 font-bold tracking-wider text-ink select-all">{u.account.code}</span>
         <button type="button" className="btn-small shrink-0" onClick={copy}>
           {copied ? '복사됨' : '복사'}
         </button>
       </div>
-      <p className="mt-2 text-cap text-sub">코드는 한 사람에 하나예요. 더 사도 같은 코드에 쌓여요. 다른 휴대폰이나 카카오톡 안에서 열 때 이 코드를 넣으면 산 리포트가 그대로 열려요. 캡처해 두세요.</p>
+      <p className="mt-2 text-cap text-sub">코드는 한 사람에 하나예요. 더 사도 같은 코드에 쌓여요. 다른 휴대폰이나 카카오톡 안에서 열 때 이 코드를 넣으면 산 리포트가 그대로 열려요. 캡처해 두고, 남에게는 주지 마세요.</p>
       {gifts.map((g) => (
         <GiftBox key={g.code} code={g.code} used={g.used} />
       ))}
