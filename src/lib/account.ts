@@ -47,15 +47,14 @@ export interface Buyer {
   method?: PayMethod;
 }
 
-/** 간편결제 버튼을 보일지 — 이니시스에서 간편결제 사용 설정(V104 오류 해결)이 끝나면 true */
-export const EASY_PAY_READY = false;
+/** 간편결제 버튼을 보일지 — 이니시스가 승인한 결제사만 아래 목록에 둔다 (승인 안 된 결제사는 V104 오류가 난다) */
+export const EASY_PAY_READY = true;
 
 /** 결제창에서 고를 수 있는 결제수단 (포트원 V2: CARD, 간편결제는 EASY_PAY + easyPayProvider) */
 export const PAY_METHODS = [
   { id: 'CARD', label: '카드' },
   { id: 'KAKAOPAY', label: '카카오페이' },
-  { id: 'NAVERPAY', label: '네이버페이' },
-  { id: 'TOSSPAY', label: '토스페이' },
+  // 네이버페이는 이니시스 승인이 나지 않았다(2026-11). 다른 결제사는 승인을 확인한 뒤 한 줄씩 더한다 — 포트원 이름: TOSSPAY · PAYCO · SAMSUNGPAY · SSGPAY · LPAY · APPLEPAY
 ] as const;
 export type PayMethod = (typeof PAY_METHODS)[number]['id'];
 
