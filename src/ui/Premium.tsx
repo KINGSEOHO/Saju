@@ -112,6 +112,26 @@ function previewLocked(): boolean {
   }
 }
 
+/** 결제 확인에서 먼저 보여 주는 결제수단 수 (카드 · 카카오페이 · 네이버페이) */
+const MAIN_METHODS = 3;
+
+/** 단계 번호 — 결제 확인을 '1 결제수단 → 2 구매자 정보 → 3 동의'로 읽히게 */
+function StepNo({ n }: { n: number }) {
+  return (
+    <span aria-hidden className="mr-2 inline-flex size-6 items-center justify-center rounded-full bg-accent align-[-0.1em] text-label font-bold text-on-accent">
+      {n}
+    </span>
+  );
+}
+
+/** 구매자 정보에서 무엇이 빠졌는지 한 줄로 */
+function buyerHint(name: string, digits: string, email: string): string {
+  if (!name.trim()) return '이름을 넣어 주세요.';
+  if (!/^01\d{8,9}$/.test(digits)) return '휴대폰 번호를 숫자만 넣어 주세요. 예) 01012345678';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return '이메일 주소를 확인해 주세요. 예) name@naver.com';
+  return '';
+}
+
 /** 버튼을 누른 뒤 한 번 더 확인 — 무료는 하나뿐이라 실수로 쓰지 않게, 유료는 금액을 다시 보여 준다 */
 function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: string; busy: boolean; onYes: (buyer?: Buyer) => void; onNo: () => void; onRestore?: () => void }) {
   const free = o.kind === 'free' || o.kind === 'partnerFree';
@@ -127,6 +147,8 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
   const [phone, setPhone] = useState(saved?.phone ?? '');
   const [method, setMethod] = useState<PayMethod>(saved?.method && PAY_METHODS.some((m) => m.id === saved.method) ? saved.method : 'CARD');
   const [keep, setKeep] = useState(!!saved);
+  // 자주 쓰는 결제수단 셋만 먼저 보여 주고, 나머지는 '다른 결제수단 보기'로 (지난번에 고른 것이 뒤쪽이면 처음부터 펼친다)
+  const [more, setMore] = useState(() => PAY_METHODS.findIndex((m) => m.id === saved?.method) >= MAIN_METHODS);
   const needEmail = !free && PAY_LIVE;
   const digits = phone.replace(/\D/g, '');
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) && name.trim().length > 0 && /^01\d{8,9}$/.test(digits);
@@ -142,71 +164,93 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             ? '무료로는 상대 한 명만 열 수 있어요. 더 궁금한 사람이 있다면 그 사람에게 쓰는 게 좋아요.'
             : PAYWALL_DEMO && !PAY_LIVE
             ? '결제 화면으로 넘어가는 자리예요. 시안이라 실제로 결제되지 않고 바로 열려요.'
-            : '결제 화면으로 넘어가요.'}
+            : '아래 세 가지만 하면 돼요. 결제수단을 고르고, 구매자 정보를 넣고, 동의하면 결제 화면으로 넘어가요.'}
       </p>
       {!free && EASY_PAY_READY && (
-        <fieldset className="mt-4" data-pay-method>
-          <legend className="text-label font-semibold text-ink">결제수단</legend>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {PAY_METHODS.map((m) => (
+        <fieldset className="mt-6" data-pay-method>
+          <legend className="text-ui font-bold text-ink">
+            <StepNo n={1} />
+            결제수단을 골라 주세요
+          </legend>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {(more ? PAY_METHODS : PAY_METHODS.slice(0, MAIN_METHODS)).map((m) => (
               <label
                 key={m.id}
-                className={`flex h-12 cursor-pointer items-center justify-center rounded-xl border text-ui font-semibold transition-colors ${method === m.id ? 'border-accent bg-bg text-ink' : 'border-line text-ink-2'}`}
+                className={`flex h-14 cursor-pointer items-center justify-center rounded-xl border-2 px-1 text-center text-label leading-tight font-bold transition-colors ${method === m.id ? 'border-accent bg-accent-tint text-accent-strong' : 'border-line bg-bg text-ink-2'}`}
               >
                 <input type="radio" name="pay-method" className="sr-only" checked={method === m.id} onChange={() => setMethod(m.id)} />
                 {m.label}
               </label>
             ))}
           </div>
+          {!more && PAY_METHODS.length > MAIN_METHODS && (
+            <button type="button" className="link tap mt-3 text-label" onClick={() => setMore(true)}>
+              다른 결제수단 보기 ({PAY_METHODS.slice(MAIN_METHODS)
+                .map((m) => m.label)
+                .join(' · ')})
+            </button>
+          )}
         </fieldset>
       )}
       {needEmail && (
-        <div className="mt-4">
-          <div className="panel rounded-xl px-4 py-3">
-            <p className="text-body font-semibold text-ink">명경사주 서버는 이 정보를 받거나 저장하지 않아요.</p>
-            <p className="mt-1 text-label text-sub">결제에 필요해서 결제대행사로만 바로 넘어가요.</p>
-          </div>
-          <p className="mt-4 text-label font-semibold text-ink">구매자 정보 (필수)</p>
-          <input aria-label="이름" autoComplete="name" className="field mt-2" placeholder="이름" value={name} onChange={(e) => setName(e.target.value)} />
-          <input
-            aria-label="휴대폰 번호"
-            type="tel"
-            inputMode="numeric"
-            autoComplete="tel"
-            className="field mt-2"
-            placeholder="휴대폰 번호 (숫자만)"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-          <input
-            id="pay-email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            className="field mt-2"
-            aria-label="이메일"
-            placeholder="이메일"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <label className="mt-3 flex cursor-pointer items-start gap-3 text-cap text-ink-2" data-pay-keep>
-            <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={keep} onChange={(e) => setKeep(e.target.checked)} />
+        <div className="mt-8">
+          <p className="text-ui font-bold text-ink">
+            <StepNo n={2} />
+            구매자 정보를 넣어 주세요
+          </p>
+          <p className="mt-1 text-label text-sub">결제대행사로만 넘어가고, 명경사주 서버에는 저장하지 않아요.</p>
+          <label className="mt-3 block">
+            <span className="text-label font-semibold text-ink-2">이름</span>
+            <input autoComplete="name" className="field mt-1.5" placeholder="예) 김명경" value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          <label className="mt-3 block">
+            <span className="text-label font-semibold text-ink-2">휴대폰 번호</span>
+            <input type="tel" inputMode="numeric" autoComplete="tel" className="field mt-1.5" placeholder="예) 01012345678" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </label>
+          <label className="mt-3 block">
+            <span className="text-label font-semibold text-ink-2">이메일</span>
+            <input id="pay-email" type="email" inputMode="email" autoComplete="email" className="field mt-1.5" placeholder="예) name@naver.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </label>
+          {needEmail && !emailOk && (name || phone || email) && <p className="mt-2 text-label font-semibold text-ink">{buyerHint(name, digits, email)}</p>}
+          <label className="mt-4 flex cursor-pointer items-start gap-3 text-label text-ink-2" data-pay-keep>
+            <input type="checkbox" className="mt-0.5 size-6 shrink-0 accent-accent" checked={keep} onChange={(e) => setKeep(e.target.checked)} />
             <span>
-              <b className="text-ink">(선택)</b> 다음에 살 때 다시 넣지 않게 이 휴대폰(브라우저)에만 기억해요. 서버로는 보내지 않고, 체크를 풀고 결제하면 지워져요.
+              <b className="text-ink">(선택)</b> 다음에 살 때 다시 넣지 않게 이 휴대폰에만 기억해요.
             </span>
           </label>
-          <p className="mt-2 text-cap text-sub">
-            이름·휴대폰 번호·이메일은 결제대행사가 결제 처리와 결제 안내를 위해 꼭 받는 정보예요. 결제대행사에만 넘기고 명경사주 서버에는 저장하지 않아요. 보관은 전자상거래법에 따라 5년이에요.
-            입력하지 않으면 결제할 수 없어요(
-            <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
-              개인정보처리방침
-            </a>
-            ).
-          </p>
+          <details className="mt-3 text-cap text-sub">
+            <summary className="cursor-pointer font-semibold text-ink-2">이 정보가 왜 필요한가요?</summary>
+            <p className="mt-2">
+              이름·휴대폰 번호·이메일은 결제대행사가 결제 처리와 결제 안내를 위해 꼭 받는 정보예요. 결제대행사에만 넘기고 명경사주 서버에는 저장하지 않아요. 보관은 전자상거래법에 따라 5년이에요.
+              입력하지 않으면 결제할 수 없어요. ‘이 휴대폰에만 기억’을 고르면 이 브라우저에만 남고, 체크를 풀고 결제하면 지워져요(
+              <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
+                개인정보처리방침
+              </a>
+              ).
+            </p>
+          </details>
         </div>
       )}
       {!free && (
-        <div className="mt-4 space-y-3 text-cap text-ink-2" data-pay-agree>
+        <div className="mt-8 space-y-3 text-cap text-ink-2" data-pay-agree>
+          <p className="text-ui font-bold text-ink">
+            <StepNo n={needEmail ? 3 : EASY_PAY_READY ? 2 : 1} />
+            동의해 주세요
+          </p>
+          {/* 한 번에 누를 수 있는 '모두 동의' — 항목은 아래에 하나씩 그대로 보여 주고, 따로 풀 수도 있다 */}
+          <label className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-ui font-bold ${agree && adult && privacy ? 'border-accent bg-accent-tint text-accent-strong' : 'border-line bg-bg text-ink'}`} data-pay-all>
+            <input
+              type="checkbox"
+              className="size-6 shrink-0 accent-accent"
+              checked={agree && adult && privacy}
+              onChange={(e) => {
+                setAgree(e.target.checked);
+                setAdult(e.target.checked);
+                setPrivacy(e.target.checked);
+              }}
+            />
+            아래 세 가지에 모두 동의해요
+          </label>
           {/* 필수 동의는 하나로 묶지 않고 따로 받는다 (만 14세 · 상품과 환불 · 개인정보) */}
           <label className="flex cursor-pointer items-start gap-3">
             <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={adult} onChange={(e) => setAdult(e.target.checked)} />
@@ -233,7 +277,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
             <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-accent" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} />
             <span>
               <b className="text-ink">(필수)</b> 개인정보 처리에 동의해요. 구매 기록(구매 코드 · 상품 · 금액 · 결제 번호 · 생일로 만든 사주 구분값)을 결제 확인과 다시 보기를 위해 5년 보관해요.
-              {needEmail ? ' 위 이름·휴대폰 번호·이메일은 결제대행사에만 넘겨요.' : ''} 이름·생년월일은 보내지 않아요. 동의하지 않으면 결제할 수 없어요(
+              {needEmail ? ' 위 이름·휴대폰 번호·이메일은 결제대행사에만 넘기고, 결제대행사가 전자상거래법에 따라 5년 보관해요.' : ''} 이름·생년월일은 보내지 않아요. 동의하지 않으면 결제할 수 없어요(
               <a href="#/privacy" target="_blank" rel="noreferrer" className="underline">
                 개인정보처리방침
               </a>
@@ -242,8 +286,13 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
           </label>
         </div>
       )}
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <button type="button" className="btn-secondary" onClick={onNo} disabled={busy}>
+      {!free && !busy && !(agree && adult && privacy && (!needEmail || emailOk)) && (
+        <p className="mt-5 text-center text-label text-sub" aria-live="polite">
+          {needEmail && !emailOk ? '구매자 정보를 넣으면 결제 버튼이 켜져요.' : '동의에 체크하면 결제 버튼이 켜져요.'}
+        </p>
+      )}
+      <div className="mt-4 grid grid-cols-[1fr_2fr] gap-2">
+        <button type="button" className="btn-secondary h-14" onClick={onNo} disabled={busy}>
           {free ? '다시 생각할게요' : '취소'}
         </button>
         {/* 한 번 누르면 끝날 때까지 잠근다 — 두 번 눌러 두 번 결제되지 않게 */}
@@ -258,7 +307,7 @@ function Confirm({ o, what, busy, onYes, onNo, onRestore }: { o: Offer; what: st
           disabled={busy || (!free && !(agree && adult && privacy)) || (needEmail && !emailOk)}
           aria-busy={busy}
         >
-          {busy ? '결제하는 중…' : free ? '무료로 열기' : PAYWALL_DEMO ? '결제하고 열기' : '결제하기'}
+          {busy ? '결제하는 중…' : free ? '무료로 열기' : `${o.cost.toLocaleString('ko-KR')}원 결제하기`}
         </button>
       </div>
       {onRestore && !busy && (
