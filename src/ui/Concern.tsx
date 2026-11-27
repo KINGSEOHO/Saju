@@ -340,6 +340,27 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
    * 무엇을 알려 주는지만 보여 주고, 실제 글은 화면에 넣지 않는다. 실제 사이트(결제 전)는 지금처럼 다 보여 준다.
    */
   const sealed = CAN_PAY && !isOpen(u.ent, id);
+  /** 잠긴 고민은 '들어 있는 답'과 결제 버튼이 맨 위로 온다. 열린 고민은 무료 부분 아래에 상세가 이어진다 */
+  const premium = (
+    <Premium
+      lead={sealed}
+      id={id}
+      title={c.detail.title}
+      what={title}
+      price={`${(id === 'year' ? PRICES.year : PRICES.concern).toLocaleString('ko-KR')}원`}
+      items={c.detail.items}
+      locked={CAN_PAY ? sealed : undefined}
+      outline={detailOutline(c)}
+      teaser={teaserOf(id, seasonKey(a).year)}
+      offers={concernOffers(u.ent, id)}
+      fresh={u.ent.first}
+      onTake={(o, buyer) => u.buy(o, id, undefined, buyer)}
+      onRedeem={u.redeem}
+      onCoupon={id === 'career' || id === 'love' || id === 'money' || id === 'exam' ? (c) => u.coupon(c, id) : undefined}
+    >
+      <ConcernDetail a={a} c={c} />
+    </Premium>
+  );
   return (
     <>
       {id === 'love' && (
@@ -362,7 +383,9 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
         </div>
       )}
 
-      <section aria-labelledby={`concern-${id}`}>
+      {sealed && premium}
+
+      <section aria-labelledby={`concern-${id}`} className={sealed ? 'mt-14 border-t-2 border-ink pt-6' : undefined}>
         <p className="kicker">
           {title} · {c.ask}
         </p>
@@ -430,23 +453,7 @@ function ConcernView({ a, report, id, u }: { a: SajuAnalysis; report: Report; id
 
       {c.notice && <p className="mt-6 rounded-xl bg-fill px-4 py-3 text-label text-sub">{c.notice}</p>}
 
-      <Premium
-        id={id}
-        title={c.detail.title}
-        what={title}
-        price={`${(id === 'year' ? PRICES.year : PRICES.concern).toLocaleString('ko-KR')}원`}
-        items={c.detail.items}
-        locked={CAN_PAY ? sealed : undefined}
-        outline={detailOutline(c)}
-        teaser={teaserOf(id, seasonKey(a).year)}
-        offers={concernOffers(u.ent, id)}
-        fresh={u.ent.first}
-        onTake={(o, buyer) => u.buy(o, id, undefined, buyer)}
-        onRedeem={u.redeem}
-        onCoupon={id === 'career' || id === 'love' || id === 'money' || id === 'exam' ? (c) => u.coupon(c, id) : undefined}
-      >
-        <ConcernDetail a={a} c={c} />
-      </Premium>
+      {!sealed && premium}
     </>
   );
 }

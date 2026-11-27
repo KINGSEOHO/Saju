@@ -74,11 +74,10 @@ function Teaser({ lines }: { lines: string[] }) {
   );
 }
 
-function LockedBlur({ outline, teaser }: { outline?: string[]; teaser?: string[] }) {
-  if (!outline?.length) return <Veil rows={8} className="mt-6" />;
+function LockedBlur({ outline }: { outline?: string[] }) {
+  if (!outline?.length) return <Veil rows={8} className="mt-8" />;
   return (
-    <div className="mt-6 space-y-10">
-      {teaser?.length ? <Teaser lines={teaser} /> : null}
+    <div className="mt-10 space-y-10">
       {outline.map((t, i) => (
         <section key={t}>
           <h4 className="text-title3 text-ink">{t}</h4>
@@ -429,8 +428,11 @@ export function Premium({
   onCoupon,
   outline,
   teaser,
+  lead = false,
   children,
 }: {
+  /** 그 칸의 맨 위에 올 때 — 위쪽 굵은 선과 여백을 뺀다 (잠긴 고민은 이 칸이 맨 위로 온다) */
+  lead?: boolean;
   /** 측정에도 쓰는 이름 — 고민(career…), 궁합(compat), 재회(reunion) */
   id: string;
   title: string;
@@ -525,7 +527,7 @@ export function Premium({
   }, [id, locked, firstCost]);
   const status = locked ? '잠금 해제하면 볼 수 있어요' : lockedProp === false ? '열려 있어요' : `${price ? `정가 ${price} · ` : ''}결제 준비 중이라 지금은 무료로 열려 있어요`;
   return (
-    <section className="mt-14 border-t-2 border-ink pt-5" aria-label={title} data-premium={id}>
+    <section className={lead ? '' : 'mt-14 border-t-2 border-ink pt-5'} aria-label={title} data-premium={id}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="tag">상세 리포트</span>
         <span className="text-cap text-sub">{status}</span>
@@ -545,7 +547,8 @@ export function Premium({
               ))}
             </ul>
           )}
-          <LockedBlur outline={outline} teaser={teaser} />
+          {/* 무엇을 알게 되는지(빈칸) → 결제 버튼 → 들어 있는 내용의 제목들 순서 — 궁금할 때 바로 살 수 있게 버튼을 위에 둔다 */}
+          {teaser?.length ? <Teaser lines={teaser} /> : null}
           {done && <PayNotice n={done} />}
           {pay ? (
             asking ? (
@@ -601,6 +604,7 @@ export function Premium({
               {note && <p className="mt-2 text-label font-semibold text-accent">결제는 준비 중이에요. 조금만 기다려 주세요.</p>}
             </>
           )}
+          <LockedBlur outline={outline} />
         </div>
       ) : (
         <>
