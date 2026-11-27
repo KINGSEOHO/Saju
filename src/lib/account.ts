@@ -54,7 +54,10 @@ export const EASY_PAY_READY = true;
 export const PAY_METHODS = [
   { id: 'CARD', label: '카드' },
   { id: 'KAKAOPAY', label: '카카오페이' },
-  // 네이버페이는 이니시스 승인이 나지 않았다(2026-11). 다른 결제사는 승인을 확인한 뒤 한 줄씩 더한다 — 포트원 이름: TOSSPAY · PAYCO · SAMSUNGPAY · SSGPAY · LPAY · APPLEPAY
+  { id: 'TOSSPAY', label: '토스페이' },
+  { id: 'SAMSUNGPAY', label: '삼성페이' },
+  { id: 'PAYCO', label: '페이코' },
+  // 네이버페이(NAVERPAY)는 이니시스 승인이 끝난 것을 확인한 뒤 한 줄 더한다. 그 밖의 포트원 이름: SSGPAY · LPAY · APPLEPAY
 ] as const;
 export type PayMethod = (typeof PAY_METHODS)[number]['id'];
 
