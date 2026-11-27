@@ -54,10 +54,11 @@ export const EASY_PAY_READY = true;
 export const PAY_METHODS = [
   { id: 'CARD', label: '카드' },
   { id: 'KAKAOPAY', label: '카카오페이' },
+  { id: 'NAVERPAY', label: '네이버페이' },
   { id: 'TOSSPAY', label: '토스페이' },
   { id: 'SAMSUNGPAY', label: '삼성페이' },
   { id: 'PAYCO', label: '페이코' },
-  // 네이버페이(NAVERPAY)는 이니시스 승인이 끝난 것을 확인한 뒤 한 줄 더한다. 그 밖의 포트원 이름: SSGPAY · LPAY · APPLEPAY
+  // 이니시스 '간편결제서비스 사용현황'에서 '사용함'인 결제사만 둔다. 그 밖의 포트원 이름: SSGPAY · LPAY · APPLEPAY
 ] as const;
 export type PayMethod = (typeof PAY_METHODS)[number]['id'];
 
